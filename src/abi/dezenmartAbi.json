@@ -1,0 +1,89 @@
+  {
+    "DEZENMART_ABI": [
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_usdtAddress", "type": "address" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "tradeId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "seller",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "logisticsProvider",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "totalAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isUSDT",
+        "type": "bool"
+      }
+    ],
+    "name": "TradeCreated",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tradeId", "type": "uint256" }
+    ],
+    "name": "cancelTrade",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tradeId", "type": "uint256" }
+    ],
+    "name": "confirmDelivery",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "seller", "type": "address" },
+      { "internalType": "uint256", "name": "productCost", "type": "uint256" },
+      {
+        "internalType": "address",
+        "name": "logisticsProvider",
+        "type": "address"
+      },
+      { "internalType": "uint256", "name": "logisticsCost", "type": "uint256" },
+      { "internalType": "bool", "name": "useUSDT", "type": "bool" }
+    ],
+    "name": "createTrade",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "payable",
+    "type": "function"
+  }]
+
+}
