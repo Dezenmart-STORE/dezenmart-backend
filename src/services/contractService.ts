@@ -14,8 +14,9 @@ export class DezenMartContractService {
 
   constructor() {
     // Connect to Celo network (Mainnet or Testnet)
-    const nodeUrl = config.CELO_NODE_URL || 'https://forno.celo.org'; // Mainnet
-    // const nodeUrl = 'https://alfajores-forno.celo-testnet.org'; // Testnet
+    const nodeUrl =
+      config.CELO_NODE_URL || 'https://alfajores-forno.celo-testnet.org'; // Testnet for now
+    // const nodeUrl = 'https://forno.celo.org'; // Mainnet
 
     this.kit = newKit(nodeUrl);
     this.contractAddress = config.CONTRACT_ADDRESS || '';
@@ -67,7 +68,7 @@ export class DezenMartContractService {
   ) {
     const contract = await this.getContract();
 
-    // Calculate total amount based on your contract logic
+    // Calculate total amount based on contract logic
     const useUSDT = false;
     const baseCost = this.kit.web3.utils
       .toBN(productCost)
