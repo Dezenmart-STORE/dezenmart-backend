@@ -4,7 +4,13 @@ import { CustomError } from '../middlewares/errorHandler';
 
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const { error } = schema.validate(req, {
+    const toValidate = {
+      query: req.query,
+      body: req.body,
+      params: req.params,
+    };
+
+    const { error } = schema.validate(toValidate, {
       abortEarly: false, // Return all errors, not just the first one
       allowUnknown: true, // Allow unknown keys that will be ignored
       stripUnknown: true, // Remove unknown keys from output
@@ -12,9 +18,10 @@ export const validate = (schema: Joi.ObjectSchema) => {
 
     if (error) {
       next(new CustomError('Validation Error', 422, 'fail'));
-    } else {
-      next();
+      return;
     }
+
+    next();
   };
 };
 

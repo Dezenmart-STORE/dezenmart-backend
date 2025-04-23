@@ -3,20 +3,17 @@ import { UserService } from '../services/userService';
 import { CustomError } from '../middlewares/errorHandler';
 
 export class UserController {
-  static register = async (req: Request, res: Response) => {
-    const user = await UserService.registerUser(req.body);
-    res.status(201).json({
-      id: user._id,
-      username: user.username,
-      email: user.email,
-    });
+  static getUserByEmail = async (req: Request, res: Response) => {
+    const user = await UserService.getUserByEmail(req.params.email);
+    res.json(user);
   };
 
-  static login = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-    const authData = await UserService.authenticateUser(email, password);
-    if (!authData) throw new CustomError('Invalid credentials', 401, 'fail');
-    res.json(authData);
+  static getAllUsers = async (req: Request, res: Response) => {
+    const users = await UserService.getAllUsers(
+      parseInt(req.query.page as string) || 1,
+      parseInt(req.query.limit as string) || 10,
+    );
+    res.json(users);
   };
 
   static getProfile = async (req: Request, res: Response) => {
@@ -25,13 +22,29 @@ export class UserController {
   };
 
   static updateProfile = async (req: Request, res: Response) => {
-    const user = await UserService.updateUserProfile(req.user.id, req.body);
-    res.json(user);
+    const userId = req.user.id;
+    const updateData = { ...req.body };
+    const file = req.file as Express.Multer.File | undefined;
+
+    if (file) {
+      const imageFilename = file.filename;
+      updateData.profileImage = imageFilename;
+    }
+
+    const updatedUser = await UserService.updateUser(userId, updateData);
+    if (!updatedUser) throw new CustomError('User not found', 404, 'fail');
+    res.json(updatedUser);
   };
 
   static getUserById = async (req: Request, res: Response) => {
     const user = await UserService.getUserById(req.params.id);
     if (!user) throw new CustomError('User not found', 404, 'fail');
     res.json(user);
+  };
+
+  static deleteUser = async (req: Request, res: Response) => {
+    const user = await UserService.deleteUser(req.params.id);
+    if (!user) throw new CustomError('User not found', 404, 'fail');
+    res.json({ success: true });
   };
 }

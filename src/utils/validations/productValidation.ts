@@ -9,7 +9,6 @@ export const ProductValidation = {
       description: Joi.string().min(10).max(1000).required(),
       price: Joi.number().positive().precision(2).required(),
       category: Joi.string().required(),
-      images: Joi.array().items(Joi.string().uri()).min(1).required(),
       isSponsored: Joi.boolean().default(false),
     }),
   }),
@@ -24,7 +23,6 @@ export const ProductValidation = {
       description: Joi.string().min(10).max(1000).optional(),
       price: Joi.number().positive().precision(2).optional(),
       category: Joi.string().optional(),
-      images: Joi.array().items(Joi.string().uri()).min(1).optional(),
       isSponsored: Joi.boolean().optional(),
       isActive: Joi.boolean().optional(),
     }).min(1), // At least one field is required

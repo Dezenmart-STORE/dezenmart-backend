@@ -3,29 +3,34 @@ import { ProductController } from '../controllers/productController';
 import { ProductValidation } from '../utils/validations/productValidation';
 import { validate } from '../utils/validation';
 import { authenticate } from '../middlewares/authMiddleware';
+import { uploadMultipleImages } from '../middlewares/uploadMiddleware';
 
 const router = express.Router();
 
 router.post(
   '/',
   authenticate,
+  uploadMultipleImages('images', 5),
   validate(ProductValidation.create),
   ProductController.createProduct,
 );
-router.get(
-  '/category/:category',
-  validate(ProductValidation.byCategory),
-  ProductController.getProductsByCategory,
-);
+router.get('/', ProductController.getProducts);
+// router.get(
+//   '/category/:category',
+//   validate(ProductValidation.byCategory),
+//   ProductController.getProductsByCategory,
+// );
 router.get(
   '/search',
   validate(ProductValidation.search),
   ProductController.searchProducts,
 );
+router.get('/sponsored', ProductController.getSponsoredProducts);
 router.get('/:id', ProductController.getProductDetails);
 router.put(
   '/:id',
   authenticate,
+  uploadMultipleImages('images', 5),
   validate(ProductValidation.update),
   ProductController.updateProduct,
 );
