@@ -11,7 +11,8 @@ interface IOrder extends Document {
     | 'rejected'
     | 'completed'
     | 'disputed'
-    | 'refunded';
+    | 'refunded'
+    | 'delivery_confirmed';
   dispute?: {
     raisedBy: Types.ObjectId;
     reason: string;
@@ -37,6 +38,7 @@ const OrderSchema = new Schema<IOrder>(
         'completed',
         'disputed',
         'refunded',
+        'delivery_confirmed',
       ],
       default: 'pending',
     },
