@@ -18,7 +18,7 @@ export interface IUser extends Document {
   };
   lastRewardCalculation: Date;
   referralCode: string;
-  referredBy?: Types.ObjectId;
+  referredBy?: Schema.Types.ObjectId;
   referralCount: number;
   isReferralCodeUsed: boolean;
   createdAt: Date;
