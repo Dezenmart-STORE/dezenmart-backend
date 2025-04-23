@@ -1,7 +1,8 @@
-import { Review } from '../models/reviewModel';
+import { Review, IReview } from '../models/reviewModel';
 import { Order } from '../models/orderModel';
 import { User } from '../models/userModel';
 import { CustomError } from '../middlewares/errorHandler';
+import { RewardService } from './rewardService';
 
 export class ReviewService {
   static async createReview(reviewData: {
@@ -34,11 +35,13 @@ export class ReviewService {
       );
     }
 
-    const review = new Review(reviewData);
+    const review: IReview = new Review(reviewData);
     await review.save();
 
-    // Update user's average rating
-    await this.updateUserRating(reviewData.reviewed);
+    if (review.rating === 5 && review._id) {
+      const reviewIdString = review._id.toString();
+      await RewardService.processFiveStarReview(reviewIdString);
+    }
 
     return review;
   }
@@ -58,14 +61,14 @@ export class ReviewService {
     return await Review.find({ reviewed: userId })
       .skip(skip)
       .limit(limit)
-      .populate('reviewer', 'username profileImage')
+      .populate('reviewer', 'name profileImage')
       .populate('order', 'product')
       .sort({ createdAt: -1 });
   }
 
   static async getReviewForOrder(orderId: string) {
     return await Review.findOne({ order: orderId })
-      .populate('reviewer', 'username profileImage')
-      .populate('reviewed', 'username profileImage');
+      .populate('reviewer', 'name profileImage')
+      .populate('reviewed', 'name profileImage');
   }
 }

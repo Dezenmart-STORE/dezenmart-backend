@@ -18,8 +18,8 @@ export class OrderService {
   static async getOrderById(id: string) {
     const order = await Order.findById(id)
       .populate('product', 'name price images')
-      .populate('buyer', 'username profileImage')
-      .populate('seller', 'username profileImage rating');
+      .populate('buyer', 'name profileImage')
+      .populate('seller', 'name profileImage rating');
 
     if (!order) throw new CustomError('Order not found', 404, 'fail');
     return order;
