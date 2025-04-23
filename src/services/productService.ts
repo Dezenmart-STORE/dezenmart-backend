@@ -19,16 +19,16 @@ export class ProductService {
   }
 
   static async deleteProduct(id: string) {
-    return await Product.findByIdAndUpdate(id);
+    return await Product.findByIdAndDelete(id);
   }
 
-  static async getProductsByCategory(category: string, page = 1, limit = 10) {
-    const skip = (page - 1) * limit;
-    return await Product.find({ category, isActive: true })
-      .skip(skip)
-      .limit(limit)
-      .populate('seller', 'username profileImage rating');
-  }
+  // static async getProductsByCategory(category: string, page = 1, limit = 10) {
+  //   const skip = (page - 1) * limit;
+  //   return await Product.find({ category, isActive: true })
+  //     .skip(skip)
+  //     .limit(limit)
+  //     .populate('seller', 'username profileImage rating');
+  // }
 
   static async getSponsoredProducts() {
     return await Product.find({ isSponsored: true, isActive: true })

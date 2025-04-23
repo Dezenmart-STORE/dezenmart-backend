@@ -1,4 +1,4 @@
-import Joi, { date } from 'joi';
+import Joi from 'joi';
 import { Schemas } from '../validation';
 
 export const UserValidation = {
