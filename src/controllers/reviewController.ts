@@ -13,6 +13,11 @@ export class ReviewController {
     res.status(201).json(review);
   };
 
+  static updateUserRating = async (req: Request, res: Response) => {
+    await ReviewService.updateUserRating(req.params.userId);
+    res.json({ success: true });
+  };
+
   static getUserReviews = async (req: Request, res: Response) => {
     const reviews = await ReviewService.getReviewsForUser(
       req.params.userId,

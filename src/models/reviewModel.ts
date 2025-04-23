@@ -1,6 +1,6 @@
 import { Schema, model, Document } from 'mongoose';
 
-interface IReview extends Document {
+export interface IReview extends Document {
   reviewer: Schema.Types.ObjectId;
   reviewed: Schema.Types.ObjectId;
   order: Schema.Types.ObjectId;

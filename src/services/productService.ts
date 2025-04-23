@@ -27,13 +27,13 @@ export class ProductService {
   //   return await Product.find({ category, isActive: true })
   //     .skip(skip)
   //     .limit(limit)
-  //     .populate('seller', 'username profileImage rating');
+  //     .populate('seller', 'name profileImage rating');
   // }
 
   static async getSponsoredProducts() {
     return await Product.find({ isSponsored: true, isActive: true })
       .limit(4)
-      .populate('seller', 'username profileImage rating');
+      .populate('seller', 'name profileImage rating');
   }
 
   static async searchProducts(query: string, filters: any) {
@@ -54,7 +54,7 @@ export class ProductService {
 
     return await Product.find(searchQuery).populate(
       'seller',
-      'username profileImage rating',
+      'name profileImage rating',
     );
   }
 }
