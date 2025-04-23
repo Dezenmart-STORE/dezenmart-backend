@@ -10,6 +10,11 @@ export const ReviewValidation = {
       comment: Joi.string().max(500).optional(),
     }),
   }),
+  updateUserRating: Joi.object({
+    params: Joi.object({
+      userId: Schemas.id.required(),
+    }),
+  }),
   getUserReviews: Joi.object({
     params: Joi.object({
       userId: Schemas.id.required(),
