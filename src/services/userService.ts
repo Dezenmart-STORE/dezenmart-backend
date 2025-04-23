@@ -1,55 +1,55 @@
 import { User, IUser } from '../models/userModel';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 export class UserService {
-  static async registerUser(userData: {
-    username: string;
-    email: string;
-    password: string;
-  }) {
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
-    const user = new User({
-      ...userData,
-      password: hashedPassword,
-    });
-    return await user.save();
-  }
+  static async findOrCreateUser(
+    profile: any,
+  ): Promise<{ user: IUser; token: string }> {
+    let user = await User.findOne({ googleId: profile.id });
 
-  static async authenticateUser(email: string, password: string) {
-    const user = await User.findOne({ email });
-    if (!user) return null;
+    if (!user) {
+      user = await User.findOne({ email: profile.emails[0].value });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return null;
+      if (user) {
+        user.googleId = profile.id;
+        await user.save();
+      } else {
+        user = new User({
+          googleId: profile.id,
+          email: profile.emails[0].value,
+          name: profile.displayName,
+          profileImage: profile.photos[0]?.value,
+        });
+        await user.save();
+      }
+    }
 
     const token = jwt.sign(
-      { id: user._id, username: user.username },
+      { id: user._id, email: user.email },
       process.env.JWT_SECRET!,
       { expiresIn: '7d' },
     );
-
-    return {
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        profileImage: user.profileImage,
-        isMerchant: user.isMerchant,
-        rating: user.rating,
-      },
-      token,
-    };
+    return { user, token };
   }
 
-  static async updateUserProfile(userId: string, updateData: Partial<IUser>) {
-    if (updateData.password) {
-      updateData.password = await bcrypt.hash(updateData.password, 10);
-    }
-    return await User.findByIdAndUpdate(userId, updateData, { new: true });
+  static async getUserByEmail(email: string) {
+    return await User.findOne({ email });
   }
 
   static async getUserById(id: string) {
     return await User.findById(id).select('-password');
+  }
+
+  static async updateUser(id: string, data: Partial<IUser>) {
+    return await User.findByIdAndUpdate(id, data, { new: true });
+  }
+
+  static async deleteUser(id: string) {
+    return await User.findByIdAndDelete(id);
+  }
+
+  static async getAllUsers(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    return await User.find().skip(skip).limit(limit).select('-password');
   }
 }
