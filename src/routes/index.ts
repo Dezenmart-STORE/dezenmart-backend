@@ -5,6 +5,7 @@ import productRoute from './productRoute';
 import orderRoute from './orderRoute';
 import reviewRoute from './reviewRoute';
 import rewardRoute from './rewardRoute';
+import referralRoute from './referralRoute';
 import watchlistRoute from './watchlistRoute';
 
 const router = express.Router();
@@ -15,6 +16,7 @@ router.use('/products', productRoute);
 router.use('/orders', orderRoute);
 router.use('/reviews', reviewRoute);
 router.use('/rewards', rewardRoute);
+router.use('/referral', referralRoute);
 router.use('/watchlist', watchlistRoute);
 
 export default router;
