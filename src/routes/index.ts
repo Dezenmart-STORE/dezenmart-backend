@@ -8,6 +8,7 @@ import rewardRoute from './rewardRoute';
 import referralRoute from './referralRoute';
 import watchlistRoute from './watchlistRoute';
 import notificationRoute from './notificationRoute';
+import messageRoute from './messageRoute';
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use('/rewards', rewardRoute);
 router.use('/referral', referralRoute);
 router.use('/watchlist', watchlistRoute);
 router.use('/notifications', notificationRoute);
+router.use('/messages', messageRoute);
 
 export default router;
