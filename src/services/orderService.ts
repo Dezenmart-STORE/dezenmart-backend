@@ -1,6 +1,8 @@
 import { Order } from '../models/orderModel';
 import { CustomError } from '../middlewares/errorHandler';
 import { Types } from 'mongoose';
+import { NotificationService } from './notificationService';
+import { RewardService } from './rewardService';
 
 export class OrderService {
   static async createOrder(orderData: {
@@ -31,7 +33,8 @@ export class OrderService {
       | 'rejected'
       | 'completed'
       | 'disputed'
-      | 'refunded',
+      | 'refunded'
+      | 'delivery_confirmed',
     userId: string,
   ) {
     const order = await Order.findById(id);
@@ -46,7 +49,28 @@ export class OrderService {
     }
 
     order.status = status;
-    return await order.save();
+    const updatedOrder = await order.save();
+
+    if (status === 'completed') {
+      await RewardService.processOrderRewards(id);
+    }
+
+    // Process rewards when delivery is confirmed
+    if (status === 'delivery_confirmed') {
+      await RewardService.processDeliveryConfirmation(id);
+    }
+
+    const recipient =
+      order.seller.toString() === userId ? order.buyer : order.seller;
+
+    await NotificationService.createNotification({
+      recipient: recipient.toString(),
+      type: 'ORDER_UPDATE',
+      message: `Order status updated to ${status}`,
+      metadata: { orderId: id },
+    });
+
+    return updatedOrder;
   }
 
   static async getUserOrders(userId: string, type: 'buyer' | 'seller') {

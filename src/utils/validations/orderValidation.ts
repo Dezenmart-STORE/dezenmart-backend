@@ -14,7 +14,15 @@ export const OrderValidation = {
     }),
     body: Joi.object({
       status: Joi.string()
-        .valid('accepted', 'rejected', 'completed')
+        .valid(
+          'pending',
+          'accepted',
+          'rejected',
+          'completed',
+          'disputed',
+          'refunded',
+          'delivery_confirmed',
+        )
         .required(),
     }),
   }),
@@ -37,6 +45,7 @@ export const OrderValidation = {
           'completed',
           'disputed',
           'refunded',
+          'delivery_confirmed',
         )
         .optional(),
     }),
