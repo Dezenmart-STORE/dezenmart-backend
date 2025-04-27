@@ -4,6 +4,7 @@ import { AbiItem } from 'web3-utils';
 import dotenv from 'dotenv';
 import abi from '../abi/dezenmartAbi.json';
 import config from '../configs/config';
+import { BlockNumber } from 'web3-core';
 
 dotenv.config();
 
@@ -11,6 +12,9 @@ export class DezenMartContractService {
   private kit: ContractKit;
   private contractAddress: string;
   private usdtAddress: string;
+
+  private pollingInterval: NodeJS.Timeout | null = null;
+  private lastCheckedBlock: BlockNumber = 'latest';
 
   constructor() {
     // Connect to Celo network (Mainnet or Testnet)
@@ -230,28 +234,94 @@ export class DezenMartContractService {
     }
   }
 
+  // --- Stop polling ---
+  public stopListening() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+      console.log('Stopped event polling.');
+    }
+  }
+
   // Listen for events
   async listenForEvents() {
+    // Stop any existing polling first
+    this.stopListening();
+
     const contract = await this.getContract();
+    const pollingFrequencyMs = 30000;
+
+    const poll = async () => {
+      try {
+        // Determine the block range to query
+        const fromBlock =
+          typeof this.lastCheckedBlock === 'number'
+            ? this.lastCheckedBlock + 1
+            : 'latest';
+        const currentBlock = await this.kit.web3.eth.getBlockNumber();
+
+        // Avoid querying if fromBlock would be greater than currentBlock
+        if (typeof fromBlock === 'number' && fromBlock > currentBlock) {
+          console.log(
+            `Polling: No new blocks since ${this.lastCheckedBlock}. Current: ${currentBlock}`,
+          );
+          return;
+        }
+
+        // If fromBlock was 'latest', we only query the currentBlock now
+        const effectiveFromBlock =
+          fromBlock === 'latest' ? currentBlock : fromBlock;
+
+        // --- Poll for specific events ---
+
+        const tradeCreatedEvents = await contract.getPastEvents(
+          'TradeCreated',
+          {
+            fromBlock: effectiveFromBlock,
+            toBlock: currentBlock,
+          },
+        );
+
+        for (const event of tradeCreatedEvents) {
+          console.log('[Poll] TradeCreated:', event.returnValues);
+        }
+
+        const deliveryConfirmedEvents = await contract.getPastEvents(
+          'DeliveryConfirmed',
+          {
+            fromBlock: effectiveFromBlock,
+            toBlock: currentBlock,
+          },
+        );
+
+        for (const event of deliveryConfirmedEvents) {
+          console.log('[Poll] DeliveryConfirmed:', event.returnValues);
+        }
+
+        this.lastCheckedBlock = currentBlock;
+      } catch (error) {
+        console.error('Error during event polling:', error);
+      }
+    };
 
     // Listen for TradeCreated events
-    contract.events
-      .TradeCreated()
-      .on('data', (event: any) => {
-        console.log('New trade created:', event.returnValues);
-      })
-      .on('error', console.error);
+    // contract.events
+    //   .TradeCreated()
+    //   .on('data', (event: any) => {
+    //     console.log('New trade created:', event.returnValues);
+    //   })
+    //   .on('error', console.error);
 
     // Listen for DeliveryConfirmed events
-    contract.events
-      .DeliveryConfirmed()
-      .on('data', (event: any) => {
-        console.log(
-          'Delivery confirmed for trade:',
-          event.returnValues.tradeId,
-        );
-      })
-      .on('error', console.error);
+    // contract.events
+    //   .DeliveryConfirmed()
+    //   .on('data', (event: any) => {
+    //     console.log(
+    //       'Delivery confirmed for trade:',
+    //       event.returnValues.tradeId,
+    //     );
+    //   })
+    //   .on('error', console.error);
 
     //TODO: Add more event listeners as needed
   }
