@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 import { IUser } from '../models/userModel';
+import { URLSearchParams } from 'url';
 
 interface AuthResult {
   user: IUser;
@@ -14,6 +15,7 @@ router.get('/google', passport.authenticate('google'));
 router.get(
   '/google/callback',
   (req: Request, res: Response, next: NextFunction) => {
+    const frontendUrl = process.env.FRONTEND_URL;
     passport.authenticate(
       'google',
       (err: any, authResult: AuthResult | false, info: any) => {
@@ -34,12 +36,12 @@ router.get(
               message: 'Failed to establish session.',
             });
           }
-          return res.json({
-            success: true,
-            message: 'Authentication successful.',
-            user: authResult.user,
+          const queryParams = new URLSearchParams({
             token: authResult.token,
-          });
+            userId: (authResult.user as any)._id.toString(),
+          }).toString();
+
+          return res.redirect(`${frontendUrl}/auth/google?${queryParams}`);
         });
       },
     )(req, res, next);
