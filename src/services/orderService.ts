@@ -3,16 +3,60 @@ import { CustomError } from '../middlewares/errorHandler';
 import { Types } from 'mongoose';
 import { NotificationService } from './notificationService';
 import { RewardService } from './rewardService';
+import { Product, IProduct } from '../models/productModel';
 
 export class OrderService {
-  static async createOrder(orderData: {
+  static async createOrder(orderInput: {
     product: string;
     buyer: string;
-    seller: string;
-    amount: number;
+    logisticsProviderWalletAddress: string;
+    quantity: number;
   }) {
-    const order = new Order(orderData);
-    return await order.save();
+    if (orderInput.quantity <= 0) {
+      throw new CustomError('Quantity must be greater than zero', 400, 'fail');
+    }
+
+    const updatedProduct = await Product.findOneAndUpdate(
+      { _id: orderInput.product, stock: { $gte: orderInput.quantity } },
+      { $inc: { stock: -orderInput.quantity } },
+      { new: true },
+    );
+
+    if (!updatedProduct) {
+      const existingProduct = await Product.findById(orderInput.product).select(
+        'stock name',
+      );
+      if (!existingProduct) {
+        throw new CustomError('Product not found', 404, 'fail');
+      }
+      throw new CustomError(
+        `Insufficient stock for product "${existingProduct.name}". Available: ${existingProduct.stock}, Requested: ${orderInput.quantity}.`,
+        400,
+        'fail',
+      );
+    }
+
+    const amount = updatedProduct.price * orderInput.quantity;
+
+    const order = new Order({
+      product: updatedProduct._id,
+      buyer: orderInput.buyer,
+      seller: updatedProduct.seller,
+      amount,
+      quantity: orderInput.quantity,
+      sellerWalletAddress: updatedProduct.sellerWalletAddress,
+      logisticsProviderWalletAddress: orderInput.logisticsProviderWalletAddress,
+    });
+
+    const savedOrder = await order.save();
+    await NotificationService.createNotification({
+      recipient: updatedProduct.seller.toString(),
+      type: 'ORDER_PLACED',
+      message: `New order placed for ${updatedProduct.name}`,
+      metadata: { orderId: savedOrder._id },
+    });
+
+    return savedOrder;
   }
 
   static async getOrderById(id: string) {

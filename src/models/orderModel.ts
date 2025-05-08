@@ -5,6 +5,9 @@ interface IOrder extends Document {
   buyer: Schema.Types.ObjectId;
   seller: Schema.Types.ObjectId;
   amount: number;
+  quantity: number;
+  sellerWalletAddress: string;
+  logisticsProviderWalletAddress: string;
   status:
     | 'pending'
     | 'accepted'
@@ -29,6 +32,9 @@ const OrderSchema = new Schema<IOrder>(
     buyer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     seller: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     amount: { type: Number, required: true },
+    quantity: { type: Number, required: true },
+    sellerWalletAddress: { type: String },
+    logisticsProviderWalletAddress: { type: String },
     status: {
       type: String,
       enum: [

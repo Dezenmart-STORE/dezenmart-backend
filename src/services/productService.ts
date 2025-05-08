@@ -11,7 +11,10 @@ export class ProductService {
   }
 
   static async getProductById(id: string) {
-    return await Product.findById(id);
+    return await Product.findById(id).populate(
+      'seller',
+      'name profileImage rating',
+    );
   }
 
   static async updateProduct(id: string, productData: Partial<IProduct>) {
