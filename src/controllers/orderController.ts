@@ -6,8 +6,8 @@ export class OrderController {
     const order = await OrderService.createOrder({
       product: req.body.product,
       buyer: req.user.id,
-      seller: req.body.seller,
-      amount: req.body.amount,
+      logisticsProviderWalletAddress: req.body.logisticsProviderWalletAddress,
+      quantity: req.body.quantity,
     });
     res.status(201).json(order);
   };
