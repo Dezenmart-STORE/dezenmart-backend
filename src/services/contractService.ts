@@ -1,12 +1,32 @@
-// src/services/contractService.ts
 import { ContractKit, newKit } from '@celo/contractkit';
 import { AbiItem } from 'web3-utils';
-import dotenv from 'dotenv';
-import abi from '../abi/dezenmartAbi.json';
-import config from '../configs/config';
 import { BlockNumber } from 'web3-core';
+import dotenv from 'dotenv';
+import config from '../configs/config';
+import abi from '../abi/dezenmartAbi.json';
 
 dotenv.config();
+
+// Define types for our trade structure to match the contract
+export interface Trade {
+  buyer: string;
+  seller: string;
+  logisticsProviders: string[];
+  logisticsCosts: string[];
+  chosenLogisticsProvider: string;
+  productCost: string;
+  logisticsCost: string;
+  escrowFee: string;
+  totalAmount: string;
+  totalQuantity: string;
+  remainingQuantity: string;
+  logisticsSelected: boolean;
+  delivered: boolean;
+  completed: boolean;
+  disputed: boolean;
+  isUSDT: boolean;
+  parentTradeId: string;
+}
 
 export class DezenMartContractService {
   private kit: ContractKit;
@@ -20,7 +40,6 @@ export class DezenMartContractService {
     // Connect to Celo network (Mainnet or Testnet)
     const nodeUrl =
       config.CELO_NODE_URL || 'https://alfajores-forno.celo-testnet.org'; // Testnet for now
-    // const nodeUrl = 'https://forno.celo.org'; // Mainnet
 
     this.kit = newKit(nodeUrl);
     this.contractAddress = config.CONTRACT_ADDRESS || '';
@@ -63,70 +82,140 @@ export class DezenMartContractService {
     return receipt;
   }
 
-  // Create trade with ETH
-  async createTradeWithETH(
-    seller: string,
-    productCost: string, // in wei
-    logisticsProvider: string,
-    logisticsCost: string, // in wei
+  // Create trade (seller)
+  async createTrade(
+    productCost: string, // in smallest units (wei or USDT units)
+    logisticsProviders: string[], // array of provider addresses
+    logisticsCosts: string[], // array of logistics costs
+    useUSDT: boolean,
+    totalQuantity: string,
   ) {
+    if (logisticsProviders.length !== logisticsCosts.length) {
+      throw new Error('Providers and costs arrays must have the same length');
+    }
+
     const contract = await this.getContract();
 
-    // Calculate total amount based on contract logic
-    const useUSDT = false;
-    const baseCost = this.kit.web3.utils
-      .toBN(productCost)
-      .add(this.kit.web3.utils.toBN(logisticsCost));
-    const feeMultiplier = this.kit.web3.utils.toBN(250); // 2.5%
-    const basisPoints = this.kit.web3.utils.toBN(10000);
-    const escrowFee = baseCost.mul(feeMultiplier).div(basisPoints);
-    const totalAmount = baseCost.add(escrowFee).toString();
+    // Ensure all parameters are properly formatted
+    const formattedProviders = logisticsProviders.map((provider) => {
+      if (!provider.startsWith('0x')) {
+        throw new Error(`Invalid provider address: ${provider}`);
+      }
+      return provider;
+    });
+
+    const formattedCosts = logisticsCosts.map((cost) => {
+      if (!/^\d+$/.test(cost)) {
+        throw new Error(`Invalid cost: ${cost}`);
+      }
+      return cost;
+    });
+
+    if (!/^\d+$/.test(totalQuantity) || parseInt(totalQuantity) <= 0) {
+      throw new Error('Total quantity must be a positive number');
+    }
+
+    // Log transaction parameters for debugging
+    console.log('createTrade args:', {
+      productCost,
+      logisticsProviders: formattedProviders,
+      logisticsCosts: formattedCosts,
+      useUSDT,
+      totalQuantity,
+    });
 
     const tx = await contract.methods.createTrade(
-      seller,
       productCost,
-      logisticsProvider,
-      logisticsCost,
+      formattedProviders,
+      formattedCosts,
       useUSDT,
+      totalQuantity,
     );
 
-
-    const receipt = await this.sendTransaction(tx, totalAmount);
+    const receipt = await this.sendTransaction(tx);
     return receipt;
   }
 
-  // Create trade with USDT
-  async createTradeWithUSDT(
-    seller: string,
-    productCost: string, // in smallest USDT units
-    logisticsProvider: string,
-    logisticsCost: string, // in smallest USDT units
+  // Buy trade (buyer)
+  async buyTrade(
+    tradeId: string,
+    quantity: string,
+    logisticsProviderIndex: number,
+    useUSDT: boolean,
   ) {
     const contract = await this.getContract();
-    const useUSDT = true;
 
-    // First, approve the contract to spend USDT
-    const baseCost = this.kit.web3.utils
-      .toBN(productCost)
-      .add(this.kit.web3.utils.toBN(logisticsCost));
-    const feeMultiplier = this.kit.web3.utils.toBN(250); // 2.5%
-    const basisPoints = this.kit.web3.utils.toBN(10000);
-    const escrowFee = baseCost.mul(feeMultiplier).div(basisPoints);
-    const totalAmount = baseCost.add(escrowFee).toString();
+    // Get the trade details to calculate the required payment
+    const trade = await this.getTrade(tradeId);
 
-    // Approve USDT spending
-    await this.approveUSDT(totalAmount);
+    if (parseInt(trade.remainingQuantity) < parseInt(quantity)) {
+      throw new Error('Insufficient quantity available');
+    }
 
-    // Create trade
-    const tx = await contract.methods.createTrade(
-      seller,
-      productCost,
-      logisticsProvider,
-      logisticsCost,
-      useUSDT,
-    );
-    const receipt = await this.sendTransaction(tx);
-    return receipt;
+    // Calculate payment amount
+    if (logisticsProviderIndex >= trade.logisticsProviders.length) {
+      throw new Error('Invalid logistics provider index');
+    }
+
+    const chosenLogisticsCost = trade.logisticsCosts[logisticsProviderIndex];
+    const totalProductCost = this.kit.web3.utils
+      .toBN(trade.productCost)
+      .mul(this.kit.web3.utils.toBN(quantity))
+      .toString();
+    const totalLogisticsCost = this.kit.web3.utils
+      .toBN(chosenLogisticsCost)
+      .mul(this.kit.web3.utils.toBN(quantity))
+      .toString();
+
+    // Calculate escrow fees (2.5%)
+    const productEscrowFee = this.kit.web3.utils
+      .toBN(totalProductCost)
+      .mul(this.kit.web3.utils.toBN(250))
+      .div(this.kit.web3.utils.toBN(10000))
+      .toString();
+    const logisticsEscrowFee = this.kit.web3.utils
+      .toBN(totalLogisticsCost)
+      .mul(this.kit.web3.utils.toBN(250))
+      .div(this.kit.web3.utils.toBN(10000))
+      .toString();
+
+    // Calculate total payment amount
+    const totalAmount = this.kit.web3.utils
+      .toBN(totalProductCost)
+      .add(this.kit.web3.utils.toBN(totalLogisticsCost))
+      .toString();
+
+    console.log('buyTrade calculation:', {
+      tradeId,
+      quantity,
+      logisticsProviderIndex,
+      totalProductCost,
+      totalLogisticsCost,
+      productEscrowFee,
+      logisticsEscrowFee,
+      totalAmount,
+    });
+
+    if (useUSDT) {
+      // First, approve the contract to spend USDT
+      await this.approveUSDT(totalAmount);
+
+      // Then execute the buyTrade function
+      const tx = await contract.methods.buyTrade(
+        tradeId,
+        quantity,
+        logisticsProviderIndex,
+      );
+      return await this.sendTransaction(tx);
+    } else {
+      // For ETH payment, send the value with the transaction
+      const tx = await contract.methods.buyTrade(
+        tradeId,
+        quantity,
+        logisticsProviderIndex,
+      );
+      return await this.sendTransaction(tx, totalAmount);
+    }
   }
 
   // Approve USDT spending
@@ -152,12 +241,36 @@ export class DezenMartContractService {
       config.USDT_ADDRESS,
     );
 
-    const tx = await usdtContract.methods.approve(config.CONTRACT_ADDRESS, amount);
-    await this.sendTransaction(tx);
+    const tx = await usdtContract.methods.approve(
+      config.CONTRACT_ADDRESS,
+      amount,
+    );
+    const receipt = await this.sendTransaction(tx);
+
+    // Check if approval was successful
+    console.log('USDT approval receipt:', receipt);
+
+    // Verify allowance after approval
+    const allowance = await usdtContract.methods
+      .allowance(this.kit.defaultAccount, config.CONTRACT_ADDRESS)
+      .call();
+
+    console.log(`USDT allowance after approval: ${allowance}`);
+
+    // Ensure the allowance is sufficient
+    if (
+      this.kit.web3.utils.toBN(allowance).lt(this.kit.web3.utils.toBN(amount))
+    ) {
+      throw new Error(
+        `USDT approval failed. Allowance: ${allowance}, Required: ${amount}`,
+      );
+    }
+
+    return receipt;
   }
 
   // Confirm delivery (buyer only)
-  async confirmDelivery(tradeId: number) {
+  async confirmDelivery(tradeId: string) {
     const contract = await this.getContract();
     const tx = await contract.methods.confirmDelivery(tradeId);
 
@@ -166,7 +279,7 @@ export class DezenMartContractService {
   }
 
   // Cancel trade (buyer only)
-  async cancelTrade(tradeId: number) {
+  async cancelTrade(tradeId: string) {
     const contract = await this.getContract();
     const tx = await contract.methods.cancelTrade(tradeId);
 
@@ -175,7 +288,7 @@ export class DezenMartContractService {
   }
 
   // Raise dispute
-  async raiseDispute(tradeId: number) {
+  async raiseDispute(tradeId: string) {
     const contract = await this.getContract();
     const tx = await contract.methods.raiseDispute(tradeId);
 
@@ -184,7 +297,7 @@ export class DezenMartContractService {
   }
 
   // Resolve dispute (admin only)
-  async resolveDispute(tradeId: number, winner: string) {
+  async resolveDispute(tradeId: string, winner: string) {
     const contract = await this.getContract();
     const tx = await contract.methods.resolveDispute(tradeId, winner);
 
@@ -193,24 +306,85 @@ export class DezenMartContractService {
   }
 
   // Get trade details
-  async getTrade(tradeId: number) {
+  async getTrade(tradeId: string): Promise<Trade> {
     const contract = await this.getContract();
-    const trade = await contract.methods.trades(tradeId).call();
+    try {
+      const trade = await contract.methods.trades(tradeId).call();
 
-    return {
-      buyer: trade.buyer,
-      seller: trade.seller,
-      logisticsProvider: trade.logisticsProvider,
-      productCost: trade.productCost,
-      logisticsCost: trade.logisticsCost,
-      escrowFee: trade.escrowFee,
-      totalAmount: trade.totalAmount,
-      logisticsSelected: trade.logisticsSelected,
-      delivered: trade.delivered,
-      completed: trade.completed,
-      disputed: trade.disputed,
-      isUSDT: trade.isUSDT,
-    };
+      // Format the response to match our Trade interface
+      return {
+        buyer: trade.buyer,
+        seller: trade.seller,
+        logisticsProviders: Array.isArray(trade.logisticsProviders)
+          ? trade.logisticsProviders
+          : [],
+        logisticsCosts: Array.isArray(trade.logisticsCosts)
+          ? trade.logisticsCosts
+          : [],
+        chosenLogisticsProvider: trade.chosenLogisticsProvider,
+        productCost: trade.productCost,
+        logisticsCost: trade.logisticsCost,
+        escrowFee: trade.escrowFee,
+        totalAmount: trade.totalAmount,
+        totalQuantity: trade.totalQuantity,
+        remainingQuantity: trade.remainingQuantity,
+        logisticsSelected: trade.logisticsSelected,
+        delivered: trade.delivered,
+        completed: trade.completed,
+        disputed: trade.disputed,
+        isUSDT: trade.isUSDT,
+        parentTradeId: trade.parentTradeId,
+      };
+    } catch (error) {
+      console.error('Error fetching trade:', error);
+      throw new Error(`Failed to get trade with ID ${tradeId}`);
+    }
+  }
+
+  // Get all trades for the current buyer
+  async getTradesByBuyer(): Promise<Trade[]> {
+    const contract = await this.getContract();
+    try {
+      const trades = await contract.methods.getTradesByBuyer().call({
+        from: this.kit.defaultAccount,
+      });
+      return trades;
+    } catch (error) {
+      console.error('Error fetching buyer trades:', error);
+      throw new Error('Failed to get buyer trades');
+    }
+  }
+
+  // Get all trades for the current seller
+  async getTradesBySeller(): Promise<Trade[]> {
+    const contract = await this.getContract();
+    try {
+      const trades = await contract.methods.getTradesBySeller().call({
+        from: this.kit.defaultAccount,
+      });
+      return trades;
+    } catch (error) {
+      console.error('Error fetching seller trades:', error);
+      throw new Error('Failed to get seller trades');
+    }
+  }
+
+  // Admin withdraw ETH fees
+  async withdrawEscrowFeesETH() {
+    const contract = await this.getContract();
+    const tx = await contract.methods.withdrawEscrowFeesETH();
+
+    const receipt = await this.sendTransaction(tx);
+    return receipt;
+  }
+
+  // Admin withdraw USDT fees
+  async withdrawEscrowFeesUSDT() {
+    const contract = await this.getContract();
+    const tx = await contract.methods.withdrawEscrowFeesUSDT();
+
+    const receipt = await this.sendTransaction(tx);
+    return receipt;
   }
 
   // Helper function to send transactions
@@ -224,28 +398,67 @@ export class DezenMartContractService {
         );
       }
 
-      // Try to log the ABI of the function being called
-      if (tx._method) {
-        console.log('Method signature:', tx._method.signature);
-        console.log('Method name:', tx._method.name);
-        console.log('Method params:', tx._method.inputs);
-      }
-      const gasEstimate = await tx.estimateGas({ from, value });
+      console.log('Sending transaction from:', accounts, from);
 
+      // Log transaction details for debugging
+      if (tx._method) {
+        console.log('Transaction method:', tx._method.name);
+        console.log('Transaction parameters:', tx._method.inputs);
+      }
+
+      // Estimate gas with a buffer to avoid out-of-gas errors
+      let gasEstimate;
+      try {
+        gasEstimate = await tx.estimateGas({ from, value });
+        console.log('Gas estimate:', gasEstimate);
+      } catch (error) {
+        console.error('Gas estimation error:', error);
+      }
+
+      // Send the transaction with a gas buffer
       const receipt = await tx.send({
         from,
         gas: Math.round(gasEstimate * 1.2), // Add 20% buffer
         value,
       });
 
+      console.log('Transaction receipt:', {
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed,
+        status: receipt.status,
+      });
+
       return receipt;
     } catch (error) {
       console.error('Transaction error:', error);
+
+      // Check for specific error patterns
+      const errorString = (
+        error instanceof Error ? error : new Error(String(error))
+      ).toString();
+      if (errorString.includes('param.map is not a function')) {
+        console.error(
+          'Parameter format error: Ensure all array parameters are properly formatted as arrays',
+        );
+
+        if (tx._method) {
+          console.error('Failing method:', tx._method.name);
+          console.error(
+            'Method parameters:',
+            JSON.stringify(tx._method.inputs),
+          );
+          console.error('Method signature:', tx._method.signature);
+        }
+      }
+
       throw error;
     }
   }
 
-  // --- Stop polling ---
+  // --- Event listening ---
+
+  // Stop polling
   public stopListening() {
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval);
@@ -255,12 +468,19 @@ export class DezenMartContractService {
   }
 
   // Listen for events
-  async listenForEvents() {
+  async listenForEvents(
+    eventCallbacks: {
+      onTradeCreated?: (event: any) => void;
+      onTradePurchased?: (event: any) => void;
+      onDeliveryConfirmed?: (event: any) => void;
+      onDisputeRaised?: (event: any) => void;
+    } = {},
+  ) {
     // Stop any existing polling first
     this.stopListening();
 
     const contract = await this.getContract();
-    const pollingFrequencyMs = 30000;
+    const pollingFrequencyMs = 30000; // 30 seconds
 
     const poll = async () => {
       try {
@@ -285,6 +505,7 @@ export class DezenMartContractService {
 
         // --- Poll for specific events ---
 
+        // TradeCreated events
         const tradeCreatedEvents = await contract.getPastEvents(
           'TradeCreated',
           {
@@ -295,8 +516,28 @@ export class DezenMartContractService {
 
         for (const event of tradeCreatedEvents) {
           console.log('[Poll] TradeCreated:', event.returnValues);
+          if (eventCallbacks.onTradeCreated) {
+            eventCallbacks.onTradeCreated(event);
+          }
         }
 
+        // TradePurchased events
+        const tradePurchasedEvents = await contract.getPastEvents(
+          'TradePurchased',
+          {
+            fromBlock: effectiveFromBlock,
+            toBlock: currentBlock,
+          },
+        );
+
+        for (const event of tradePurchasedEvents) {
+          console.log('[Poll] TradePurchased:', event.returnValues);
+          if (eventCallbacks.onTradePurchased) {
+            eventCallbacks.onTradePurchased(event);
+          }
+        }
+
+        // DeliveryConfirmed events
         const deliveryConfirmedEvents = await contract.getPastEvents(
           'DeliveryConfirmed',
           {
@@ -307,6 +548,25 @@ export class DezenMartContractService {
 
         for (const event of deliveryConfirmedEvents) {
           console.log('[Poll] DeliveryConfirmed:', event.returnValues);
+          if (eventCallbacks.onDeliveryConfirmed) {
+            eventCallbacks.onDeliveryConfirmed(event);
+          }
+        }
+
+        // DisputeRaised events
+        const disputeRaisedEvents = await contract.getPastEvents(
+          'DisputeRaised',
+          {
+            fromBlock: effectiveFromBlock,
+            toBlock: currentBlock,
+          },
+        );
+
+        for (const event of disputeRaisedEvents) {
+          console.log('[Poll] DisputeRaised:', event.returnValues);
+          if (eventCallbacks.onDisputeRaised) {
+            eventCallbacks.onDisputeRaised(event);
+          }
         }
 
         this.lastCheckedBlock = currentBlock;
@@ -315,25 +575,9 @@ export class DezenMartContractService {
       }
     };
 
-    // Listen for TradeCreated events
-    // contract.events
-    //   .TradeCreated()
-    //   .on('data', (event: any) => {
-    //     console.log('New trade created:', event.returnValues);
-    //   })
-    //   .on('error', console.error);
-
-    // Listen for DeliveryConfirmed events
-    // contract.events
-    //   .DeliveryConfirmed()
-    //   .on('data', (event: any) => {
-    //     console.log(
-    //       'Delivery confirmed for trade:',
-    //       event.returnValues.tradeId,
-    //     );
-    //   })
-    //   .on('error', console.error);
-
-    //TODO: Add more event listeners as needed
+    // Start polling
+    await poll(); // Run immediately once
+    this.pollingInterval = setInterval(poll, pollingFrequencyMs);
+    console.log(`Started event polling every ${pollingFrequencyMs}ms`);
   }
 }
