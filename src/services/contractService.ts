@@ -90,6 +90,7 @@ export class DezenMartContractService {
       useUSDT,
     );
 
+
     const receipt = await this.sendTransaction(tx, totalAmount);
     return receipt;
   }
@@ -124,7 +125,6 @@ export class DezenMartContractService {
       logisticsCost,
       useUSDT,
     );
-
     const receipt = await this.sendTransaction(tx);
     return receipt;
   }
@@ -149,10 +149,10 @@ export class DezenMartContractService {
 
     const usdtContract = new this.kit.web3.eth.Contract(
       usdtAbi as AbiItem[],
-      this.usdtAddress,
+      config.USDT_ADDRESS,
     );
 
-    const tx = await usdtContract.methods.approve(this.contractAddress, amount);
+    const tx = await usdtContract.methods.approve(config.CONTRACT_ADDRESS, amount);
     await this.sendTransaction(tx);
   }
 
@@ -218,7 +218,18 @@ export class DezenMartContractService {
     try {
       const accounts = await this.kit.web3.eth.getAccounts();
       const from = this.kit.defaultAccount || accounts[0];
+      if (!from) {
+        throw new Error(
+          'No default account found. Please set a default account.',
+        );
+      }
 
+      // Try to log the ABI of the function being called
+      if (tx._method) {
+        console.log('Method signature:', tx._method.signature);
+        console.log('Method name:', tx._method.name);
+        console.log('Method params:', tx._method.inputs);
+      }
       const gasEstimate = await tx.estimateGas({ from, value });
 
       const receipt = await tx.send({
