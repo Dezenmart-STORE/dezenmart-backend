@@ -8,9 +8,12 @@ export const ProductValidation = {
       name: Joi.string().min(3).max(100).required(),
       description: Joi.string().min(10).max(1000).required(),
       price: Joi.number().positive().precision(2).required(),
-      type: Joi.object()
-        .pattern(Joi.string(), Joi.alternatives().try(Joi.string(), Joi.number()))
-        .min(1).required(),
+      type: Joi.array().items( // Validate type as an array of objects
+        Joi.object()
+          .pattern(Joi.string(), Joi.alternatives().try(Joi.string(), Joi.number()))
+          .min(1)
+          .required()
+      ).min(1).required(),
       category: Joi.string().required(),
       sellerWalletAddress: Joi.string().required(),
       stock: Joi.number().integer().min(0).required(),
