@@ -68,7 +68,6 @@ export class ContractController {
         logisticsCosts,
         useUSDT,
         totalQuantity,
-        orderId,
       } = req.body;
 
       // Validate product cost
@@ -133,24 +132,12 @@ export class ContractController {
         );
       }
 
-      // Validate orderId for tracking
-      if (!orderId) {
-        return next(
-          new CustomError(
-            'Internal orderId is required for tracking',
-            400,
-            'fail',
-          ),
-        );
-      }
-
       console.log('Creating trade with params:', {
         productCost,
         logisticsProviders,
         logisticsCosts,
         useUSDT,
-        totalQuantity,
-        orderId
+        totalQuantity
       });
 
       // Create the trade
@@ -165,14 +152,39 @@ export class ContractController {
       const updateMessage =
         'Blockchain transaction sent. Order linking relies on event listener.';
       console.log(
-        `Trade creation Tx sent for Order ${orderId}: ${receipt.transactionHash}. Waiting for event listener to link.`,
+        `Trade creation Tx sent for ${receipt.transactionHash}. Waiting for event listener to link.`,
       );
+
+      let extractedTradeId: string | undefined;
+
+      if (receipt.events) {
+        // Attempt 1: From TradeCreated event (generally preferred)
+        if (receipt.events.TradeCreated) {
+          const tradeCreatedEvent = receipt.events.TradeCreated;
+          // Handle if TradeCreated is an array or a single object
+          const eventInstance = Array.isArray(tradeCreatedEvent) ? tradeCreatedEvent[0] : tradeCreatedEvent;
+          if (eventInstance && eventInstance.returnValues) {
+            extractedTradeId = eventInstance.returnValues.tradeId;
+          }
+        }
+
+        // Attempt 2: From LogisticsSelected event if TradeCreated didn't yield ID
+        if (!extractedTradeId && receipt.events.LogisticsSelected) {
+          const logisticsEvents = receipt.events.LogisticsSelected;
+          // Handle if LogisticsSelected is an array or a single object
+          const firstEventInstance = Array.isArray(logisticsEvents) ? logisticsEvents[0] : logisticsEvents;
+          if (firstEventInstance && firstEventInstance.returnValues) {
+            extractedTradeId = firstEventInstance.returnValues.tradeId;
+          }
+        }
+      }
 
       res.status(201).json({
         status: 'success',
         message: `Trade creation transaction sent. ${updateMessage}`,
         data: {
           transactionHash: receipt.transactionHash,
+          tradeId: extractedTradeId,
         },
       });
     } catch (error) {

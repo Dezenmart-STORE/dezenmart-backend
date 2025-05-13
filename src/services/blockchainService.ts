@@ -153,7 +153,7 @@ export class DezenMartLogisticsService {
     }
 
     // Calculate payment amount
-    if (logisticsProviderIndex >= trade.logisticsProviders.length) {
+    if (logisticsProviderIndex > trade.logisticsProviders.length) {
       throw new Error('Invalid logistics provider index');
     }
 
