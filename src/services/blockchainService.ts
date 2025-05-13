@@ -28,7 +28,7 @@ export interface Trade {
   parentTradeId: string;
 }
 
-export class DezenMartContractService {
+export class DezenMartLogisticsService {
   private kit: ContractKit;
   private contractAddress: string;
   private usdtAddress: string;
@@ -241,10 +241,7 @@ export class DezenMartContractService {
       config.USDT_ADDRESS,
     );
 
-    const tx = await usdtContract.methods.approve(
-      config.CONTRACT_ADDRESS,
-      amount,
-    );
+    const tx = await usdtContract.methods.approve(config.CONTRACT_ADDRESS, amount);
     const receipt = await this.sendTransaction(tx);
 
     // Check if approval was successful
@@ -434,9 +431,7 @@ export class DezenMartContractService {
       console.error('Transaction error:', error);
 
       // Check for specific error patterns
-      const errorString = (
-        error instanceof Error ? error : new Error(String(error))
-      ).toString();
+      const errorString = (error instanceof Error ? error : new Error(String(error))).toString();
       if (errorString.includes('param.map is not a function')) {
         console.error(
           'Parameter format error: Ensure all array parameters are properly formatted as arrays',
