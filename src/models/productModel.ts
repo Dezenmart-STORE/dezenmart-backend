@@ -4,7 +4,7 @@ export interface IProduct extends Document {
   name: string;
   description: string;
   price: number;
-  type: Record<string, string | number>;
+  type: { [key: string]: string | number }[]
   category: string;
   seller: Schema.Types.ObjectId;
   sellerWalletAddress: string;
@@ -24,7 +24,7 @@ const productSchema = new Schema<IProduct>(
     name: { type: String, required: true },
     description: { type: String, required: true },
     price: { type: Number, required: true },
-    type: { type: Schema.Types.Mixed, required: true },
+    type: { type: [{ type: Schema.Types.Mixed }], required: true },
     category: { type: String, required: true },
     seller: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     sellerWalletAddress: { type: String, required: true },

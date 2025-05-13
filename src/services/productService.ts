@@ -6,7 +6,7 @@ interface ICreateProductInput {
   name: string;
   description: string;
   price: number;
-  type: Record<string, string | number>;
+  type: Record<string, string | number>[];
   category: string;
   seller: string;
   sellerWalletAddress: string;
