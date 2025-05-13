@@ -1,9 +1,58 @@
+import { CustomError } from '../middlewares/errorHandler';
 import { Product, IProduct } from '../models/productModel';
+import { contractService } from '../server';
+
+interface ICreateProductInput {
+  name: string;
+  description: string;
+  price: number;
+  type: Record<string, string | number>;
+  category: string;
+  seller: string;
+  sellerWalletAddress: string;
+  stock: number;
+  images: string[];
+  logisticsCost: string[];
+  isSponsored: boolean;
+  isActive: boolean;
+  logisticsProviders: string[];
+  useUSDT: boolean;
+}
 
 export class ProductService {
-  static async createProduct(productData: Partial<IProduct>) {
-    const product = new Product(productData);
-    return await product.save();
+  static async createProduct(productInput: ICreateProductInput): Promise<IProduct> {
+    // 1. Create the trade on the blockchain
+    const productCostStr = productInput.price.toString();
+    const totalQuantityStr = productInput.stock.toString();
+    const logisticsCostsArr = productInput.logisticsCost;
+
+    if (!productCostStr || !totalQuantityStr || !productInput.logisticsProviders || !logisticsCostsArr || typeof productInput.useUSDT === 'undefined') {
+      throw new CustomError('Missing required fields for trade creation within product data.', 400, 'fail');
+    }
+
+    const tradeReceipt = await contractService.createTrade(
+      productCostStr,
+      productInput.logisticsProviders,
+      logisticsCostsArr,
+      productInput.useUSDT,
+      totalQuantityStr,
+    );
+
+    let tradeId;
+    if (tradeReceipt && tradeReceipt.events && tradeReceipt.events.LogisticsSelected && tradeReceipt.events.LogisticsSelected.returnValues && tradeReceipt.events.LogisticsSelected.returnValues.tradeId) {
+      tradeId = tradeReceipt.events.LogisticsSelected.returnValues.tradeId.toString();
+    } else {
+      console.error('Failed to extract tradeId from createTrade receipt:', tradeReceipt);
+      throw new CustomError('Trade created on blockchain, but failed to retrieve tradeId from events. Product not saved.', 500, 'error');
+    }
+
+    // 2. Create the product in the database with the tradeId
+    const productToSave = new Product({
+      ...productInput,
+      tradeId: tradeId,
+    });
+
+    return await productToSave.save();
   }
 
   static async getProducts() {
