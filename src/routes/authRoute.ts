@@ -40,7 +40,7 @@ router.get(
             token: authResult.token,
             userId: (authResult.user as any)._id.toString(),
           }).toString();
-
+          
           return res.redirect(`${frontendUrl}/auth/google?${queryParams}`);
         });
       },
