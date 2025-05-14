@@ -104,6 +104,10 @@ export class DezenMartContractService {
       return provider;
     });
 
+    if (!Array.isArray(logisticsCosts)) {
+      logisticsCosts = [logisticsCosts];
+    }
+
     const formattedCosts = logisticsCosts.map((cost) => {
       if (!/^\d+$/.test(cost)) {
         throw new Error(`Invalid cost: ${cost}`);
