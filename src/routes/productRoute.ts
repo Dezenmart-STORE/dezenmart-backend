@@ -4,6 +4,7 @@ import { ProductValidation } from '../utils/validations/productValidation';
 import { validate } from '../utils/validation';
 import { authenticate } from '../middlewares/authMiddleware';
 import { uploadMultipleImages } from '../middlewares/uploadMiddleware';
+import transformProductFormData from '../middlewares/transformFormData';
 
 const router = express.Router();
 
@@ -11,6 +12,7 @@ router.post(
   '/',
   authenticate,
   uploadMultipleImages('images', 5),
+  transformProductFormData,
   validate(ProductValidation.create),
   ProductController.createProduct,
 );
