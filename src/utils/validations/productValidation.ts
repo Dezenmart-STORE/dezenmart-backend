@@ -8,7 +8,7 @@ export const ProductValidation = {
       name: Joi.string().min(3).max(100).required(),
       description: Joi.string().min(10).max(1000).required(),
       price: Joi.number().positive().precision(2).required(),
-      type: Joi.array().items( // Validate type as an array of objects
+      type: Joi.array().items(
         Joi.object()
           .pattern(Joi.string(), Joi.alternatives().try(Joi.string(), Joi.number()))
           .min(1)
