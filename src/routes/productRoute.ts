@@ -13,7 +13,7 @@ router.post(
   authenticate,
   uploadMultipleImages('images', 5),
   transformProductFormData,
-  validate(ProductValidation.create),
+  // validate(ProductValidation.create),
   ProductController.createProduct,
 );
 router.get('/', ProductController.getProducts);
