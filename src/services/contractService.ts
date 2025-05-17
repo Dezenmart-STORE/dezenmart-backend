@@ -73,6 +73,13 @@ export class DezenMartContractService {
     return receipt;
   }
 
+  async getLogisticsProviders(): Promise<string[]> {
+    const contract = await this.getContract();
+    const providers: string[] = await contract.methods.getLogisticsProviders().call();
+    console.log('Logistics providers:', providers);
+    return providers;
+  }
+
   // Register seller
   async registerSeller() {
     const contract = await this.getContract();
@@ -87,7 +94,7 @@ export class DezenMartContractService {
     productCost: string, // in smallest units (wei or USDT units)
     logisticsProviders: string[], // array of provider addresses
     logisticsCosts: string[], // array of logistics costs
-    useUSDT: boolean,
+
     totalQuantity: string,
   ) {
     if (logisticsProviders.length !== logisticsCosts.length) {
@@ -119,20 +126,10 @@ export class DezenMartContractService {
       throw new Error('Total quantity must be a positive number');
     }
 
-    // Log transaction parameters for debugging
-    console.log('createTrade args:', {
-      productCost,
-      logisticsProviders: formattedProviders,
-      logisticsCosts: formattedCosts,
-      useUSDT,
-      totalQuantity,
-    });
-
     const tx = await contract.methods.createTrade(
       productCost,
       formattedProviders,
       formattedCosts,
-      useUSDT,
       totalQuantity,
     );
 
@@ -144,8 +141,7 @@ export class DezenMartContractService {
   async buyTrade(
     tradeId: string,
     quantity: string,
-    logisticsProviderIndex: number,
-    useUSDT: boolean,
+    logisticsProvider: string,
   ) {
     const contract = await this.getContract();
 
@@ -156,20 +152,49 @@ export class DezenMartContractService {
       throw new Error('Insufficient quantity available');
     }
 
-    // Calculate payment amount
-    if (logisticsProviderIndex > trade.logisticsProviders.length) {
-      throw new Error('Invalid logistics provider index');
+    if (!trade.logisticsProviders || !Array.isArray(trade.logisticsProviders)) {
+      throw new Error('Logistics providers data is invalid or missing');
+    }
+    
+    if (!trade.logisticsCosts || !Array.isArray(trade.logisticsCosts)) {
+      throw new Error('Logistics costs data is invalid or missing');
     }
 
-    const chosenLogisticsCost = trade.logisticsCosts[logisticsProviderIndex];
+    // Calculate payment amount
+    // if (logisticsProviderIndex < 0 || logisticsProviderIndex >= trade.logisticsProviders.length) {
+    //   throw new Error(`Invalid logistics provider index: ${logisticsProviderIndex}. Available indices: 0 to ${trade.logisticsProviders.length - 1}`);
+    // }
+
+    // if (trade.logisticsCosts.length !== trade.logisticsProviders.length) {
+    //   throw new Error(`Mismatch between logistics providers (${trade.logisticsProviders.length}) and costs (${trade.logisticsCosts.length})`);
+    // }
+
+    // const chosenLogisticsCost = trade.logisticsCosts[logisticsProvider];
+    // if (!chosenLogisticsCost) {
+    //   throw new Error(`Invalid logistics cost ${logisticsProvider}: ${chosenLogisticsCost}`);
+    // }
+    // const providerIndex = trade.logisticsProviders.indexOf(logisticsProvider);
+    // if (providerIndex === -1) {
+    //   throw new Error(`Logistics provider address not found: ${logisticsProvider}`);
+    // }
+
+    // if (trade.logisticsCosts.length !== trade.logisticsProviders.length) {
+    //   throw new Error(`Mismatch between logistics providers (${trade.logisticsProviders.length}) and costs (${trade.logisticsCosts.length})`);
+    // }
+
+    // const chosenLogisticsCost = trade.logisticsCosts[providerIndex];
+    // if (!chosenLogisticsCost) {
+    //   throw new Error(`Invalid logistics cost at index ${providerIndex}: ${chosenLogisticsCost}`);
+    // }
+
     const totalProductCost = this.kit.web3.utils
       .toBN(trade.productCost)
       .mul(this.kit.web3.utils.toBN(quantity))
       .toString();
-    const totalLogisticsCost = this.kit.web3.utils
-      .toBN(chosenLogisticsCost)
-      .mul(this.kit.web3.utils.toBN(quantity))
-      .toString();
+    // const totalLogisticsCost = this.kit.web3.utils
+    //   .toBN(chosenLogisticsCost)
+    //   .mul(this.kit.web3.utils.toBN(quantity))
+    //   .toString();
 
     // Calculate escrow fees (2.5%)
     const productEscrowFee = this.kit.web3.utils
@@ -177,49 +202,38 @@ export class DezenMartContractService {
       .mul(this.kit.web3.utils.toBN(250))
       .div(this.kit.web3.utils.toBN(10000))
       .toString();
-    const logisticsEscrowFee = this.kit.web3.utils
-      .toBN(totalLogisticsCost)
-      .mul(this.kit.web3.utils.toBN(250))
-      .div(this.kit.web3.utils.toBN(10000))
-      .toString();
+    // const logisticsEscrowFee = this.kit.web3.utils
+    //   .toBN(totalLogisticsCost)
+    //   .mul(this.kit.web3.utils.toBN(250))
+    //   .div(this.kit.web3.utils.toBN(10000))
+    //   .toString();
 
     // Calculate total payment amount
     const totalAmount = this.kit.web3.utils
       .toBN(totalProductCost)
-      .add(this.kit.web3.utils.toBN(totalLogisticsCost))
+      // .add(this.kit.web3.utils.toBN(totalLogisticsCost))
+      .add(this.kit.web3.utils.toBN(productEscrowFee))
+      // .add(this.kit.web3.utils.toBN(logisticsEscrowFee))
       .toString();
 
-    console.log('buyTrade calculation:', {
-      tradeId,
-      quantity,
-      logisticsProviderIndex,
-      totalProductCost,
-      totalLogisticsCost,
-      productEscrowFee,
-      logisticsEscrowFee,
-      totalAmount,
-    });
 
-    if (useUSDT) {
-      // First, approve the contract to spend USDT
       await this.approveUSDT(totalAmount);
 
-      // Then execute the buyTrade function
       const tx = await contract.methods.buyTrade(
         tradeId,
         quantity,
-        logisticsProviderIndex,
+        logisticsProvider,
       );
-      return await this.sendTransaction(tx);
-    } else {
-      // For ETH payment, send the value with the transaction
-      const tx = await contract.methods.buyTrade(
-        tradeId,
-        quantity,
-        logisticsProviderIndex,
-      );
-      return await this.sendTransaction(tx, totalAmount);
-    }
+      console.log('Executing transaction...');
+      const receipt = await this.sendTransaction(tx, trade.isUSDT ? '0' : totalAmount);
+      console.log('Buy trade receipt:', receipt);
+      return receipt;
+      // console.log('Transaction:', tx);
+      // const buyTradeReceipt = await this.sendTransaction(tx)
+      // console.log('Buy trade receipt:', buyTradeReceipt);
+      // return buyTradeReceipt;
+      // return await this.sendTransaction(tx);
+    // }
   }
 
   // Approve USDT spending
@@ -255,20 +269,20 @@ export class DezenMartContractService {
     console.log('USDT approval receipt:', receipt);
 
     // Verify allowance after approval
-    const allowance = await usdtContract.methods
-      .allowance(this.kit.defaultAccount, config.CONTRACT_ADDRESS)
-      .call();
+    // const allowance = await usdtContract.methods
+    //   .allowance(this.kit.defaultAccount, config.CONTRACT_ADDRESS)
+    //   .call();
 
-    console.log(`USDT allowance after approval: ${allowance}`);
+    // console.log(`USDT allowance after approval: ${allowance}`);
 
     // Ensure the allowance is sufficient
-    if (
-      this.kit.web3.utils.toBN(allowance).lt(this.kit.web3.utils.toBN(amount))
-    ) {
-      throw new Error(
-        `USDT approval failed. Allowance: ${allowance}, Required: ${amount}`,
-      );
-    }
+    // if (
+    //   this.kit.web3.utils.toBN(allowance).lt(this.kit.web3.utils.toBN(amount))
+    // ) {
+    //   throw new Error(
+    //     `USDT approval failed. Allowance: ${allowance}, Required: ${amount}`,
+    //   );
+    // }
 
     return receipt;
   }
@@ -475,7 +489,7 @@ export class DezenMartContractService {
   async listenForEvents(
     eventCallbacks: {
       onTradeCreated?: (event: any) => void;
-      onTradePurchased?: (event: any) => void;
+      // onTradePurchased?: (event: any) => void;
       onDeliveryConfirmed?: (event: any) => void;
       onDisputeRaised?: (event: any) => void;
     } = {},
@@ -526,20 +540,20 @@ export class DezenMartContractService {
         }
 
         // TradePurchased events
-        const tradePurchasedEvents = await contract.getPastEvents(
-          'TradePurchased',
-          {
-            fromBlock: effectiveFromBlock,
-            toBlock: currentBlock,
-          },
-        );
+        // const tradePurchasedEvents = await contract.getPastEvents(
+        //   'TradePurchased',
+        //   {
+        //     fromBlock: effectiveFromBlock,
+        //     toBlock: currentBlock,
+        //   },
+        // );
 
-        for (const event of tradePurchasedEvents) {
-          console.log('[Poll] TradePurchased:', event.returnValues);
-          if (eventCallbacks.onTradePurchased) {
-            eventCallbacks.onTradePurchased(event);
-          }
-        }
+        // for (const event of tradePurchasedEvents) {
+        //   console.log('[Poll] TradePurchased:', event.returnValues);
+        //   if (eventCallbacks.onTradePurchased) {
+        //     eventCallbacks.onTradePurchased(event);
+        //   }
+        // }
 
         // DeliveryConfirmed events
         const deliveryConfirmedEvents = await contract.getPastEvents(

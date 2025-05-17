@@ -75,4 +75,11 @@ router.get(
   ContractController.getTradesBySeller,
 );
 
+router.get(
+  '/logistics',
+  authenticate,
+  ContractController.getLogisticsProviders,
+);
+
+
 export default router;
