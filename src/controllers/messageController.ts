@@ -1,13 +1,35 @@
 import { Request, Response } from 'express';
 import { MessageService } from '../services/messageService';
+import { CustomError } from '../middlewares/errorHandler';
 
 export class MessageController {
   static sendMessage = async (req: Request, res: Response) => {
+    const { recipient, content, order } = req.body;
+    const file = req.file as Express.Multer.File | undefined;
+
+    if (!content && !file) {
+      throw new CustomError(
+        'Message must have either content or a file.',
+        400,
+        'fail',
+      );
+    }
+
+    let fileUrl: string | undefined;
+    let fileType: string | undefined;
+
+    if (file) {
+      fileUrl = file.path;
+      fileType = file.mimetype;
+    }
+
     const message = await MessageService.sendMessage(
       req.user.id,
-      req.body.recipient,
-      req.body.content,
-      req.body.order,
+      recipient,
+      content,
+      order,
+      fileUrl,
+      fileType,
     );
     res.status(201).json(message);
   };
