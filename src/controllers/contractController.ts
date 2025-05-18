@@ -30,6 +30,19 @@ export class ContractController {
     }
   }
 
+  static async getLogisticsProviders(req: Request, res: Response, next: NextFunction) {
+    try {
+      const providers = await contractService.getLogisticsProviders();
+      res.status(200).json({
+        status: 'success',
+        data: providers,
+      });
+    } catch (error) {
+      console.error('Error in getLogisticsProviders controller:', error);
+      next(error);
+    }
+  }
+
   static async resolveDispute(req: Request, res: Response, next: NextFunction) {
     try {
       const { tradeId } = req.params;
@@ -145,7 +158,6 @@ export class ContractController {
         productCost,
         logisticsProviders,
         logisticsCosts,
-        useUSDT,
         totalQuantity
       );
 
@@ -196,7 +208,7 @@ export class ContractController {
   static async buyTrade(req: Request, res: Response, next: NextFunction) {
     try {
       const { tradeId } = req.params;
-      const { quantity, logisticsProviderIndex } = req.body;
+      const { quantity, logisticsProvider } = req.body;
 
       // Validate tradeId
       if (!tradeId || isNaN(parseInt(tradeId, 10)) || parseInt(tradeId, 10) < 0) {
@@ -208,20 +220,19 @@ export class ContractController {
         return next(new CustomError('Valid quantity is required', 400, 'fail'));
       }
 
-      // Validate logistics provider index
-      if (logisticsProviderIndex === undefined || isNaN(Number(logisticsProviderIndex)) || Number(logisticsProviderIndex) < 0) {
-        return next(new CustomError('Valid logistics provider index is required', 400, 'fail'));
+      
+      // Validate logistics provider
+      if (logisticsProvider === undefined || logisticsProvider === null) {
+        return next(new CustomError('Valid logistics provider is required', 400, 'fail'));
       }
 
       // Get trade to determine if it uses USDT
       const trade = await contractService.getTrade(tradeId);
-      
       // Buy the trade
       const receipt = await contractService.buyTrade(
         tradeId,
         quantity,
-        logisticsProviderIndex,
-        trade.isUSDT
+        logisticsProvider,
       );
 
       res.status(200).json({

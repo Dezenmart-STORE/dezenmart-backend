@@ -34,7 +34,6 @@ export class ProductService {
       productCostStr,
       productInput.logisticsProviders,
       logisticsCostsArr,
-      productInput.useUSDT,
       totalQuantityStr,
     );
 
@@ -43,19 +42,16 @@ export class ProductService {
       if (Array.isArray(tradeReceipt.events.LogisticsSelected) && 
           tradeReceipt.events.LogisticsSelected.length > 0) {
         tradeId = tradeReceipt.events.LogisticsSelected[0].returnValues.tradeId.toString();
-        console.log('Found tradeId in LogisticsSelected array, first event');
       }
       else if (tradeReceipt.events.LogisticsSelected && 
           tradeReceipt.events.LogisticsSelected.returnValues && 
           tradeReceipt.events.LogisticsSelected.returnValues.tradeId) {
         tradeId = tradeReceipt.events.LogisticsSelected.returnValues.tradeId.toString();
-        console.log('Found tradeId in LogisticsSelected single event');
       }
       else if (tradeReceipt.events.TradeCreated && 
                tradeReceipt.events.TradeCreated.returnValues && 
                tradeReceipt.events.TradeCreated.returnValues.tradeId) {
         tradeId = tradeReceipt.events.TradeCreated.returnValues.tradeId.toString();
-        console.log('Found tradeId in TradeCreated event');
       }
       else {
         for (const eventName in tradeReceipt.events) {
@@ -63,12 +59,10 @@ export class ProductService {
           
           if (Array.isArray(event) && event.length > 0 && event[0].returnValues && event[0].returnValues.tradeId) {
             tradeId = event[0].returnValues.tradeId.toString();
-            console.log(`Found tradeId in event array: ${eventName}`);
             break;
           }
           else if (typeof event === 'object' && event.returnValues && event.returnValues.tradeId) {
             tradeId = event.returnValues.tradeId.toString();
-            console.log(`Found tradeId in event: ${eventName}`);
             break;
           }
         }
