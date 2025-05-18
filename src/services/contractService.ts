@@ -160,64 +160,7 @@ export class DezenMartContractService {
       throw new Error('Logistics costs data is invalid or missing');
     }
 
-    // Calculate payment amount
-    // if (logisticsProviderIndex < 0 || logisticsProviderIndex >= trade.logisticsProviders.length) {
-    //   throw new Error(`Invalid logistics provider index: ${logisticsProviderIndex}. Available indices: 0 to ${trade.logisticsProviders.length - 1}`);
-    // }
-
-    // if (trade.logisticsCosts.length !== trade.logisticsProviders.length) {
-    //   throw new Error(`Mismatch between logistics providers (${trade.logisticsProviders.length}) and costs (${trade.logisticsCosts.length})`);
-    // }
-
-    // const chosenLogisticsCost = trade.logisticsCosts[logisticsProvider];
-    // if (!chosenLogisticsCost) {
-    //   throw new Error(`Invalid logistics cost ${logisticsProvider}: ${chosenLogisticsCost}`);
-    // }
-    // const providerIndex = trade.logisticsProviders.indexOf(logisticsProvider);
-    // if (providerIndex === -1) {
-    //   throw new Error(`Logistics provider address not found: ${logisticsProvider}`);
-    // }
-
-    // if (trade.logisticsCosts.length !== trade.logisticsProviders.length) {
-    //   throw new Error(`Mismatch between logistics providers (${trade.logisticsProviders.length}) and costs (${trade.logisticsCosts.length})`);
-    // }
-
-    // const chosenLogisticsCost = trade.logisticsCosts[providerIndex];
-    // if (!chosenLogisticsCost) {
-    //   throw new Error(`Invalid logistics cost at index ${providerIndex}: ${chosenLogisticsCost}`);
-    // }
-
-    const totalProductCost = this.kit.web3.utils
-      .toBN(trade.productCost)
-      .mul(this.kit.web3.utils.toBN(quantity))
-      .toString();
-    // const totalLogisticsCost = this.kit.web3.utils
-    //   .toBN(chosenLogisticsCost)
-    //   .mul(this.kit.web3.utils.toBN(quantity))
-    //   .toString();
-
-    // Calculate escrow fees (2.5%)
-    const productEscrowFee = this.kit.web3.utils
-      .toBN(totalProductCost)
-      .mul(this.kit.web3.utils.toBN(250))
-      .div(this.kit.web3.utils.toBN(10000))
-      .toString();
-    // const logisticsEscrowFee = this.kit.web3.utils
-    //   .toBN(totalLogisticsCost)
-    //   .mul(this.kit.web3.utils.toBN(250))
-    //   .div(this.kit.web3.utils.toBN(10000))
-    //   .toString();
-
-    // Calculate total payment amount
-    const totalAmount = this.kit.web3.utils
-      .toBN(totalProductCost)
-      // .add(this.kit.web3.utils.toBN(totalLogisticsCost))
-      .add(this.kit.web3.utils.toBN(productEscrowFee))
-      // .add(this.kit.web3.utils.toBN(logisticsEscrowFee))
-      .toString();
-
-
-      await this.approveUSDT(totalAmount);
+      // await this.approveUSDT('10000000000000000000');
 
       const tx = await contract.methods.buyTrade(
         tradeId,
@@ -225,15 +168,7 @@ export class DezenMartContractService {
         logisticsProvider,
       );
       console.log('Executing transaction...');
-      const receipt = await this.sendTransaction(tx, trade.isUSDT ? '0' : totalAmount);
-      console.log('Buy trade receipt:', receipt);
-      return receipt;
-      // console.log('Transaction:', tx);
-      // const buyTradeReceipt = await this.sendTransaction(tx)
-      // console.log('Buy trade receipt:', buyTradeReceipt);
-      // return buyTradeReceipt;
-      // return await this.sendTransaction(tx);
-    // }
+      return await this.sendTransaction(tx);
   }
 
   // Approve USDT spending
@@ -266,23 +201,9 @@ export class DezenMartContractService {
     const receipt = await this.sendTransaction(tx);
 
     // Check if approval was successful
-    console.log('USDT approval receipt:', receipt);
-
-    // Verify allowance after approval
-    // const allowance = await usdtContract.methods
-    //   .allowance(this.kit.defaultAccount, config.CONTRACT_ADDRESS)
-    //   .call();
-
-    // console.log(`USDT allowance after approval: ${allowance}`);
-
-    // Ensure the allowance is sufficient
-    // if (
-    //   this.kit.web3.utils.toBN(allowance).lt(this.kit.web3.utils.toBN(amount))
-    // ) {
-    //   throw new Error(
-    //     `USDT approval failed. Allowance: ${allowance}, Required: ${amount}`,
-    //   );
-    // }
+    const approvalSuccess = receipt.status;
+    console.log(
+      `USDT approval ${approvalSuccess ? 'successful' : 'failed'}. Transaction hash: ${receipt.transactionHash}`,)
 
     return receipt;
   }
@@ -327,7 +248,7 @@ export class DezenMartContractService {
   async getTrade(tradeId: string): Promise<Trade> {
     const contract = await this.getContract();
     try {
-      const trade = await contract.methods.trades(tradeId).call();
+      const trade = await contract.methods.getTrade(tradeId).call();
 
       // Format the response to match our Trade interface
       return {
@@ -416,8 +337,6 @@ export class DezenMartContractService {
         );
       }
 
-      console.log('Sending transaction from:', accounts, from);
-
       // Log transaction details for debugging
       if (tx._method) {
         console.log('Transaction method:', tx._method.name);
@@ -450,27 +369,6 @@ export class DezenMartContractService {
       return receipt;
     } catch (error) {
       console.error('Transaction error:', error);
-
-      // Check for specific error patterns
-      const errorString = (
-        error instanceof Error ? error : new Error(String(error))
-      ).toString();
-      if (errorString.includes('param.map is not a function')) {
-        console.error(
-          'Parameter format error: Ensure all array parameters are properly formatted as arrays',
-        );
-
-        if (tx._method) {
-          console.error('Failing method:', tx._method.name);
-          console.error(
-            'Method parameters:',
-            JSON.stringify(tx._method.inputs),
-          );
-          console.error('Method signature:', tx._method.signature);
-        }
-      }
-
-      throw error;
     }
   }
 

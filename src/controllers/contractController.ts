@@ -220,19 +220,19 @@ export class ContractController {
         return next(new CustomError('Valid quantity is required', 400, 'fail'));
       }
 
-      // Validate logistics provider index
-      if (logisticsProvider === undefined || logisticsProvider < 0) {
+      
+      // Validate logistics provider
+      if (logisticsProvider === undefined || logisticsProvider === null) {
         return next(new CustomError('Valid logistics provider is required', 400, 'fail'));
       }
 
       // Get trade to determine if it uses USDT
       const trade = await contractService.getTrade(tradeId);
-      
       // Buy the trade
       const receipt = await contractService.buyTrade(
         tradeId,
         quantity,
-        logisticsProvider
+        logisticsProvider,
       );
 
       res.status(200).json({

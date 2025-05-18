@@ -1,708 +1,851 @@
 {
     "DEZENMART_ABI": [
-  {
-    "inputs": [
       {
-        "internalType": "address",
-        "name": "_usdtAddress",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [],
-    "name": "BuyerIsSeller",
-    "type": "error"
-  },
-  {
-    "inputs": [
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_usdtAddress",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      { "inputs": [], "name": "BuyerIsSeller", "type": "error" },
       {
-        "internalType": "uint256",
-        "name": "requested",
-        "type": "uint256"
+        "inputs": [
+          { "internalType": "uint256", "name": "requested", "type": "uint256" },
+          { "internalType": "uint256", "name": "available", "type": "uint256" }
+        ],
+        "name": "InsufficientQuantity",
+        "type": "error"
       },
       {
-        "internalType": "uint256",
-        "name": "available",
-        "type": "uint256"
-      }
-    ],
-    "name": "InsufficientQuantity",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "needed",
-        "type": "uint256"
+        "inputs": [
+          { "internalType": "uint256", "name": "needed", "type": "uint256" },
+          { "internalType": "uint256", "name": "allowance", "type": "uint256" }
+        ],
+        "name": "InsufficientUSDTAllowance",
+        "type": "error"
       },
       {
-        "internalType": "uint256",
-        "name": "allowance",
-        "type": "uint256"
-      }
-    ],
-    "name": "InsufficientUSDTAllowance",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "needed",
-        "type": "uint256"
+        "inputs": [
+          { "internalType": "uint256", "name": "needed", "type": "uint256" },
+          { "internalType": "uint256", "name": "balance", "type": "uint256" }
+        ],
+        "name": "InsufficientUSDTBalance",
+        "type": "error"
       },
       {
-        "internalType": "uint256",
-        "name": "balance",
-        "type": "uint256"
-      }
-    ],
-    "name": "InsufficientUSDTBalance",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "provider",
-        "type": "address"
-      }
-    ],
-    "name": "InvalidLogisticsProvider",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      }
-    ],
-    "name": "InvalidPurchaseId",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
+        "inputs": [
+          { "internalType": "address", "name": "provider", "type": "address" }
+        ],
+        "name": "InvalidLogisticsProvider",
+        "type": "error"
       },
       {
-        "internalType": "string",
-        "name": "expectedState",
-        "type": "string"
-      }
-    ],
-    "name": "InvalidPurchaseState",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "quantity",
-        "type": "uint256"
-      }
-    ],
-    "name": "InvalidQuantity",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tradeId",
-        "type": "uint256"
-      }
-    ],
-    "name": "InvalidTradeId",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tradeId",
-        "type": "uint256"
+        "inputs": [
+          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+        ],
+        "name": "InvalidPurchaseId",
+        "type": "error"
       },
       {
-        "internalType": "string",
-        "name": "expectedState",
-        "type": "string"
-      }
-    ],
-    "name": "InvalidTradeState",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "providersLength",
-        "type": "uint256"
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "expectedState",
+            "type": "string"
+          }
+        ],
+        "name": "InvalidPurchaseState",
+        "type": "error"
       },
       {
-        "internalType": "uint256",
-        "name": "costsLength",
-        "type": "uint256"
-      }
-    ],
-    "name": "MismatchedArrays",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NoLogisticsProviders",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "caller",
-        "type": "address"
+        "inputs": [
+          { "internalType": "uint256", "name": "quantity", "type": "uint256" }
+        ],
+        "name": "InvalidQuantity",
+        "type": "error"
       },
       {
-        "internalType": "string",
-        "name": "role",
-        "type": "string"
-      }
-    ],
-    "name": "NotAuthorized",
-    "type": "error"
-  },
-  {
-    "inputs": [
+        "inputs": [
+          { "internalType": "uint256", "name": "tradeId", "type": "uint256" }
+        ],
+        "name": "InvalidTradeId",
+        "type": "error"
+      },
       {
-        "internalType": "address",
+        "inputs": [
+          { "internalType": "uint256", "name": "tradeId", "type": "uint256" },
+          {
+            "internalType": "string",
+            "name": "expectedState",
+            "type": "string"
+          }
+        ],
+        "name": "InvalidTradeState",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "providersLength",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "costsLength",
+            "type": "uint256"
+          }
+        ],
+        "name": "MismatchedArrays",
+        "type": "error"
+      },
+      { "inputs": [], "name": "NoLogisticsProviders", "type": "error" },
+      {
+        "inputs": [
+          { "internalType": "address", "name": "caller", "type": "address" },
+          { "internalType": "string", "name": "role", "type": "string" }
+        ],
+        "name": "NotAuthorized",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          { "internalType": "address", "name": "owner", "type": "address" }
+        ],
+        "name": "OwnableInvalidOwner",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          { "internalType": "address", "name": "account", "type": "address" }
+        ],
+        "name": "OwnableUnauthorizedAccount",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+        ],
+        "name": "PurchaseNotFound",
+        "type": "error"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "tradeId", "type": "uint256" }
+        ],
+        "name": "TradeNotFound",
+        "type": "error"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          }
+        ],
+        "name": "DeliveryConfirmed",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "address",
+            "name": "initiator",
+            "type": "address"
+          }
+        ],
+        "name": "DisputeRaised",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "address",
+            "name": "winner",
+            "type": "address"
+          }
+        ],
+        "name": "DisputeResolved",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "provider",
+            "type": "address"
+          }
+        ],
+        "name": "LogisticsProviderRegistered",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "address",
+            "name": "logisticsProvider",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "logisticsCost",
+            "type": "uint256"
+          }
+        ],
+        "name": "LogisticsSelected",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "previousOwner",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "newOwner",
+            "type": "address"
+          }
+        ],
+        "name": "OwnershipTransferred",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "totalAmount",
+            "type": "uint256"
+          }
+        ],
+        "name": "PaymentHeld",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "sellerAmount",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "logisticsAmount",
+            "type": "uint256"
+          }
+        ],
+        "name": "PaymentSettled",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          }
+        ],
+        "name": "PurchaseConfirmed",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          },
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "tradeId",
+            "type": "uint256"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "buyer",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "quantity",
+            "type": "uint256"
+          }
+        ],
+        "name": "PurchaseCreated",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "tradeId",
+            "type": "uint256"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "seller",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "productCost",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "totalQuantity",
+            "type": "uint256"
+          }
+        ],
+        "name": "TradeCreated",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "tradeId",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "internalType": "string",
+            "name": "status",
+            "type": "string"
+          }
+        ],
+        "name": "TradeStatusUpdated",
+        "type": "event"
+      },
+      {
+        "inputs": [],
+        "name": "BASIS_POINTS",
+        "outputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "ESCROW_FEE_PERCENT",
+        "outputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "tradeId", "type": "uint256" },
+          { "internalType": "uint256", "name": "quantity", "type": "uint256" },
+          {
+            "internalType": "address",
+            "name": "logisticsProvider",
+            "type": "address"
+          }
+        ],
+        "name": "buyTrade",
+        "outputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "address", "name": "", "type": "address" },
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "name": "buyerPurchaseIds",
+        "outputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "address", "name": "", "type": "address" }
+        ],
+        "name": "buyers",
+        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+        ],
+        "name": "cancelPurchase",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+        ],
+        "name": "confirmDelivery",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+        ],
+        "name": "confirmPurchase",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "productCost",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "logisticsProvidersList",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "logisticsCosts",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalQuantity",
+            "type": "uint256"
+          }
+        ],
+        "name": "createTrade",
+        "outputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "name": "disputesResolved",
+        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getBuyerPurchases",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "purchaseId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "tradeId",
+                "type": "uint256"
+              },
+              { "internalType": "address", "name": "buyer", "type": "address" },
+              {
+                "internalType": "uint256",
+                "name": "quantity",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "totalAmount",
+                "type": "uint256"
+              },
+              { "internalType": "bool", "name": "delivered", "type": "bool" },
+              { "internalType": "bool", "name": "confirmed", "type": "bool" },
+              { "internalType": "bool", "name": "disputed", "type": "bool" },
+              {
+                "internalType": "address",
+                "name": "chosenLogisticsProvider",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "logisticsCost",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct DezenMartLogistics.Purchase[]",
+            "name": "",
+            "type": "tuple[]"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getLogisticsProviders",
+        "outputs": [
+          { "internalType": "address[]", "name": "", "type": "address[]" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getProviderTrades",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "purchaseId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "tradeId",
+                "type": "uint256"
+              },
+              { "internalType": "address", "name": "buyer", "type": "address" },
+              {
+                "internalType": "uint256",
+                "name": "quantity",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "totalAmount",
+                "type": "uint256"
+              },
+              { "internalType": "bool", "name": "delivered", "type": "bool" },
+              { "internalType": "bool", "name": "confirmed", "type": "bool" },
+              { "internalType": "bool", "name": "disputed", "type": "bool" },
+              {
+                "internalType": "address",
+                "name": "chosenLogisticsProvider",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "logisticsCost",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct DezenMartLogistics.Purchase[]",
+            "name": "",
+            "type": "tuple[]"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+        ],
+        "name": "getPurchase",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "purchaseId",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "tradeId",
+                "type": "uint256"
+              },
+              { "internalType": "address", "name": "buyer", "type": "address" },
+              {
+                "internalType": "uint256",
+                "name": "quantity",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "totalAmount",
+                "type": "uint256"
+              },
+              { "internalType": "bool", "name": "delivered", "type": "bool" },
+              { "internalType": "bool", "name": "confirmed", "type": "bool" },
+              { "internalType": "bool", "name": "disputed", "type": "bool" },
+              {
+                "internalType": "address",
+                "name": "chosenLogisticsProvider",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "logisticsCost",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct DezenMartLogistics.Purchase",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getSellerTrades",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "seller",
+                "type": "address"
+              },
+              {
+                "internalType": "address[]",
+                "name": "logisticsProviders",
+                "type": "address[]"
+              },
+              {
+                "internalType": "uint256[]",
+                "name": "logisticsCosts",
+                "type": "uint256[]"
+              },
+              {
+                "internalType": "uint256",
+                "name": "productCost",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "escrowFee",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "totalQuantity",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "remainingQuantity",
+                "type": "uint256"
+              },
+              { "internalType": "bool", "name": "active", "type": "bool" },
+              {
+                "internalType": "uint256[]",
+                "name": "purchaseIds",
+                "type": "uint256[]"
+              }
+            ],
+            "internalType": "struct DezenMartLogistics.Trade[]",
+            "name": "",
+            "type": "tuple[]"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "tradeId", "type": "uint256" }
+        ],
+        "name": "getTrade",
+        "outputs": [
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "seller",
+                "type": "address"
+              },
+              {
+                "internalType": "address[]",
+                "name": "logisticsProviders",
+                "type": "address[]"
+              },
+              {
+                "internalType": "uint256[]",
+                "name": "logisticsCosts",
+                "type": "uint256[]"
+              },
+              {
+                "internalType": "uint256",
+                "name": "productCost",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "escrowFee",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "totalQuantity",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "remainingQuantity",
+                "type": "uint256"
+              },
+              { "internalType": "bool", "name": "active", "type": "bool" },
+              {
+                "internalType": "uint256[]",
+                "name": "purchaseIds",
+                "type": "uint256[]"
+              }
+            ],
+            "internalType": "struct DezenMartLogistics.Trade",
+            "name": "",
+            "type": "tuple"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "address", "name": "", "type": "address" }
+        ],
+        "name": "logisticsProviders",
+        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
         "name": "owner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnableInvalidOwner",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
-    ],
-    "name": "OwnableUnauthorizedAccount",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      }
-    ],
-    "name": "PurchaseNotFound",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tradeId",
-        "type": "uint256"
-      }
-    ],
-    "name": "TradeNotFound",
-    "type": "error"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      }
-    ],
-    "name": "DeliveryConfirmed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
+        "outputs": [
+          { "internalType": "address", "name": "", "type": "address" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
       },
       {
-        "indexed": false,
-        "internalType": "address",
-        "name": "initiator",
-        "type": "address"
-      }
-    ],
-    "name": "DisputeRaised",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
+        "inputs": [
+          { "internalType": "address", "name": "", "type": "address" },
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "name": "providerTradeIds",
+        "outputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
       },
       {
-        "indexed": false,
-        "internalType": "address",
-        "name": "winner",
-        "type": "address"
-      }
-    ],
-    "name": "DisputeResolved",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "provider",
-        "type": "address"
-      }
-    ],
-    "name": "LogisticsProviderRegistered",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
+        "inputs": [],
+        "name": "purchaseCounter",
+        "outputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
       },
       {
-        "indexed": false,
-        "internalType": "address",
-        "name": "logisticsProvider",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "logisticsCost",
-        "type": "uint256"
-      }
-    ],
-    "name": "LogisticsSelected",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "previousOwner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnershipTransferred",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "totalAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "PaymentHeld",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "sellerAmount",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "logisticsAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "PaymentSettled",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      }
-    ],
-    "name": "PurchaseConfirmed",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "tradeId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "buyer",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "quantity",
-        "type": "uint256"
-      }
-    ],
-    "name": "PurchaseCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "tradeId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "seller",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "productCost",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "totalQuantity",
-        "type": "uint256"
-      }
-    ],
-    "name": "TradeCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "tradeId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "status",
-        "type": "string"
-      }
-    ],
-    "name": "TradeStatusUpdated",
-    "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "BASIS_POINTS",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "ESCROW_FEE_PERCENT",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tradeId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "quantity",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "logisticsProvider",
-        "type": "address"
-      }
-    ],
-    "name": "buyTrade",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "buyerPurchaseIds",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "buyers",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      }
-    ],
-    "name": "cancelPurchase",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      }
-    ],
-    "name": "confirmDelivery",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      }
-    ],
-    "name": "confirmPurchase",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "productCost",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address[]",
-        "name": "logisticsProvidersList",
-        "type": "address[]"
-      },
-      {
-        "internalType": "uint256[]",
-        "name": "logisticsCosts",
-        "type": "uint256[]"
-      },
-      {
-        "internalType": "uint256",
-        "name": "totalQuantity",
-        "type": "uint256"
-      }
-    ],
-    "name": "createTrade",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "disputesResolved",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getBuyerPurchases",
-    "outputs": [
-      {
-        "components": [
+        "inputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "name": "purchases",
+        "outputs": [
           {
             "internalType": "uint256",
             "name": "purchaseId",
             "type": "uint256"
           },
-          {
-            "internalType": "uint256",
-            "name": "tradeId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "buyer",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quantity",
-            "type": "uint256"
-          },
+          { "internalType": "uint256", "name": "tradeId", "type": "uint256" },
+          { "internalType": "address", "name": "buyer", "type": "address" },
+          { "internalType": "uint256", "name": "quantity", "type": "uint256" },
           {
             "internalType": "uint256",
             "name": "totalAmount",
             "type": "uint256"
           },
-          {
-            "internalType": "bool",
-            "name": "delivered",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "confirmed",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "disputed",
-            "type": "bool"
-          },
+          { "internalType": "bool", "name": "delivered", "type": "bool" },
+          { "internalType": "bool", "name": "confirmed", "type": "bool" },
+          { "internalType": "bool", "name": "disputed", "type": "bool" },
           {
             "internalType": "address",
             "name": "chosenLogisticsProvider",
@@ -714,194 +857,116 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct DezenMartLogistics.Purchase[]",
-        "name": "",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getLogisticsProviders",
-    "outputs": [
+        "stateMutability": "view",
+        "type": "function"
+      },
       {
-        "internalType": "address[]",
-        "name": "",
-        "type": "address[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getProviderTrades",
-    "outputs": [
+        "inputs": [
+          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+        ],
+        "name": "raiseDispute",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
       {
-        "components": [
+        "inputs": [],
+        "name": "registerBuyer",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "address", "name": "provider", "type": "address" }
+        ],
+        "name": "registerLogisticsProvider",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "registerSeller",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "name": "registeredProviders",
+        "outputs": [
+          { "internalType": "address", "name": "", "type": "address" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "renounceOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
           {
             "internalType": "uint256",
             "name": "purchaseId",
             "type": "uint256"
           },
-          {
-            "internalType": "uint256",
-            "name": "tradeId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "buyer",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quantity",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "delivered",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "confirmed",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "disputed",
-            "type": "bool"
-          },
-          {
-            "internalType": "address",
-            "name": "chosenLogisticsProvider",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "logisticsCost",
-            "type": "uint256"
-          }
+          { "internalType": "address", "name": "winner", "type": "address" }
         ],
-        "internalType": "struct DezenMartLogistics.Purchase[]",
-        "name": "",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
+        "name": "resolveDispute",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
       {
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getPurchase",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "purchaseId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "tradeId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "buyer",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quantity",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalAmount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "delivered",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "confirmed",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "disputed",
-            "type": "bool"
-          },
-          {
-            "internalType": "address",
-            "name": "chosenLogisticsProvider",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "logisticsCost",
-            "type": "uint256"
-          }
+        "inputs": [
+          { "internalType": "address", "name": "", "type": "address" },
+          { "internalType": "uint256", "name": "", "type": "uint256" }
         ],
-        "internalType": "struct DezenMartLogistics.Purchase",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getSellerTrades",
-    "outputs": [
+        "name": "sellerTradeIds",
+        "outputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
       {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "seller",
-            "type": "address"
-          },
-          {
-            "internalType": "address[]",
-            "name": "logisticsProviders",
-            "type": "address[]"
-          },
-          {
-            "internalType": "uint256[]",
-            "name": "logisticsCosts",
-            "type": "uint256[]"
-          },
+        "inputs": [
+          { "internalType": "address", "name": "", "type": "address" }
+        ],
+        "name": "sellers",
+        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "tradeCounter",
+        "outputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "", "type": "uint256" }
+        ],
+        "name": "trades",
+        "outputs": [
+          { "internalType": "address", "name": "seller", "type": "address" },
           {
             "internalType": "uint256",
             "name": "productCost",
             "type": "uint256"
           },
-          {
-            "internalType": "uint256",
-            "name": "escrowFee",
-            "type": "uint256"
-          },
+          { "internalType": "uint256", "name": "escrowFee", "type": "uint256" },
           {
             "internalType": "uint256",
             "name": "totalQuantity",
@@ -912,440 +977,35 @@
             "name": "remainingQuantity",
             "type": "uint256"
           },
-          {
-            "internalType": "bool",
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "internalType": "uint256[]",
-            "name": "purchaseIds",
-            "type": "uint256[]"
-          }
+          { "internalType": "bool", "name": "active", "type": "bool" }
         ],
-        "internalType": "struct DezenMartLogistics.Trade[]",
-        "name": "",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
+        "stateMutability": "view",
+        "type": "function"
+      },
       {
-        "internalType": "uint256",
-        "name": "tradeId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getTrade",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "seller",
-            "type": "address"
-          },
-          {
-            "internalType": "address[]",
-            "name": "logisticsProviders",
-            "type": "address[]"
-          },
-          {
-            "internalType": "uint256[]",
-            "name": "logisticsCosts",
-            "type": "uint256[]"
-          },
-          {
-            "internalType": "uint256",
-            "name": "productCost",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "escrowFee",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalQuantity",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "remainingQuantity",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "internalType": "uint256[]",
-            "name": "purchaseIds",
-            "type": "uint256[]"
-          }
+        "inputs": [
+          { "internalType": "address", "name": "newOwner", "type": "address" }
         ],
-        "internalType": "struct DezenMartLogistics.Trade",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "logisticsProviders",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "owner",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
+        "name": "transferOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
       },
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "providerTradeIds",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "purchaseCounter",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "purchases",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
+        "inputs": [],
+        "name": "usdt",
+        "outputs": [
+          { "internalType": "contract IERC20", "name": "", "type": "address" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
       },
       {
-        "internalType": "uint256",
-        "name": "tradeId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "buyer",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "quantity",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "totalAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "delivered",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "confirmed",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "disputed",
-        "type": "bool"
-      },
-      {
-        "internalType": "address",
-        "name": "chosenLogisticsProvider",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "logisticsCost",
-        "type": "uint256"
+        "inputs": [],
+        "name": "withdrawEscrowFees",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
       }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      }
-    ],
-    "name": "raiseDispute",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "registerBuyer",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "provider",
-        "type": "address"
-      }
-    ],
-    "name": "registerLogisticsProvider",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "registerSeller",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "registeredProviders",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "purchaseId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "winner",
-        "type": "address"
-      }
-    ],
-    "name": "resolveDispute",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "sellerTradeIds",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "sellers",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "tradeCounter",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "trades",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "seller",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "productCost",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "escrowFee",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "totalQuantity",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "remainingQuantity",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "active",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "usdt",
-    "outputs": [
-      {
-        "internalType": "contract IERC20",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "withdrawEscrowFees",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-]
+    ]
 }
