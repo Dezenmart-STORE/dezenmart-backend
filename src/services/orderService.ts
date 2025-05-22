@@ -121,6 +121,8 @@ export class OrderService {
     const query = type === 'buyer' ? { buyer: userId } : { seller: userId };
     return await Order.find(query)
       .populate('product', 'name price images')
+      .populate('buyer', 'name profileImage')
+      .populate('seller', 'name profileImage rating')
       .sort({ createdAt: -1 });
   }
 
