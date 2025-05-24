@@ -32,42 +32,43 @@ export class ProductService {
 
     const tradeReceipt = await contractService.createTrade(
       productCostStr,
-      productInput.logisticsProviders,
+      productInput.logisticsProviders as `0x${string}`[],
       logisticsCostsArr,
-      totalQuantityStr,
+      BigInt(totalQuantityStr),
     );
 
     let tradeId;
-    if (tradeReceipt && tradeReceipt.events) {
-      if (Array.isArray(tradeReceipt.events.LogisticsSelected) && 
-          tradeReceipt.events.LogisticsSelected.length > 0) {
-        tradeId = tradeReceipt.events.LogisticsSelected[0].returnValues.tradeId.toString();
-      }
-      else if (tradeReceipt.events.LogisticsSelected && 
-          tradeReceipt.events.LogisticsSelected.returnValues && 
-          tradeReceipt.events.LogisticsSelected.returnValues.tradeId) {
-        tradeId = tradeReceipt.events.LogisticsSelected.returnValues.tradeId.toString();
-      }
-      else if (tradeReceipt.events.TradeCreated && 
-               tradeReceipt.events.TradeCreated.returnValues && 
-               tradeReceipt.events.TradeCreated.returnValues.tradeId) {
-        tradeId = tradeReceipt.events.TradeCreated.returnValues.tradeId.toString();
-      }
-      else {
-        for (const eventName in tradeReceipt.events) {
-          const event = tradeReceipt.events[eventName];
+    // if (tradeReceipt && tradeReceipt.events) {
+    //   if (Array.isArray(tradeReceipt.events.LogisticsSelected) && 
+    //       tradeReceipt.events.LogisticsSelected.length > 0) {
+    //     tradeId = tradeReceipt.events.LogisticsSelected[0].returnValues.tradeId.toString();
+    //   }
+    //   else if (tradeReceipt.events.LogisticsSelected && 
+    //       tradeReceipt.events.LogisticsSelected.returnValues && 
+    //       tradeReceipt.events.LogisticsSelected.returnValues.tradeId) {
+    //     tradeId = tradeReceipt.events.LogisticsSelected.returnValues.tradeId.toString();
+    //   }
+    //   else if (tradeReceipt.events.TradeCreated && 
+    //            tradeReceipt.events.TradeCreated.returnValues && 
+    //            tradeReceipt.events.TradeCreated.returnValues.tradeId) {
+    //     tradeId = tradeReceipt.events.TradeCreated.returnValues.tradeId.toString();
+    //   }
+    //   else {
+    //     for (const eventName in tradeReceipt.events) {
+    //       const event = tradeReceipt.events[eventName];
           
-          if (Array.isArray(event) && event.length > 0 && event[0].returnValues && event[0].returnValues.tradeId) {
-            tradeId = event[0].returnValues.tradeId.toString();
-            break;
-          }
-          else if (typeof event === 'object' && event.returnValues && event.returnValues.tradeId) {
-            tradeId = event.returnValues.tradeId.toString();
-            break;
-          }
-        }
-      }
-    }
+    //       if (Array.isArray(event) && event.length > 0 && event[0].returnValues && event[0].returnValues.tradeId) {
+    //         tradeId = event[0].returnValues.tradeId.toString();
+    //         break;
+    //       }
+    //       else if (typeof event === 'object' && event.returnValues && event.returnValues.tradeId) {
+    //         tradeId = event.returnValues.tradeId.toString();
+    //         break;
+    //       }
+    //     }
+    //   }
+    // }
+    tradeId = JSON.stringify(tradeReceipt.tradeId.toString());
 
     if (!tradeId) {
       console.error('Failed to extract tradeId. Full receipt:', JSON.stringify(tradeReceipt, null, 2));

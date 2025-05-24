@@ -1,499 +1,741 @@
-import { ContractKit, newKit } from '@celo/contractkit';
-import { AbiItem } from 'web3-utils';
-import { BlockNumber } from 'web3-core';
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
+  parseUnits,
+  formatUnits,
+  getContract,
+  Address,
+  Hash,
+  TransactionReceipt,
+  WatchEventReturnType,
+  decodeEventLog,
+  parseAbiItem,
+  GetLogsReturnType,
+} from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { celo, celoAlfajores } from 'viem/chains';
 import dotenv from 'dotenv';
-import config from '../configs/config';
 import abi from '../abi/dezenmartAbi.json';
+import config from '../configs/config';
+import { StringDecoder } from 'string_decoder';
 
 dotenv.config();
 
-// Define types for our trade structure to match the contract
-export interface Trade {
-  buyer: string;
-  seller: string;
-  logisticsProviders: string[];
-  logisticsCosts: string[];
-  chosenLogisticsProvider: string;
-  productCost: string;
-  logisticsCost: string;
-  escrowFee: string;
-  totalAmount: string;
-  totalQuantity: string;
-  remainingQuantity: string;
-  logisticsSelected: boolean;
+// Define types to match the contract structure
+export interface Purchase {
+  purchaseId: bigint;
+  tradeId: bigint;
+  buyer: Address;
+  quantity: bigint;
+  totalAmount: bigint;
   delivered: boolean;
-  completed: boolean;
+  confirmed: boolean;
   disputed: boolean;
-  isUSDT: boolean;
-  parentTradeId: string;
+  chosenLogisticsProvider: Address;
+  logisticsCost: bigint;
 }
+
+export interface Trade {
+  seller: Address;
+  logisticsProviders: Address[];
+  logisticsCosts: bigint[];
+  productCost: bigint;
+  escrowFee: bigint;
+  totalQuantity: bigint;
+  remainingQuantity: bigint;
+  active: boolean;
+  purchaseIds: bigint[];
+}
+
+export interface ContractConfig {
+  contractAddress: Address;
+  usdtAddress: Address;
+  privateKey?: `0x${string}`;
+  isTestnet?: boolean;
+  rpcUrl?: string;
+}
+
+// USDT Contract ABI (minimal for approve and allowance)
+const USDT_ABI = [
+  {
+    inputs: [
+      { name: '_spender', type: 'address' },
+      { name: '_value', type: 'uint256' },
+    ],
+    name: 'approve',
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: '_owner', type: 'address' },
+      { name: '_spender', type: 'address' },
+    ],
+    name: 'allowance',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: '_owner', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
 
 export class DezenMartContractService {
-  private kit: ContractKit;
-  private contractAddress: string;
-  private usdtAddress: string;
-
-  private pollingInterval: NodeJS.Timeout | null = null;
-  private lastCheckedBlock: BlockNumber = 'latest';
+  private publicClient;
+  private walletClient;
+  private account;
+  // private configure: ContractConfig;
+  private contract;
+  private usdtContract;
+  private eventUnsubscribers: (() => void)[] = [];
 
   constructor() {
-    // Connect to Celo network (Mainnet or Testnet)
-    const nodeUrl =
-      config.CELO_NODE_URL || 'https://alfajores-forno.celo-testnet.org'; // Testnet for now
+    // Choose the appropriate chain
+    const chain = config.IS_TESTNET ? celoAlfajores : celo;
+    const rpcUrl =
+      config.CELO_NODE_URL ||
+      (config.IS_TESTNET
+        ? 'https://alfajores-forno.celo-testnet.org'
+        : 'https://forno.celo.org');
 
-    this.kit = newKit(nodeUrl);
-    this.contractAddress = config.CONTRACT_ADDRESS || '';
-    this.usdtAddress = config.USDT_ADDRESS || '';
+    // Create public client for reading
+    this.publicClient = createPublicClient({
+      chain,
+      transport: http(rpcUrl),
+    });
 
-    // Set default account if provided
+    // Create wallet client if private key is provided
     if (config.PRIVATE_KEY) {
-      const account = this.kit.web3.eth.accounts.privateKeyToAccount(
-        config.PRIVATE_KEY,
-      );
-      this.kit.addAccount(account.privateKey);
-      this.kit.defaultAccount = account.address as `0x${string}`;
-    }
-  }
-
-  // Get contract instance
-  private async getContract() {
-    return new this.kit.web3.eth.Contract(
-      abi.DEZENMART_ABI as AbiItem[],
-      this.contractAddress,
-    );
-  }
-
-  // Register logistics provider (admin only)
-  async registerLogisticsProvider(providerAddress: string) {
-    const contract = await this.getContract();
-    const tx =
-      await contract.methods.registerLogisticsProvider(providerAddress);
-
-    const receipt = await this.sendTransaction(tx);
-    return receipt;
-  }
-
-  async getLogisticsProviders(): Promise<string[]> {
-    const contract = await this.getContract();
-    const providers: string[] = await contract.methods.getLogisticsProviders().call();
-    console.log('Logistics providers:', providers);
-    return providers;
-  }
-
-  // Register seller
-  async registerSeller() {
-    const contract = await this.getContract();
-    const tx = await contract.methods.registerSeller();
-
-    const receipt = await this.sendTransaction(tx);
-    return receipt;
-  }
-
-  // Create trade (seller)
-  async createTrade(
-    productCost: string, // in smallest units (wei or USDT units)
-    logisticsProviders: string[], // array of provider addresses
-    logisticsCosts: string[], // array of logistics costs
-
-    totalQuantity: string,
-  ) {
-    if (logisticsProviders.length !== logisticsCosts.length) {
-      throw new Error('Providers and costs arrays must have the same length');
+      this.account = privateKeyToAccount(config.PRIVATE_KEY as `0x${string}`);
+      this.walletClient = createWalletClient({
+        account: this.account,
+        chain,
+        transport: http(rpcUrl),
+      });
     }
 
-    const contract = await this.getContract();
-
-    // Ensure all parameters are properly formatted
-    const formattedProviders = logisticsProviders.map((provider) => {
-      if (!provider.startsWith('0x')) {
-        throw new Error(`Invalid provider address: ${provider}`);
-      }
-      return provider;
-    });
-
-    if (!Array.isArray(logisticsCosts)) {
-      logisticsCosts = [logisticsCosts];
-    }
-
-    const formattedCosts = logisticsCosts.map((cost) => {
-      if (!/^\d+$/.test(cost)) {
-        throw new Error(`Invalid cost: ${cost}`);
-      }
-      return cost;
-    });
-
-    if (!/^\d+$/.test(totalQuantity) || parseInt(totalQuantity) <= 0) {
-      throw new Error('Total quantity must be a positive number');
-    }
-
-    const tx = await contract.methods.createTrade(
-      productCost,
-      formattedProviders,
-      formattedCosts,
-      totalQuantity,
-    );
-
-    const receipt = await this.sendTransaction(tx);
-    return receipt;
-  }
-
-  // Buy trade (buyer)
-  async buyTrade(
-    tradeId: string,
-    quantity: string,
-    logisticsProvider: string,
-  ) {
-    const contract = await this.getContract();
-
-    // Get the trade details to calculate the required payment
-    const trade = await this.getTrade(tradeId);
-
-    if (parseInt(trade.remainingQuantity) < parseInt(quantity)) {
-      throw new Error('Insufficient quantity available');
-    }
-
-    if (!trade.logisticsProviders || !Array.isArray(trade.logisticsProviders)) {
-      throw new Error('Logistics providers data is invalid or missing');
-    }
-    
-    if (!trade.logisticsCosts || !Array.isArray(trade.logisticsCosts)) {
-      throw new Error('Logistics costs data is invalid or missing');
-    }
-
-      // await this.approveUSDT('10000000000000000000');
-
-      const tx = await contract.methods.buyTrade(
-        tradeId,
-        quantity,
-        logisticsProvider,
-      );
-      console.log('Executing transaction...');
-      return await this.sendTransaction(tx);
-  }
-
-  // Approve USDT spending
-  private async approveUSDT(amount: string) {
-    // USDT ABI (just the approve function)
-    const usdtAbi = [
-      {
-        constant: false,
-        inputs: [
-          { name: '_spender', type: 'address' },
-          { name: '_value', type: 'uint256' },
-        ],
-        name: 'approve',
-        outputs: [{ name: '', type: 'bool' }],
-        payable: false,
-        stateMutability: 'nonpayable',
-        type: 'function',
+    // Initialize contract instances
+    this.contract = getContract({
+      address: config.CONTRACT_ADDRESS as `0x${string}`,
+      abi: abi.DEZENMART_ABI,
+      client: {
+        public: this.publicClient,
+        wallet: this.walletClient,
       },
-    ];
+    });
 
-    const usdtContract = new this.kit.web3.eth.Contract(
-      usdtAbi as AbiItem[],
-      config.USDT_ADDRESS,
-    );
-
-    const tx = await usdtContract.methods.approve(
-      config.CONTRACT_ADDRESS,
-      amount,
-    );
-    const receipt = await this.sendTransaction(tx);
-
-    // Check if approval was successful
-    const approvalSuccess = receipt.status;
-    console.log(
-      `USDT approval ${approvalSuccess ? 'successful' : 'failed'}. Transaction hash: ${receipt.transactionHash}`,)
-
-    return receipt;
+    this.usdtContract = getContract({
+      address: config.USDT_ADDRESS as `0x${string}`,
+      abi: USDT_ABI,
+      client: {
+        public: this.publicClient,
+        wallet: this.walletClient,
+      },
+    });
   }
 
-  // Confirm delivery (buyer only)
-  async confirmDelivery(tradeId: string) {
-    const contract = await this.getContract();
-    const tx = await contract.methods.confirmDelivery(tradeId);
-
-    const receipt = await this.sendTransaction(tx);
-    return receipt;
-  }
-
-  // Cancel trade (buyer only)
-  async cancelTrade(tradeId: string) {
-    const contract = await this.getContract();
-    const tx = await contract.methods.cancelTrade(tradeId);
-
-    const receipt = await this.sendTransaction(tx);
-    return receipt;
-  }
-
-  // Raise dispute
-  async raiseDispute(tradeId: string) {
-    const contract = await this.getContract();
-    const tx = await contract.methods.raiseDispute(tradeId);
-
-    const receipt = await this.sendTransaction(tx);
-    return receipt;
-  }
-
-  // Resolve dispute (admin only)
-  async resolveDispute(tradeId: string, winner: string) {
-    const contract = await this.getContract();
-    const tx = await contract.methods.resolveDispute(tradeId, winner);
-
-    const receipt = await this.sendTransaction(tx);
-    return receipt;
-  }
-
-  // Get trade details
-  async getTrade(tradeId: string): Promise<Trade> {
-    const contract = await this.getContract();
-    try {
-      const trade = await contract.methods.getTrade(tradeId).call();
-
-      // Format the response to match our Trade interface
-      return {
-        buyer: trade.buyer,
-        seller: trade.seller,
-        logisticsProviders: Array.isArray(trade.logisticsProviders)
-          ? trade.logisticsProviders
-          : [],
-        logisticsCosts: Array.isArray(trade.logisticsCosts)
-          ? trade.logisticsCosts
-          : [],
-        chosenLogisticsProvider: trade.chosenLogisticsProvider,
-        productCost: trade.productCost,
-        logisticsCost: trade.logisticsCost,
-        escrowFee: trade.escrowFee,
-        totalAmount: trade.totalAmount,
-        totalQuantity: trade.totalQuantity,
-        remainingQuantity: trade.remainingQuantity,
-        logisticsSelected: trade.logisticsSelected,
-        delivered: trade.delivered,
-        completed: trade.completed,
-        disputed: trade.disputed,
-        isUSDT: trade.isUSDT,
-        parentTradeId: trade.parentTradeId,
-      };
-    } catch (error) {
-      console.error('Error fetching trade:', error);
-      throw new Error(`Failed to get trade with ID ${tradeId}`);
+  // Helper method to ensure wallet client exists
+  private ensureWalletClient() {
+    if (!this.walletClient || !this.account) {
+      throw new Error(
+        'Wallet client not initialized. Private key required for write operations.',
+      );
     }
   }
 
-  // Get all trades for the current buyer
-  async getTradesByBuyer(): Promise<Trade[]> {
-    const contract = await this.getContract();
-    try {
-      const trades = await contract.methods.getTradesByBuyer().call({
-        from: this.kit.defaultAccount,
-      });
-      return trades;
-    } catch (error) {
-      console.error('Error fetching buyer trades:', error);
-      throw new Error('Failed to get buyer trades');
-    }
+  // Helper to perform contract reads
+  private async readContract(functionName: string, args: any[] = []) {
+    return await this.publicClient.readContract({
+      address: config.CONTRACT_ADDRESS as `0x${string}`,
+      abi: abi.DEZENMART_ABI,
+      functionName,
+      args,
+    });
   }
 
-  // Get all trades for the current seller
-  async getTradesBySeller(): Promise<Trade[]> {
-    const contract = await this.getContract();
-    try {
-      const trades = await contract.methods.getTradesBySeller().call({
-        from: this.kit.defaultAccount,
-      });
-      return trades;
-    } catch (error) {
-      console.error('Error fetching seller trades:', error);
-      throw new Error('Failed to get seller trades');
-    }
+  // Helper to perform contract writes
+  private async writeContract(functionName: string, args: any[] = []) {
+    this.ensureWalletClient();
+    return await this.walletClient!.writeContract({
+      address: config.CONTRACT_ADDRESS as `0x${string}`,
+      abi: abi.DEZENMART_ABI,
+      functionName,
+      args,
+    });
   }
 
-  // Admin withdraw ETH fees
-  async withdrawEscrowFeesETH() {
-    const contract = await this.getContract();
-    const tx = await contract.methods.withdrawEscrowFeesETH();
-
-    const receipt = await this.sendTransaction(tx);
-    return receipt;
+  // Helper to perform USDT reads
+  private async readUSDTContract(
+    functionName: 'allowance' | 'balanceOf',
+    args: readonly [`0x${string}`, `0x${string}`]
+  ): Promise<bigint> {
+    return await this.publicClient.readContract({
+      address: config.USDT_ADDRESS as `0x${string}`,
+      abi: USDT_ABI,
+      functionName,
+      args: args
+    });
   }
 
-  // Admin withdraw USDT fees
-  async withdrawEscrowFeesUSDT() {
-    const contract = await this.getContract();
-    const tx = await contract.methods.withdrawEscrowFeesUSDT();
-
-    const receipt = await this.sendTransaction(tx);
-    return receipt;
+  // Helper to perform USDT writes
+  private async writeUSDTContract(
+    functionName: 'approve',
+    args: [`0x${string}`, bigint]) {
+    this.ensureWalletClient();
+    return await this.walletClient!.writeContract({
+      address: config.USDT_ADDRESS as `0x${string}`,
+      abi: USDT_ABI,
+      functionName,
+      args,
+    });
   }
 
-  // Helper function to send transactions
-  private async sendTransaction(tx: any, value = '0') {
-    try {
-      const accounts = await this.kit.web3.eth.getAccounts();
-      const from = this.kit.defaultAccount || accounts[0];
-      if (!from) {
-        throw new Error(
-          'No default account found. Please set a default account.',
-        );
-      }
+  // --- Registration Functions ---
 
-      // Log transaction details for debugging
-      if (tx._method) {
-        console.log('Transaction method:', tx._method.name);
-        console.log('Transaction parameters:', tx._method.inputs);
-      }
-
-      // Estimate gas with a buffer to avoid out-of-gas errors
-      let gasEstimate;
-      try {
-        gasEstimate = await tx.estimateGas({ from, value });
-        console.log('Gas estimate:', gasEstimate);
-      } catch (error) {
-        console.error('Gas estimation error:', error);
-      }
-
-      // Send the transaction with a gas buffer
-      const receipt = await tx.send({
-        from,
-        gas: Math.round(gasEstimate * 1.2), // Add 20% buffer
-        value,
-      });
-
-      console.log('Transaction receipt:', {
-        transactionHash: receipt.transactionHash,
-        blockNumber: receipt.blockNumber,
-        gasUsed: receipt.gasUsed,
-        status: receipt.status,
-      });
-
-      return receipt;
-    } catch (error) {
-      console.error('Transaction error:', error);
-    }
+  async registerLogisticsProvider(providerAddress: Address): Promise<Hash> {
+    return await this.writeContract('registerLogisticsProvider', [
+      providerAddress,
+    ]);
   }
 
-  // --- Event listening ---
-
-  // Stop polling
-  public stopListening() {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = null;
-      console.log('Stopped event polling.');
-    }
+  async registerBuyer(): Promise<Hash> {
+    return await this.writeContract('registerBuyer');
   }
 
-  // Listen for events
-  async listenForEvents(
-    eventCallbacks: {
-      onTradeCreated?: (event: any) => void;
-      // onTradePurchased?: (event: any) => void;
-      onDeliveryConfirmed?: (event: any) => void;
-      onDisputeRaised?: (event: any) => void;
-    } = {},
-  ) {
-    // Stop any existing polling first
-    this.stopListening();
+  async registerSeller(): Promise<Hash> {
+    return await this.writeContract('registerSeller');
+  }
 
-    const contract = await this.getContract();
-    const pollingFrequencyMs = 30000; // 30 seconds
+  // --- Read Functions ---
 
-    const poll = async () => {
-      try {
-        // Determine the block range to query
-        const fromBlock =
-          typeof this.lastCheckedBlock === 'number'
-            ? this.lastCheckedBlock + 1
-            : 'latest';
-        const currentBlock = await this.kit.web3.eth.getBlockNumber();
+  async getLogisticsProviders(): Promise<Address[]> {
+    return (await this.readContract('getLogisticsProviders')) as Address[];
+  }
 
-        // Avoid querying if fromBlock would be greater than currentBlock
-        if (typeof fromBlock === 'number' && fromBlock > currentBlock) {
-          console.log(
-            `Polling: No new blocks since ${this.lastCheckedBlock}. Current: ${currentBlock}`,
-          );
-          return;
-        }
-
-        // If fromBlock was 'latest', we only query the currentBlock now
-        const effectiveFromBlock =
-          fromBlock === 'latest' ? currentBlock : fromBlock;
-
-        // --- Poll for specific events ---
-
-        // TradeCreated events
-        const tradeCreatedEvents = await contract.getPastEvents(
-          'TradeCreated',
-          {
-            fromBlock: effectiveFromBlock,
-            toBlock: currentBlock,
-          },
-        );
-
-        for (const event of tradeCreatedEvents) {
-          console.log('[Poll] TradeCreated:', event.returnValues);
-          if (eventCallbacks.onTradeCreated) {
-            eventCallbacks.onTradeCreated(event);
-          }
-        }
-
-        // TradePurchased events
-        // const tradePurchasedEvents = await contract.getPastEvents(
-        //   'TradePurchased',
-        //   {
-        //     fromBlock: effectiveFromBlock,
-        //     toBlock: currentBlock,
-        //   },
-        // );
-
-        // for (const event of tradePurchasedEvents) {
-        //   console.log('[Poll] TradePurchased:', event.returnValues);
-        //   if (eventCallbacks.onTradePurchased) {
-        //     eventCallbacks.onTradePurchased(event);
-        //   }
-        // }
-
-        // DeliveryConfirmed events
-        const deliveryConfirmedEvents = await contract.getPastEvents(
-          'DeliveryConfirmed',
-          {
-            fromBlock: effectiveFromBlock,
-            toBlock: currentBlock,
-          },
-        );
-
-        for (const event of deliveryConfirmedEvents) {
-          console.log('[Poll] DeliveryConfirmed:', event.returnValues);
-          if (eventCallbacks.onDeliveryConfirmed) {
-            eventCallbacks.onDeliveryConfirmed(event);
-          }
-        }
-
-        // DisputeRaised events
-        const disputeRaisedEvents = await contract.getPastEvents(
-          'DisputeRaised',
-          {
-            fromBlock: effectiveFromBlock,
-            toBlock: currentBlock,
-          },
-        );
-
-        for (const event of disputeRaisedEvents) {
-          console.log('[Poll] DisputeRaised:', event.returnValues);
-          if (eventCallbacks.onDisputeRaised) {
-            eventCallbacks.onDisputeRaised(event);
-          }
-        }
-
-        this.lastCheckedBlock = currentBlock;
-      } catch (error) {
-        console.error('Error during event polling:', error);
-      }
+  async getTrade(tradeId: number): Promise<Trade> {
+    const trade = (await this.readContract('getTrade', [tradeId])) as any;
+    return {
+      seller: trade.seller,
+      logisticsProviders: trade.logisticsProviders,
+      logisticsCosts: trade.logisticsCosts,
+      productCost: trade.productCost,
+      escrowFee: trade.escrowFee,
+      totalQuantity: trade.totalQuantity,
+      remainingQuantity: trade.remainingQuantity,
+      active: trade.active,
+      purchaseIds: trade.purchaseIds,
     };
+  }
 
-    // Start polling
-    await poll(); // Run immediately once
-    this.pollingInterval = setInterval(poll, pollingFrequencyMs);
-    console.log(`Started event polling every ${pollingFrequencyMs}ms`);
+  async getPurchase(purchaseId: bigint): Promise<Purchase> {
+    const purchase = (await this.readContract('getPurchase', [
+      purchaseId,
+    ])) as any;
+    return {
+      purchaseId: purchase.purchaseId,
+      tradeId: purchase.tradeId,
+      buyer: purchase.buyer,
+      quantity: purchase.quantity,
+      totalAmount: purchase.totalAmount,
+      delivered: purchase.delivered,
+      confirmed: purchase.confirmed,
+      disputed: purchase.disputed,
+      chosenLogisticsProvider: purchase.chosenLogisticsProvider,
+      logisticsCost: purchase.logisticsCost,
+    };
+  }
+
+  async getBuyerPurchases(): Promise<Purchase[]> {
+    const purchases = (await this.readContract('getBuyerPurchases')) as any[];
+    return purchases.map((p) => ({
+      purchaseId: p.purchaseId,
+      tradeId: p.tradeId,
+      buyer: p.buyer,
+      quantity: p.quantity,
+      totalAmount: p.totalAmount,
+      delivered: p.delivered,
+      confirmed: p.confirmed,
+      disputed: p.disputed,
+      chosenLogisticsProvider: p.chosenLogisticsProvider,
+      logisticsCost: p.logisticsCost,
+    }));
+  }
+
+  async getSellerTrades(): Promise<Trade[]> {
+    const trades = (await this.readContract('getSellerTrades')) as any[];
+    return trades.map((t) => ({
+      seller: t.seller,
+      logisticsProviders: t.logisticsProviders,
+      logisticsCosts: t.logisticsCosts,
+      productCost: t.productCost,
+      escrowFee: t.escrowFee,
+      totalQuantity: t.totalQuantity,
+      remainingQuantity: t.remainingQuantity,
+      active: t.active,
+      purchaseIds: t.purchaseIds,
+    }));
+  }
+
+  async getProviderTrades(): Promise<Purchase[]> {
+    const purchases = (await this.readContract('getProviderTrades')) as any[];
+    return purchases.map((p) => ({
+      purchaseId: p.purchaseId,
+      tradeId: p.tradeId,
+      buyer: p.buyer,
+      quantity: p.quantity,
+      totalAmount: p.totalAmount,
+      delivered: p.delivered,
+      confirmed: p.confirmed,
+      disputed: p.disputed,
+      chosenLogisticsProvider: p.chosenLogisticsProvider,
+      logisticsCost: p.logisticsCost,
+    }));
+  }
+
+  // --- USDT Functions ---
+
+  async getUSDTBalance(address: Address): Promise<bigint> {
+    return (await this.readUSDTContract('balanceOf', [address, address])) as bigint;
+  }
+
+  async getUSDTAllowance(owner: Address, spender: Address): Promise<bigint> {
+    return (await this.readUSDTContract('allowance', [
+      owner,
+      spender,
+    ])) as bigint;
+  }
+
+  async approveUSDT(amount: bigint): Promise<Hash> {
+    return await this.writeUSDTContract('approve', [
+      config.CONTRACT_ADDRESS as `0x${string}`,
+      amount,
+    ]);
+  }
+
+  // --- Trade Functions ---
+
+  async createTrade(
+    productCostInUSDT: string,
+    logisticsProviders: Address[],
+    logisticsCostsInUSDT: string[],
+    totalQuantity: bigint,
+  ): Promise<{ hash: Hash; tradeId: bigint }> {
+    // Convert USDT amounts to Gwei (assuming 6 decimals for USDT)
+    const productCost = parseUnits(productCostInUSDT, 6);
+    const logisticsCosts = logisticsCostsInUSDT.map((cost) =>
+      parseUnits(cost, 6),
+    );
+
+    const hash = await this.writeContract('createTrade', [
+      productCost,
+      logisticsProviders,
+      logisticsCosts,
+      totalQuantity,
+    ]);
+
+    // Wait for transaction receipt to get the trade ID from events
+    const receipt = await this.getTransactionReceipt(hash);
+
+    // Find the TradeCreated event in the receipt
+    const tradeCreatedEvent = receipt.logs.find((log) => {
+      try {
+        const decoded = decodeEventLog({
+          abi: abi.DEZENMART_ABI,
+          data: log.data,
+          topics: log.topics,
+        });
+        return decoded.eventName === 'TradeCreated';
+      } catch {
+        return false;
+      }
+    });
+
+    if (!tradeCreatedEvent) {
+      throw new Error('TradeCreated event not found in transaction receipt');
+    }
+
+    const decoded = decodeEventLog({
+      abi: abi.DEZENMART_ABI,
+      data: tradeCreatedEvent.data,
+      topics: tradeCreatedEvent.topics,
+    });
+
+    const tradeId = (decoded.args as any).tradeId as bigint;
+
+    return { hash, tradeId };
+  }
+
+  async buyTrade(
+    tradeId: number,
+    quantity: bigint,
+    logisticsProvider: Address,
+  ): Promise<{ hash: Hash; purchaseId: bigint }> {
+    // Get trade details to calculate required approval
+    const trade = await this.getTrade(tradeId);
+    console.log('Trade details:', trade);
+
+    // Find the logistics cost for the chosen provider
+    const providerIndex = trade.logisticsProviders.findIndex(
+      (provider) => provider.toLowerCase() === logisticsProvider.toLowerCase(),
+    );
+    console.log('Provider index:', providerIndex);
+
+    if (providerIndex === -1) {
+      throw new Error('Invalid logistics provider');
+    }
+
+    const logisticsCost = trade.logisticsCosts[providerIndex];
+    console.log('Logistics cost:', logisticsCost);
+    const totalCost = (trade.productCost + logisticsCost) * quantity;
+    console.log('Total cost:', totalCost);
+
+    // Check current allowance
+    const currentAllowance = await this.getUSDTAllowance(
+      this.account!.address,
+      config.CONTRACT_ADDRESS as `0x${string}`,
+    );
+    console.log('Current allowance:', currentAllowance);
+
+    // Approve USDT if needed
+    if (currentAllowance < totalCost) {
+      console.log(`Approving USDT: ${formatUnits(totalCost, 6)} USDT`);
+      await this.approveUSDT(totalCost);
+
+      // Wait for approval transaction to be confirmed
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+
+    const hash = await this.writeContract('buyTrade', [
+      tradeId,
+      quantity,
+      logisticsProvider,
+    ]);
+    console.log('Transaction hash:', hash);
+
+    // Wait for transaction receipt to get the purchase ID from events
+    const receipt = await this.getTransactionReceipt(hash);
+    console.log('Transaction receipt:', receipt);
+
+    // Find the PurchaseCreated event in the receipt
+    const purchaseCreatedEvent = receipt.logs.find((log) => {
+      try {
+        const decoded = decodeEventLog({
+          abi: abi.DEZENMART_ABI,
+          data: log.data,
+          topics: log.topics,
+        });
+        return decoded.eventName === 'PurchaseCreated';
+      } catch {
+        return false;
+      }
+    });
+
+    if (!purchaseCreatedEvent) {
+      throw new Error('PurchaseCreated event not found in transaction receipt');
+    }
+
+    const decoded = decodeEventLog({
+      abi: abi.DEZENMART_ABI,
+      data: purchaseCreatedEvent.data,
+      topics: purchaseCreatedEvent.topics,
+    });
+    console.log('Decoded PurchaseCreated event:', decoded);
+
+    const purchaseId = (decoded.args as any).purchaseId as bigint;
+
+    return { hash, purchaseId };
+  }
+
+  // --- Purchase Management Functions ---
+
+  async confirmDelivery(purchaseId: string): Promise<Hash> {
+    return await this.writeContract('confirmDelivery', [purchaseId]);
+  }
+
+  async confirmPurchase(purchaseId: string): Promise<Hash> {
+    return await this.writeContract('confirmPurchase', [purchaseId]);
+  }
+
+  async cancelPurchase(purchaseId: bigint): Promise<Hash> {
+    return await this.writeContract('cancelPurchase', [purchaseId]);
+  }
+
+  // --- Dispute Functions ---
+
+  async raiseDispute(purchaseId: bigint): Promise<Hash> {
+    return await this.writeContract('raiseDispute', [purchaseId]);
+  }
+
+  async resolveDispute(purchaseId: bigint, winner: Address): Promise<Hash> {
+    return await this.writeContract('resolveDispute', [purchaseId, winner]);
+  }
+
+  // --- Admin Functions ---
+
+  async withdrawEscrowFees(): Promise<Hash> {
+    return await this.writeContract('withdrawEscrowFees');
+  }
+
+  // --- Event Listening ---
+
+  async watchTradeCreated(
+    callback: (args: {
+      tradeId: bigint;
+      seller: Address;
+      productCost: bigint;
+      totalQuantity: bigint;
+    }) => void,
+  ): Promise<() => void> {
+    const unwatch = this.publicClient.watchContractEvent({
+      address: config.CONTRACT_ADDRESS as `0x${string}`,
+      abi: abi.DEZENMART_ABI,
+      eventName: 'TradeCreated',
+      onLogs: (logs) => {
+        logs.forEach((log) => {
+          try {
+            const decoded = decodeEventLog({
+              abi: abi.DEZENMART_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+            if (decoded.eventName === 'TradeCreated') {
+              callback(decoded.args as any);
+            }
+          } catch (error) {
+            console.error('Error decoding TradeCreated event:', error);
+          }
+        });
+      },
+    });
+
+    this.eventUnsubscribers.push(unwatch);
+    return unwatch;
+  }
+
+  async watchPurchaseCreated(
+    callback: (args: {
+      purchaseId: bigint;
+      tradeId: bigint;
+      buyer: Address;
+      quantity: bigint;
+    }) => void,
+  ): Promise<() => void> {
+    const unwatch = this.publicClient.watchContractEvent({
+      address: config.CONTRACT_ADDRESS as `0x${string}`,
+      abi: abi.DEZENMART_ABI,
+      eventName: 'PurchaseCreated',
+      onLogs: (logs) => {
+        logs.forEach((log) => {
+          try {
+            const decoded = decodeEventLog({
+              abi: abi.DEZENMART_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+            if (decoded.eventName === 'TradeCreated') {
+              callback(decoded.args as any);
+            }
+          } catch (error) {
+            console.error('Error decoding TradeCreated event:', error);
+          }
+        });
+      },
+    });
+
+    this.eventUnsubscribers.push(unwatch);
+    return unwatch;
+  }
+
+  async watchDeliveryConfirmed(
+    callback: (args: { purchaseId: bigint }) => void,
+  ): Promise<() => void> {
+    const unwatch = this.publicClient.watchContractEvent({
+      address: config.CONTRACT_ADDRESS as `0x${string}`,
+      abi: abi.DEZENMART_ABI,
+      eventName: 'DeliveryConfirmed',
+      onLogs: (logs) => {
+        logs.forEach((log) => {
+          try {
+            const decoded = decodeEventLog({
+              abi: abi.DEZENMART_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+            if (decoded.eventName === 'TradeCreated') {
+              callback(decoded.args as any);
+            }
+          } catch (error) {
+            console.error('Error decoding TradeCreated event:', error);
+          }
+        });
+      },
+    });
+
+    this.eventUnsubscribers.push(unwatch);
+    return unwatch;
+  }
+
+  async watchDisputeRaised(
+    callback: (args: { purchaseId: bigint; initiator: Address }) => void,
+  ): Promise<() => void> {
+    const unwatch = this.publicClient.watchContractEvent({
+      address: config.CONTRACT_ADDRESS as `0x${string}`,
+      abi: abi.DEZENMART_ABI,
+      eventName: 'DisputeRaised',
+      onLogs: (logs) => {
+        logs.forEach((log) => {
+          try {
+            const decoded = decodeEventLog({
+              abi: abi.DEZENMART_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+            if (decoded.eventName === 'TradeCreated') {
+              callback(decoded.args as any);
+            }
+          } catch (error) {
+            console.error('Error decoding TradeCreated event:', error);
+          }
+        });
+      },
+    });
+
+    this.eventUnsubscribers.push(unwatch);
+    return unwatch;
+  }
+
+  async watchDisputeResolved(
+    callback: (args: { purchaseId: bigint; winner: Address }) => void,
+  ): Promise<() => void> {
+    const unwatch = this.publicClient.watchContractEvent({
+      address: config.CONTRACT_ADDRESS as `0x${string}`,
+      abi: abi.DEZENMART_ABI,
+      eventName: 'DisputeResolved',
+      onLogs: (logs) => {
+        logs.forEach((log) => {
+          try {
+            const decoded = decodeEventLog({
+              abi: abi.DEZENMART_ABI,
+              data: log.data,
+              topics: log.topics,
+            });
+            if (decoded.eventName === 'TradeCreated') {
+              callback(decoded.args as any); // ✅ Works!
+            }
+          } catch (error) {
+            console.error('Error decoding TradeCreated event:', error);
+          }
+        });
+      },
+    });
+
+    this.eventUnsubscribers.push(unwatch);
+    return unwatch;
+  }
+
+  // --- Historical Event Queries ---
+
+  async getTradeCreatedEvents(
+    fromBlock?: bigint,
+    toBlock?: bigint,
+  ): Promise<GetLogsReturnType> {
+    return await this.publicClient.getLogs({
+      address: config.CONTRACT_ADDRESS as `0x${string}`,
+      event: parseAbiItem(
+        'event TradeCreated(uint256 indexed tradeId, address indexed seller, uint256 productCost, uint256 totalQuantity)',
+      ),
+      fromBlock: fromBlock || 'earliest',
+      toBlock: toBlock || 'latest',
+    });
+  }
+
+  async getPurchaseCreatedEvents(
+    fromBlock?: bigint,
+    toBlock?: bigint,
+  ): Promise<GetLogsReturnType> {
+    return await this.publicClient.getLogs({
+      address: config.CONTRACT_ADDRESS as `0x${string}`,
+      event: parseAbiItem(
+        'event PurchaseCreated(uint256 indexed purchaseId, uint256 indexed tradeId, address indexed buyer, uint256 quantity)',
+      ),
+      fromBlock: fromBlock || 'earliest',
+      toBlock: toBlock || 'latest',
+    });
+  }
+
+  // --- Utility Functions ---
+
+  formatUSDT(amount: bigint): string {
+    return formatUnits(amount, 6);
+  }
+
+  parseUSDT(amount: string): bigint {
+    return parseUnits(amount, 6);
+  }
+
+  async getTransactionReceipt(hash: Hash): Promise<TransactionReceipt> {
+    return await this.publicClient.waitForTransactionReceipt({ hash });
+  }
+
+  // Clean up event listeners
+  stopAllEventListeners(): void {
+    this.eventUnsubscribers.forEach((unsubscribe) => unsubscribe());
+    this.eventUnsubscribers = [];
+  }
+
+  // Get account address
+  getAccountAddress(): Address | undefined {
+    return this.account?.address;
   }
 }
+
+// Factory function for easy initialization
+// export function createDezenMartService(
+//   config: ContractConfig,
+// ): DezenMartContractService {
+//   return new DezenMartContractService(config);
+// }
+
+// Usage example:
+/*
+const contractService = createDezenMartService({
+  contractAddress: '0x...',
+  usdtAddress: '0x...',
+  privateKey: '0x...',
+  isTestnet: true,
+});
+
+// Register as seller
+await contractService.registerSeller();
+
+// Create a trade and get both transaction hash and trade ID
+const { hash: tradeHash, tradeId } = await contractService.createTrade(
+  '100', // 100 USDT product cost
+  ['0x...'], // logistics provider addresses
+  ['10'], // 10 USDT logistics cost
+  BigInt(50) // 50 items
+);
+
+console.log(`Trade ${tradeId} created with hash: ${tradeHash}`);
+
+// Buy a trade and get both transaction hash and purchase ID
+const { hash: purchaseHash, purchaseId } = await contractService.buyTrade(
+  tradeId,
+  BigInt(5), // quantity
+  '0x...' // logistics provider
+);
+
+console.log(`Purchase ${purchaseId} created with hash: ${purchaseHash}`);
+
+// Listen for events
+contractService.watchTradeCreated(({ tradeId, seller, productCost, totalQuantity }) => {
+  console.log(`New trade created: ${tradeId} by ${seller}`);
+});
+*/

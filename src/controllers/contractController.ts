@@ -17,12 +17,17 @@ export class ContractController {
       }
       console.log(`API: Registering logistics provider ${providerAddress}`);
 
-      const receipt =
+      const hash =
         await contractService.registerLogisticsProvider(providerAddress);
+      const receipt = await contractService.getTransactionReceipt(hash);
+
       res.status(200).json({
         status: 'success',
         message: 'Logistics provider registration transaction sent',
-        data: { transactionHash: receipt.transactionHash },
+        data: {
+          transactionHash: hash,
+          receipt: receipt,
+        },
       });
     } catch (error) {
       console.error('Error in registerLogisticsProvider controller:', error);
@@ -30,7 +35,11 @@ export class ContractController {
     }
   }
 
-  static async getLogisticsProviders(req: Request, res: Response, next: NextFunction) {
+  static async getLogisticsProviders(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
     try {
       const providers = await contractService.getLogisticsProviders();
       res.status(200).json({
@@ -45,11 +54,17 @@ export class ContractController {
 
   static async resolveDispute(req: Request, res: Response, next: NextFunction) {
     try {
-      const { tradeId } = req.params;
+      const { purchaseId } = req.params; // Changed from tradeId to purchaseId
       const { winner } = req.body;
 
-      if (!tradeId || isNaN(parseInt(tradeId, 10)) || parseInt(tradeId, 10) < 0) {
-        return next(new CustomError('Valid Trade ID is required', 400, 'fail'));
+      if (
+        !purchaseId ||
+        isNaN(parseInt(purchaseId, 10)) ||
+        parseInt(purchaseId, 10) < 0
+      ) {
+        return next(
+          new CustomError('Valid Purchase ID is required', 400, 'fail'),
+        );
       }
       if (!winner || !/^0x[a-fA-F0-9]{40}$/.test(winner)) {
         return next(
@@ -58,14 +73,22 @@ export class ContractController {
       }
 
       console.log(
-        `API: Resolving dispute for trade ${tradeId}, winner: ${winner}`,
+        `API: Resolving dispute for purchase ${purchaseId}, winner: ${winner}`,
       );
 
-      const receipt = await contractService.resolveDispute(tradeId, winner);
+      const hash = await contractService.resolveDispute(
+        BigInt(purchaseId),
+        winner,
+      );
+      const receipt = await contractService.getTransactionReceipt(hash);
+
       res.status(200).json({
         status: 'success',
         message: 'Dispute resolution transaction sent',
-        data: { transactionHash: receipt.transactionHash },
+        data: {
+          transactionHash: hash,
+          receipt: receipt,
+        },
       });
     } catch (error) {
       console.error('Error in resolveDispute controller:', error);
@@ -75,13 +98,8 @@ export class ContractController {
 
   static async createTrade(req: Request, res: Response, next: NextFunction) {
     try {
-      const {
-        productCost,
-        logisticsProviders,
-        logisticsCosts,
-        useUSDT,
-        totalQuantity,
-      } = req.body;
+      const { productCost, logisticsProviders, logisticsCosts, totalQuantity } =
+        req.body;
 
       // Validate product cost
       if (
@@ -95,21 +113,36 @@ export class ContractController {
       }
 
       // Validate logistics providers and costs
-      if (!Array.isArray(logisticsProviders) || logisticsProviders.length === 0) {
+      if (
+        !Array.isArray(logisticsProviders) ||
+        logisticsProviders.length === 0
+      ) {
         return next(
-          new CustomError('At least one logistics provider is required', 400, 'fail'),
+          new CustomError(
+            'At least one logistics provider is required',
+            400,
+            'fail',
+          ),
         );
       }
 
       if (!Array.isArray(logisticsCosts) || logisticsCosts.length === 0) {
         return next(
-          new CustomError('At least one logistics cost is required', 400, 'fail'),
+          new CustomError(
+            'At least one logistics cost is required',
+            400,
+            'fail',
+          ),
         );
       }
 
       if (logisticsProviders.length !== logisticsCosts.length) {
         return next(
-          new CustomError('Logistics providers and costs arrays must be the same length', 400, 'fail'),
+          new CustomError(
+            'Logistics providers and costs arrays must be the same length',
+            400,
+            'fail',
+          ),
         );
       }
 
@@ -117,7 +150,11 @@ export class ContractController {
       for (const provider of logisticsProviders) {
         if (!/^0x[a-fA-F0-9]{40}$/.test(provider)) {
           return next(
-            new CustomError(`Invalid logistics provider address: ${provider}`, 400, 'fail'),
+            new CustomError(
+              `Invalid logistics provider address: ${provider}`,
+              400,
+              'fail',
+            ),
           );
         }
       }
@@ -131,15 +168,12 @@ export class ContractController {
         }
       }
 
-      // Validate useUSDT flag
-      if (useUSDT === undefined || typeof useUSDT !== 'boolean') {
-        return next(
-          new CustomError('useUSDT flag (boolean) is required', 400, 'fail'),
-        );
-      }
-
       // Validate total quantity
-      if (!totalQuantity || isNaN(Number(totalQuantity)) || Number(totalQuantity) <= 0) {
+      if (
+        !totalQuantity ||
+        isNaN(Number(totalQuantity)) ||
+        Number(totalQuantity) <= 0
+      ) {
         return next(
           new CustomError('Valid total quantity is required', 400, 'fail'),
         );
@@ -149,54 +183,25 @@ export class ContractController {
         productCost,
         logisticsProviders,
         logisticsCosts,
-        useUSDT,
-        totalQuantity
+        totalQuantity,
       });
 
-      // Create the trade
-      const receipt = await contractService.createTrade(
-        productCost,
+      // Create the trade - now returns both hash and tradeId
+      const { hash, tradeId } = await contractService.createTrade(
+        productCost.toString(),
         logisticsProviders,
-        logisticsCosts,
-        totalQuantity
+        logisticsCosts.map((cost: number) => cost.toString()),
+        BigInt(totalQuantity),
       );
 
-      const updateMessage =
-        'Blockchain transaction sent. Order linking relies on event listener.';
-      console.log(
-        `Trade creation Tx sent for ${receipt.transactionHash}. Waiting for event listener to link.`,
-      );
-
-      let extractedTradeId: string | undefined;
-
-      if (receipt.events) {
-        // Attempt 1: From TradeCreated event (generally preferred)
-        if (receipt.events.TradeCreated) {
-          const tradeCreatedEvent = receipt.events.TradeCreated;
-          // Handle if TradeCreated is an array or a single object
-          const eventInstance = Array.isArray(tradeCreatedEvent) ? tradeCreatedEvent[0] : tradeCreatedEvent;
-          if (eventInstance && eventInstance.returnValues) {
-            extractedTradeId = eventInstance.returnValues.tradeId;
-          }
-        }
-
-        // Attempt 2: From LogisticsSelected event if TradeCreated didn't yield ID
-        if (!extractedTradeId && receipt.events.LogisticsSelected) {
-          const logisticsEvents = receipt.events.LogisticsSelected;
-          // Handle if LogisticsSelected is an array or a single object
-          const firstEventInstance = Array.isArray(logisticsEvents) ? logisticsEvents[0] : logisticsEvents;
-          if (firstEventInstance && firstEventInstance.returnValues) {
-            extractedTradeId = firstEventInstance.returnValues.tradeId;
-          }
-        }
-      }
+      console.log(`Trade creation Tx sent: ${hash}. Trade ID: ${tradeId}`);
 
       res.status(201).json({
         status: 'success',
-        message: `Trade creation transaction sent. ${updateMessage}`,
+        message: `Trade created successfully`,
         data: {
-          transactionHash: receipt.transactionHash,
-          tradeId: extractedTradeId,
+          transactionHash: hash,
+          tradeId: tradeId.toString(),
         },
       });
     } catch (error) {
@@ -211,7 +216,11 @@ export class ContractController {
       const { quantity, logisticsProvider } = req.body;
 
       // Validate tradeId
-      if (!tradeId || isNaN(parseInt(tradeId, 10)) || parseInt(tradeId, 10) < 0) {
+      if (
+        !tradeId ||
+        isNaN(parseInt(tradeId, 10)) ||
+        parseInt(tradeId, 10) < 0
+      ) {
         return next(new CustomError('Valid Trade ID is required', 400, 'fail'));
       }
 
@@ -220,26 +229,45 @@ export class ContractController {
         return next(new CustomError('Valid quantity is required', 400, 'fail'));
       }
 
-      
       // Validate logistics provider
-      if (logisticsProvider === undefined || logisticsProvider === null) {
-        return next(new CustomError('Valid logistics provider is required', 400, 'fail'));
+      if (
+        !logisticsProvider ||
+        !/^0x[a-fA-F0-9]{40}$/.test(logisticsProvider)
+      ) {
+        return next(
+          new CustomError(
+            'Valid logistics provider address is required',
+            400,
+            'fail',
+          ),
+        );
       }
 
-      // Get trade to determine if it uses USDT
-      const trade = await contractService.getTrade(tradeId);
-      // Buy the trade
-      const receipt = await contractService.buyTrade(
-        tradeId,
-        quantity,
+      // Get trade to verify it exists
+      const trade = await contractService.getTrade(parseInt(tradeId, 10));
+      if (!trade || !trade.active) {
+        return next(
+          new CustomError('Trade not found or inactive', 404, 'fail'),
+        );
+      }
+
+      console.log('Trade details:', trade);
+
+      // Buy the trade - now returns both hash and purchaseId
+      const { hash, purchaseId } = await contractService.buyTrade(
+        parseInt(tradeId, 10),
+        BigInt(quantity),
         logisticsProvider,
       );
 
+      console.log(`Purchase created: ${purchaseId} with hash: ${hash}`);
+
       res.status(200).json({
         status: 'success',
-        message: 'Trade purchase transaction sent',
-        data: { 
-          transactionHash: receipt.transactionHash,
+        message: 'Trade purchase successful',
+        data: {
+          transactionHash: hash,
+          purchaseId: purchaseId.toString(),
         },
       });
     } catch (error) {
@@ -254,18 +282,28 @@ export class ContractController {
     next: NextFunction,
   ) {
     try {
-      const { tradeId } = req.params;
-
-      if (!tradeId || isNaN(parseInt(tradeId, 10)) || parseInt(tradeId, 10) < 0) {
-        return next(new CustomError('Valid Trade ID is required', 400, 'fail'));
+      const { purchaseId } = req.params; // Changed from tradeId to purchaseId
+      
+      if (
+        !purchaseId ||
+        isNaN(parseInt(purchaseId, 10)) ||
+        parseInt(purchaseId, 10) < 0
+      ) {
+        return next(
+          new CustomError('Valid Purchase ID is required', 400, 'fail'),
+        );
       }
 
-      const receipt = await contractService.confirmDelivery(tradeId);
+      const hash = await contractService.confirmDelivery(purchaseId);
+      const receipt = await contractService.getTransactionReceipt(hash);
 
       res.status(200).json({
         status: 'success',
         message: 'Delivery confirmation transaction sent',
-        data: { transactionHash: receipt.transactionHash },
+        data: {
+          transactionHash: hash,
+          receipt: receipt,
+        },
       });
     } catch (error) {
       console.error('Error in confirmDelivery controller:', error);
@@ -273,41 +311,96 @@ export class ContractController {
     }
   }
 
-  static async cancelTrade(req: Request, res: Response, next: NextFunction) {
+  static async confirmPurchase(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
     try {
-      const { tradeId } = req.params;
+      const { purchaseId } = req.params;
 
-      if (!tradeId || isNaN(parseInt(tradeId, 10)) || parseInt(tradeId, 10) < 0) {
-        return next(new CustomError('Valid Trade ID is required', 400, 'fail'));
+      if (
+        !purchaseId ||
+        isNaN(parseInt(purchaseId, 10)) ||
+        parseInt(purchaseId, 10) < 0
+      ) {
+        return next(
+          new CustomError('Valid Purchase ID is required', 400, 'fail'),
+        );
       }
 
-      const receipt = await contractService.cancelTrade(tradeId);
+      const hash = await contractService.confirmPurchase(purchaseId);
+      const receipt = await contractService.getTransactionReceipt(hash);
 
       res.status(200).json({
         status: 'success',
-        message: 'Trade cancellation transaction sent',
-        data: { transactionHash: receipt.transactionHash },
+        message: 'Purchase confirmation transaction sent',
+        data: {
+          transactionHash: hash,
+          receipt: receipt,
+        },
       });
     } catch (error) {
-      console.error('Error in cancelTrade controller:', error);
+      console.error('Error in confirmPurchase controller:', error);
+      next(error);
+    }
+  }
+
+  static async cancelPurchase(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { purchaseId } = req.params; // Changed from tradeId to purchaseId
+
+      if (
+        !purchaseId ||
+        isNaN(parseInt(purchaseId, 10)) ||
+        parseInt(purchaseId, 10) < 0
+      ) {
+        return next(
+          new CustomError('Valid Purchase ID is required', 400, 'fail'),
+        );
+      }
+
+      const hash = await contractService.cancelPurchase(BigInt(purchaseId));
+      const receipt = await contractService.getTransactionReceipt(hash);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Purchase cancellation transaction sent',
+        data: {
+          transactionHash: hash,
+          receipt: receipt,
+        },
+      });
+    } catch (error) {
+      console.error('Error in cancelPurchase controller:', error);
       next(error);
     }
   }
 
   static async raiseDispute(req: Request, res: Response, next: NextFunction) {
     try {
-      const { tradeId } = req.params;
+      const { purchaseId } = req.params; // Changed from tradeId to purchaseId
 
-      if (!tradeId || isNaN(parseInt(tradeId, 10)) || parseInt(tradeId, 10) < 0) {
-        return next(new CustomError('Valid Trade ID is required', 400, 'fail'));
+      if (
+        !purchaseId ||
+        isNaN(parseInt(purchaseId, 10)) ||
+        parseInt(purchaseId, 10) < 0
+      ) {
+        return next(
+          new CustomError('Valid Purchase ID is required', 400, 'fail'),
+        );
       }
 
-      const receipt = await contractService.raiseDispute(tradeId);
+      const hash = await contractService.raiseDispute(BigInt(purchaseId));
+      const receipt = await contractService.getTransactionReceipt(hash);
 
       res.status(200).json({
         status: 'success',
         message: 'Dispute raising transaction sent',
-        data: { transactionHash: receipt.transactionHash },
+        data: {
+          transactionHash: hash,
+          receipt: receipt,
+        },
       });
     } catch (error) {
       console.error('Error in raiseDispute controller:', error);
@@ -323,15 +416,44 @@ export class ContractController {
     try {
       const { tradeId } = req.params;
 
-      if (!tradeId || isNaN(parseInt(tradeId, 10)) || parseInt(tradeId, 10) < 0) {
+      if (
+        !tradeId ||
+        isNaN(parseInt(tradeId, 10)) ||
+        parseInt(tradeId, 10) < 0
+      ) {
         return next(new CustomError('Valid Trade ID is required', 400, 'fail'));
       }
 
-      const tradeDetails = await contractService.getTrade(tradeId);
+      const tradeDetails = await contractService.getTrade(parseInt(tradeId, 10));
+      console.log('Trade details:', tradeDetails);
+
+      // Format the response to include human-readable amounts
+      const formattedTrade = {
+        ...tradeDetails,
+        productCostFormatted: contractService.formatUSDT(
+          tradeDetails.productCost,
+        ),
+        escrowFeeFormatted: contractService.formatUSDT(tradeDetails.escrowFee),
+        logisticsCostsFormatted: tradeDetails.logisticsCosts.map((cost) =>
+          contractService.formatUSDT(cost),
+        ),
+        // totalQuantity: tradeDetails.totalQuantity.toString(),
+        totalQuantity: JSON.stringify((tradeDetails.totalQuantity).toString()), 
+        // remainingQuantity: tradeDetails.remainingQuantity.toString(),
+        remainingQuantity: JSON.stringify((tradeDetails.remainingQuantity).toString()),
+        // purchaseIds: tradeDetails.purchaseIds.map((id) => id.toString()),
+        purchaseIds: JSON.stringify(tradeDetails.purchaseIds.map((id) => id.toString())),
+        logisticsProviders: tradeDetails.logisticsProviders.map((provider) => provider.toString()),
+        // logisticsCosts: tradeDetails.logisticsCosts.map((cost) => cost.toString()),  
+        logisticsCosts: JSON.stringify(tradeDetails.logisticsCosts.map((cost) => cost.toString())),
+        productCost: JSON.stringify(tradeDetails.productCost.toString()),
+        escrowFee: JSON.stringify(tradeDetails.escrowFee.toString()),
+        purchaseId: JSON.stringify(tradeDetails.purchaseIds.map((provider) => provider.toString())),
+      };
 
       res.status(200).json({
         status: 'success',
-        data: tradeDetails,
+        data: formattedTrade,
       });
     } catch (error) {
       console.error('Error in getTradeDetails controller:', error);
@@ -345,76 +467,291 @@ export class ContractController {
     }
   }
 
-  static async getTradesByBuyer(
+  static async getPurchaseDetails(
     req: Request,
     res: Response,
     next: NextFunction,
   ) {
     try {
-      const trades = await contractService.getTradesByBuyer();
+      const { purchaseId } = req.params;
+
+      if (
+        !purchaseId ||
+        isNaN(parseInt(purchaseId, 10)) ||
+        parseInt(purchaseId, 10) < 0
+      ) {
+        return next(
+          new CustomError('Valid Purchase ID is required', 400, 'fail'),
+        );
+      }
+
+      const purchaseDetails = await contractService.getPurchase(
+        BigInt(purchaseId),
+      );
+
+      // Format the response to include human-readable amounts
+      const formattedPurchase = {
+        ...purchaseDetails,
+        purchaseId: purchaseDetails.purchaseId.toString(),
+        tradeId: purchaseDetails.tradeId.toString(),
+        quantity: purchaseDetails.quantity.toString(),
+        totalAmountFormatted: contractService.formatUSDT(
+          purchaseDetails.totalAmount,
+        ),
+        logisticsCostFormatted: contractService.formatUSDT(
+          purchaseDetails.logisticsCost,
+        ),
+      };
 
       res.status(200).json({
         status: 'success',
-        data: trades,
+        data: formattedPurchase,
       });
     } catch (error) {
-      console.error('Error in getTradesByBuyer controller:', error);
+      console.error('Error in getPurchaseDetails controller:', error);
+      if (
+        error instanceof Error &&
+        error.message.includes('Failed to get purchase')
+      ) {
+        return next(new CustomError('Purchase not found', 404, 'fail'));
+      }
       next(error);
     }
   }
 
-  static async getTradesBySeller(
+  static async getBuyerPurchases(
     req: Request,
     res: Response,
     next: NextFunction,
   ) {
     try {
-      const trades = await contractService.getTradesBySeller();
+      const purchases = await contractService.getBuyerPurchases();
+
+      // Format the purchases for better readability
+      const formattedPurchases = purchases.map((purchase) => ({
+        ...purchase,
+        purchaseId: purchase.purchaseId.toString(),
+        tradeId: purchase.tradeId.toString(),
+        quantity: purchase.quantity.toString(),
+        totalAmountFormatted: contractService.formatUSDT(purchase.totalAmount),
+        logisticsCostFormatted: contractService.formatUSDT(
+          purchase.logisticsCost,
+        ),
+      }));
 
       res.status(200).json({
         status: 'success',
-        data: trades,
+        data: formattedPurchases,
       });
     } catch (error) {
-      console.error('Error in getTradesBySeller controller:', error);
+      console.error('Error in getBuyerPurchases controller:', error);
       next(error);
     }
   }
 
-  static async withdrawEscrowFeesETH(
+  static async getSellerTrades(
     req: Request,
     res: Response,
     next: NextFunction,
   ) {
     try {
-      const receipt = await contractService.withdrawEscrowFeesETH();
+      const trades = await contractService.getSellerTrades();
+
+      // Format the trades for better readability
+      const formattedTrades = trades.map((trade) => ({
+        ...trade,
+        productCostFormatted: contractService.formatUSDT(trade.productCost),
+        escrowFeeFormatted: contractService.formatUSDT(trade.escrowFee),
+        logisticsCostsFormatted: trade.logisticsCosts.map((cost) =>
+          contractService.formatUSDT(cost),
+        ),
+        totalQuantity: trade.totalQuantity.toString(),
+        remainingQuantity: trade.remainingQuantity.toString(),
+        purchaseIds: trade.purchaseIds.map((id) => id.toString()),
+      }));
 
       res.status(200).json({
         status: 'success',
-        message: 'ETH escrow fees withdrawal transaction sent',
-        data: { transactionHash: receipt.transactionHash },
+        data: formattedTrades,
       });
     } catch (error) {
-      console.error('Error in withdrawEscrowFeesETH controller:', error);
+      console.error('Error in getSellerTrades controller:', error);
       next(error);
     }
   }
 
-  static async withdrawEscrowFeesUSDT(
+  static async getProviderTrades(
     req: Request,
     res: Response,
     next: NextFunction,
   ) {
     try {
-      const receipt = await contractService.withdrawEscrowFeesUSDT();
+      const purchases = await contractService.getProviderTrades();
+
+      // Format the purchases for better readability
+      const formattedPurchases = purchases.map((purchase) => ({
+        ...purchase,
+        purchaseId: purchase.purchaseId.toString(),
+        tradeId: purchase.tradeId.toString(),
+        quantity: purchase.quantity.toString(),
+        totalAmountFormatted: contractService.formatUSDT(purchase.totalAmount),
+        logisticsCostFormatted: contractService.formatUSDT(
+          purchase.logisticsCost,
+        ),
+      }));
 
       res.status(200).json({
         status: 'success',
-        message: 'USDT escrow fees withdrawal transaction sent',
-        data: { transactionHash: receipt.transactionHash },
+        data: formattedPurchases,
       });
     } catch (error) {
-      console.error('Error in withdrawEscrowFeesUSDT controller:', error);
+      console.error('Error in getProviderTrades controller:', error);
+      next(error);
+    }
+  }
+
+  static async withdrawEscrowFees(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const hash = await contractService.withdrawEscrowFees();
+      const receipt = await contractService.getTransactionReceipt(hash);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Escrow fees withdrawal transaction sent',
+        data: {
+          transactionHash: hash,
+          receipt: receipt,
+        },
+      });
+    } catch (error) {
+      console.error('Error in withdrawEscrowFees controller:', error);
+      next(error);
+    }
+  }
+
+  // Registration endpoints
+  static async registerBuyer(req: Request, res: Response, next: NextFunction) {
+    try {
+      const hash = await contractService.registerBuyer();
+      const receipt = await contractService.getTransactionReceipt(hash);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Buyer registration transaction sent',
+        data: {
+          transactionHash: hash,
+          receipt: receipt,
+        },
+      });
+    } catch (error) {
+      console.error('Error in registerBuyer controller:', error);
+      next(error);
+    }
+  }
+
+  static async registerSeller(req: Request, res: Response, next: NextFunction) {
+    try {
+      const hash = await contractService.registerSeller();
+      const receipt = await contractService.getTransactionReceipt(hash);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Seller registration transaction sent',
+        data: {
+          transactionHash: hash,
+          receipt: receipt,
+        },
+      });
+    } catch (error) {
+      console.error('Error in registerSeller controller:', error);
+      next(error);
+    }
+  }
+
+  // USDT utility endpoints
+  static async getUSDTBalance(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { address } = req.params;
+
+      if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
+        return next(new CustomError('Valid address is required', 400, 'fail'));
+      }
+
+      const balance = await contractService.getUSDTBalance(address as `0x${string}`);
+
+      res.status(200).json({
+        status: 'success',
+        data: {
+          address,
+          balance: balance.toString(),
+          balanceFormatted: contractService.formatUSDT(balance),
+        },
+      });
+    } catch (error) {
+      console.error('Error in getUSDTBalance controller:', error);
+      next(error);
+    }
+  }
+
+   // Enhanced balance checking endpoint
+  //  static async checkAccountBalances(req: Request, res: Response, next: NextFunction) {
+  //   try {
+  //     const { address } = req.params;
+      
+  //     // Use provided address or default to service account
+  //     const targetAddress = address ? address as `0x${string}` : undefined;
+      
+  //     if (address && !/^0x[a-fA-F0-9]{40}$/.test(address)) {
+  //       return next(new CustomError('Valid address is required', 400, 'fail'));
+  //     }
+
+  //     const balances = await contractService.checkBalances(targetAddress);
+
+  //     res.status(200).json({
+  //       status: 'success',
+  //       data: {
+  //         address: targetAddress || contractService.getAccountAddress(),
+  //         ...balances,
+  //         recommendations: balances.hasEnoughForGas 
+  //           ? 'Account has sufficient balance for transactions'
+  //           : 'Please add more CELO to your account for gas fees'
+  //       },
+  //     });
+  //   } catch (error) {
+  //     console.error('Error in checkAccountBalances controller:', error);
+  //     next(error);
+  //   }
+  // }
+
+
+  static async approveUSDT(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { amount } = req.body;
+
+      if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+        return next(new CustomError('Valid amount is required', 400, 'fail'));
+      }
+
+      const hash = await contractService.approveUSDT(
+        contractService.parseUSDT(amount.toString()),
+      );
+      const receipt = await contractService.getTransactionReceipt(hash);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'USDT approval transaction sent',
+        data: {
+          transactionHash: hash,
+          amount: amount.toString(),
+          receipt: receipt,
+        },
+      });
+    } catch (error) {
+      console.error('Error in approveUSDT controller:', error);
       next(error);
     }
   }

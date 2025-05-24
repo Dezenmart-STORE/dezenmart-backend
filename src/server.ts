@@ -17,12 +17,12 @@ RewardService.initialize(webSocketService);
 
 export const contractService = new DezenMartContractService();
 
-contractService.listenForEvents().catch((error) => {
-  console.error('Error listening for events:', error);
-});
+// contractService.listenForEvents().catch((error) => {
+//   console.error('Error listening for events:', error);
+// });
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`WebSocket server is running on ws://localhost: ${PORT}`);
-  console.log(`Contact Service connected for address: ${config}`);
+  console.log(`Contact Service connected for address: ${config.CONTRACT_ADDRESS}`);
 });
