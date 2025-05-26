@@ -76,7 +76,6 @@ export class DezenMartContractService {
   async getLogisticsProviders(): Promise<string[]> {
     const contract = await this.getContract();
     const providers: string[] = await contract.methods.getLogisticsProviders().call();
-    console.log('Logistics providers:', providers);
     return providers;
   }
 
@@ -147,7 +146,6 @@ export class DezenMartContractService {
 
     // Get the trade details to calculate the required payment
     const trade = await this.getTrade(tradeId);
-    console.log('Trade details:', trade);
 
     if (parseInt(trade.remainingQuantity) < parseInt(quantity)) {
       throw new Error('Insufficient quantity available');
@@ -225,13 +223,7 @@ export class DezenMartContractService {
         quantity,
         logisticsProvider,
       );
-      console.log('Executing transaction...');
-      // const receipt = await this.sendTransaction(tx, trade.isUSDT ? '0' : totalAmount);
-      // console.log('Buy trade receipt:', receipt);
-      // return receipt;
-      // console.log('Transaction:', tx);
       const buyTradeReceipt = await this.sendTransaction(tx)
-      console.log('Buy trade receipt:', buyTradeReceipt);
       return buyTradeReceipt;
       // return await this.sendTransaction(tx);
     // }
@@ -268,8 +260,6 @@ export class DezenMartContractService {
 
     // Check if approval was successful
     const approvalSuccess = receipt.status;
-    console.log(
-      `USDT approval ${approvalSuccess ? 'successful' : 'failed'}. Transaction hash: ${receipt.transactionHash}`,)
 
     return receipt;
   }
@@ -413,7 +403,6 @@ export class DezenMartContractService {
       let gasEstimate;
       try {
         gasEstimate = await tx.estimateGas({ from, value });
-        console.log('Gas estimate:', gasEstimate);
       } catch (error) {
         console.error('Gas estimation error:', error);
       }
@@ -423,13 +412,6 @@ export class DezenMartContractService {
         from,
         gas: Math.round(gasEstimate * 1.2), // Add 20% buffer
         value,
-      });
-
-      console.log('Transaction receipt:', {
-        transactionHash: receipt.transactionHash,
-        blockNumber: receipt.blockNumber,
-        gasUsed: receipt.gasUsed,
-        status: receipt.status,
       });
 
       return receipt;
@@ -445,7 +427,6 @@ export class DezenMartContractService {
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval);
       this.pollingInterval = null;
-      console.log('Stopped event polling.');
     }
   }
 
@@ -475,9 +456,6 @@ export class DezenMartContractService {
 
         // Avoid querying if fromBlock would be greater than currentBlock
         if (typeof fromBlock === 'number' && fromBlock > currentBlock) {
-          console.log(
-            `Polling: No new blocks since ${this.lastCheckedBlock}. Current: ${currentBlock}`,
-          );
           return;
         }
 
@@ -497,7 +475,6 @@ export class DezenMartContractService {
         );
 
         for (const event of tradeCreatedEvents) {
-          console.log('[Poll] TradeCreated:', event.returnValues);
           if (eventCallbacks.onTradeCreated) {
             eventCallbacks.onTradeCreated(event);
           }
@@ -529,7 +506,6 @@ export class DezenMartContractService {
         );
 
         for (const event of deliveryConfirmedEvents) {
-          console.log('[Poll] DeliveryConfirmed:', event.returnValues);
           if (eventCallbacks.onDeliveryConfirmed) {
             eventCallbacks.onDeliveryConfirmed(event);
           }
@@ -545,7 +521,6 @@ export class DezenMartContractService {
         );
 
         for (const event of disputeRaisedEvents) {
-          console.log('[Poll] DisputeRaised:', event.returnValues);
           if (eventCallbacks.onDisputeRaised) {
             eventCallbacks.onDisputeRaised(event);
           }

@@ -11,41 +11,77 @@
         "stateMutability": "nonpayable",
         "type": "constructor"
       },
-      { "inputs": [], "name": "BuyerIsSeller", "type": "error" },
+      {
+        "inputs": [],
+        "name": "BuyerIsSeller",
+        "type": "error"
+      },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "requested", "type": "uint256" },
-          { "internalType": "uint256", "name": "available", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "requested",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "available",
+            "type": "uint256"
+          }
         ],
         "name": "InsufficientQuantity",
         "type": "error"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "needed", "type": "uint256" },
-          { "internalType": "uint256", "name": "allowance", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "needed",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "allowance",
+            "type": "uint256"
+          }
         ],
         "name": "InsufficientUSDTAllowance",
         "type": "error"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "needed", "type": "uint256" },
-          { "internalType": "uint256", "name": "balance", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "needed",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "balance",
+            "type": "uint256"
+          }
         ],
         "name": "InsufficientUSDTBalance",
         "type": "error"
       },
       {
         "inputs": [
-          { "internalType": "address", "name": "provider", "type": "address" }
+          {
+            "internalType": "address",
+            "name": "provider",
+            "type": "address"
+          }
         ],
         "name": "InvalidLogisticsProvider",
         "type": "error"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          }
         ],
         "name": "InvalidPurchaseId",
         "type": "error"
@@ -68,21 +104,33 @@
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "quantity", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "quantity",
+            "type": "uint256"
+          }
         ],
         "name": "InvalidQuantity",
         "type": "error"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "tradeId", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "tradeId",
+            "type": "uint256"
+          }
         ],
         "name": "InvalidTradeId",
         "type": "error"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "tradeId", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "tradeId",
+            "type": "uint256"
+          },
           {
             "internalType": "string",
             "name": "expectedState",
@@ -108,39 +156,67 @@
         "name": "MismatchedArrays",
         "type": "error"
       },
-      { "inputs": [], "name": "NoLogisticsProviders", "type": "error" },
+      {
+        "inputs": [],
+        "name": "NoLogisticsProviders",
+        "type": "error"
+      },
       {
         "inputs": [
-          { "internalType": "address", "name": "caller", "type": "address" },
-          { "internalType": "string", "name": "role", "type": "string" }
+          {
+            "internalType": "address",
+            "name": "caller",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "role",
+            "type": "string"
+          }
         ],
         "name": "NotAuthorized",
         "type": "error"
       },
       {
         "inputs": [
-          { "internalType": "address", "name": "owner", "type": "address" }
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          }
         ],
         "name": "OwnableInvalidOwner",
         "type": "error"
       },
       {
         "inputs": [
-          { "internalType": "address", "name": "account", "type": "address" }
+          {
+            "internalType": "address",
+            "name": "account",
+            "type": "address"
+          }
         ],
         "name": "OwnableUnauthorizedAccount",
         "type": "error"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          }
         ],
         "name": "PurchaseNotFound",
         "type": "error"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "tradeId", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "tradeId",
+            "type": "uint256"
+          }
         ],
         "name": "TradeNotFound",
         "type": "error"
@@ -395,7 +471,11 @@
         "inputs": [],
         "name": "BASIS_POINTS",
         "outputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
@@ -404,15 +484,27 @@
         "inputs": [],
         "name": "ESCROW_FEE_PERCENT",
         "outputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "tradeId", "type": "uint256" },
-          { "internalType": "uint256", "name": "quantity", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "tradeId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quantity",
+            "type": "uint256"
+          },
           {
             "internalType": "address",
             "name": "logisticsProvider",
@@ -421,35 +513,65 @@
         ],
         "name": "buyTrade",
         "outputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "stateMutability": "nonpayable",
         "type": "function"
       },
       {
         "inputs": [
-          { "internalType": "address", "name": "", "type": "address" },
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "name": "buyerPurchaseIds",
         "outputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
       },
       {
         "inputs": [
-          { "internalType": "address", "name": "", "type": "address" }
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
         ],
         "name": "buyers",
-        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
         "stateMutability": "view",
         "type": "function"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          }
         ],
         "name": "cancelPurchase",
         "outputs": [],
@@ -458,7 +580,11 @@
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          }
         ],
         "name": "confirmDelivery",
         "outputs": [],
@@ -467,7 +593,11 @@
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          }
         ],
         "name": "confirmPurchase",
         "outputs": [],
@@ -499,17 +629,50 @@
         ],
         "name": "createTrade",
         "outputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "stateMutability": "nonpayable",
         "type": "function"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "name": "disputesResolved",
-        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "buyer",
+            "type": "address"
+          }
+        ],
+        "name": "getBuyerAllIds",
+        "outputs": [
+          {
+            "internalType": "uint256[][]",
+            "name": "",
+            "type": "uint256[][]"
+          }
+        ],
         "stateMutability": "view",
         "type": "function"
       },
@@ -529,7 +692,11 @@
                 "name": "tradeId",
                 "type": "uint256"
               },
-              { "internalType": "address", "name": "buyer", "type": "address" },
+              {
+                "internalType": "address",
+                "name": "buyer",
+                "type": "address"
+              },
               {
                 "internalType": "uint256",
                 "name": "quantity",
@@ -540,9 +707,21 @@
                 "name": "totalAmount",
                 "type": "uint256"
               },
-              { "internalType": "bool", "name": "delivered", "type": "bool" },
-              { "internalType": "bool", "name": "confirmed", "type": "bool" },
-              { "internalType": "bool", "name": "disputed", "type": "bool" },
+              {
+                "internalType": "bool",
+                "name": "delivered",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "confirmed",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "disputed",
+                "type": "bool"
+              },
               {
                 "internalType": "address",
                 "name": "chosenLogisticsProvider",
@@ -566,7 +745,11 @@
         "inputs": [],
         "name": "getLogisticsProviders",
         "outputs": [
-          { "internalType": "address[]", "name": "", "type": "address[]" }
+          {
+            "internalType": "address[]",
+            "name": "",
+            "type": "address[]"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
@@ -587,7 +770,11 @@
                 "name": "tradeId",
                 "type": "uint256"
               },
-              { "internalType": "address", "name": "buyer", "type": "address" },
+              {
+                "internalType": "address",
+                "name": "buyer",
+                "type": "address"
+              },
               {
                 "internalType": "uint256",
                 "name": "quantity",
@@ -598,9 +785,21 @@
                 "name": "totalAmount",
                 "type": "uint256"
               },
-              { "internalType": "bool", "name": "delivered", "type": "bool" },
-              { "internalType": "bool", "name": "confirmed", "type": "bool" },
-              { "internalType": "bool", "name": "disputed", "type": "bool" },
+              {
+                "internalType": "bool",
+                "name": "delivered",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "confirmed",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "disputed",
+                "type": "bool"
+              },
               {
                 "internalType": "address",
                 "name": "chosenLogisticsProvider",
@@ -622,7 +821,11 @@
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          }
         ],
         "name": "getPurchase",
         "outputs": [
@@ -638,7 +841,11 @@
                 "name": "tradeId",
                 "type": "uint256"
               },
-              { "internalType": "address", "name": "buyer", "type": "address" },
+              {
+                "internalType": "address",
+                "name": "buyer",
+                "type": "address"
+              },
               {
                 "internalType": "uint256",
                 "name": "quantity",
@@ -649,9 +856,21 @@
                 "name": "totalAmount",
                 "type": "uint256"
               },
-              { "internalType": "bool", "name": "delivered", "type": "bool" },
-              { "internalType": "bool", "name": "confirmed", "type": "bool" },
-              { "internalType": "bool", "name": "disputed", "type": "bool" },
+              {
+                "internalType": "bool",
+                "name": "delivered",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "confirmed",
+                "type": "bool"
+              },
+              {
+                "internalType": "bool",
+                "name": "disputed",
+                "type": "bool"
+              },
               {
                 "internalType": "address",
                 "name": "chosenLogisticsProvider",
@@ -712,7 +931,11 @@
                 "name": "remainingQuantity",
                 "type": "uint256"
               },
-              { "internalType": "bool", "name": "active", "type": "bool" },
+              {
+                "internalType": "bool",
+                "name": "active",
+                "type": "bool"
+              },
               {
                 "internalType": "uint256[]",
                 "name": "purchaseIds",
@@ -729,7 +952,11 @@
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "tradeId", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "tradeId",
+            "type": "uint256"
+          }
         ],
         "name": "getTrade",
         "outputs": [
@@ -770,7 +997,11 @@
                 "name": "remainingQuantity",
                 "type": "uint256"
               },
-              { "internalType": "bool", "name": "active", "type": "bool" },
+              {
+                "internalType": "bool",
+                "name": "active",
+                "type": "bool"
+              },
               {
                 "internalType": "uint256[]",
                 "name": "purchaseIds",
@@ -787,10 +1018,20 @@
       },
       {
         "inputs": [
-          { "internalType": "address", "name": "", "type": "address" }
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
         ],
         "name": "logisticsProviders",
-        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
         "stateMutability": "view",
         "type": "function"
       },
@@ -798,19 +1039,35 @@
         "inputs": [],
         "name": "owner",
         "outputs": [
-          { "internalType": "address", "name": "", "type": "address" }
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
       },
       {
         "inputs": [
-          { "internalType": "address", "name": "", "type": "address" },
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "name": "providerTradeIds",
         "outputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
@@ -819,14 +1076,22 @@
         "inputs": [],
         "name": "purchaseCounter",
         "outputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "name": "purchases",
         "outputs": [
@@ -835,17 +1100,41 @@
             "name": "purchaseId",
             "type": "uint256"
           },
-          { "internalType": "uint256", "name": "tradeId", "type": "uint256" },
-          { "internalType": "address", "name": "buyer", "type": "address" },
-          { "internalType": "uint256", "name": "quantity", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "tradeId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "buyer",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quantity",
+            "type": "uint256"
+          },
           {
             "internalType": "uint256",
             "name": "totalAmount",
             "type": "uint256"
           },
-          { "internalType": "bool", "name": "delivered", "type": "bool" },
-          { "internalType": "bool", "name": "confirmed", "type": "bool" },
-          { "internalType": "bool", "name": "disputed", "type": "bool" },
+          {
+            "internalType": "bool",
+            "name": "delivered",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "confirmed",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "disputed",
+            "type": "bool"
+          },
           {
             "internalType": "address",
             "name": "chosenLogisticsProvider",
@@ -862,7 +1151,11 @@
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "purchaseId", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "purchaseId",
+            "type": "uint256"
+          }
         ],
         "name": "raiseDispute",
         "outputs": [],
@@ -878,7 +1171,11 @@
       },
       {
         "inputs": [
-          { "internalType": "address", "name": "provider", "type": "address" }
+          {
+            "internalType": "address",
+            "name": "provider",
+            "type": "address"
+          }
         ],
         "name": "registerLogisticsProvider",
         "outputs": [],
@@ -894,11 +1191,19 @@
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "name": "registeredProviders",
         "outputs": [
-          { "internalType": "address", "name": "", "type": "address" }
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
@@ -917,7 +1222,11 @@
             "name": "purchaseId",
             "type": "uint256"
           },
-          { "internalType": "address", "name": "winner", "type": "address" }
+          {
+            "internalType": "address",
+            "name": "winner",
+            "type": "address"
+          }
         ],
         "name": "resolveDispute",
         "outputs": [],
@@ -926,22 +1235,44 @@
       },
       {
         "inputs": [
-          { "internalType": "address", "name": "", "type": "address" },
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "name": "sellerTradeIds",
         "outputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
       },
       {
         "inputs": [
-          { "internalType": "address", "name": "", "type": "address" }
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
         ],
         "name": "sellers",
-        "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
         "stateMutability": "view",
         "type": "function"
       },
@@ -949,24 +1280,40 @@
         "inputs": [],
         "name": "tradeCounter",
         "outputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
       },
       {
         "inputs": [
-          { "internalType": "uint256", "name": "", "type": "uint256" }
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
         ],
         "name": "trades",
         "outputs": [
-          { "internalType": "address", "name": "seller", "type": "address" },
+          {
+            "internalType": "address",
+            "name": "seller",
+            "type": "address"
+          },
           {
             "internalType": "uint256",
             "name": "productCost",
             "type": "uint256"
           },
-          { "internalType": "uint256", "name": "escrowFee", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "escrowFee",
+            "type": "uint256"
+          },
           {
             "internalType": "uint256",
             "name": "totalQuantity",
@@ -977,14 +1324,22 @@
             "name": "remainingQuantity",
             "type": "uint256"
           },
-          { "internalType": "bool", "name": "active", "type": "bool" }
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
       },
       {
         "inputs": [
-          { "internalType": "address", "name": "newOwner", "type": "address" }
+          {
+            "internalType": "address",
+            "name": "newOwner",
+            "type": "address"
+          }
         ],
         "name": "transferOwnership",
         "outputs": [],
@@ -995,7 +1350,11 @@
         "inputs": [],
         "name": "usdt",
         "outputs": [
-          { "internalType": "contract IERC20", "name": "", "type": "address" }
+          {
+            "internalType": "contract IERC20",
+            "name": "",
+            "type": "address"
+          }
         ],
         "stateMutability": "view",
         "type": "function"
