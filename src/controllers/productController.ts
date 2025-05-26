@@ -33,6 +33,52 @@ export class ProductController {
       isSponsored
     } = req.body;
  
+    const parseArrayField = (fieldValue: any): string[] => {
+      if (fieldValue === undefined || fieldValue === null) {
+        return [];
+      }
+      if (Array.isArray(fieldValue)) {
+        return fieldValue.map(String);
+      }
+      if (typeof fieldValue === 'string') {
+        try {
+          const parsed = JSON.parse(fieldValue);
+          if (Array.isArray(parsed)) {
+            return parsed.map(String);
+          } else {
+            return [String(parsed)];
+          }
+        } catch (e) {
+          if (fieldValue.includes(',')) {
+            return fieldValue.split(',').map(s => String(s.trim()));
+          } else {
+            if (fieldValue.trim() === '') return [];
+            return [String(fieldValue)];
+          }
+        }
+      }
+      // For other types like number, convert to string and wrap in array
+      return [String(fieldValue)];
+    };
+
+    const finalLogisticsCosts = parseArrayField(logisticsCosts);
+    const finalLogisticsProviders = parseArrayField(logisticsProviders);
+
+    // Validate required fields after parsing
+    if (!name) throw new CustomError('Product name is required', 400, 'fail');
+    if (price === undefined || price === null || isNaN(Number(price))) throw new CustomError('Valid product price is required', 400, 'fail');
+    if (stock === undefined || stock === null || isNaN(Number(stock))) throw new CustomError('Valid product stock is required', 400, 'fail');
+    if (!category) throw new CustomError('Product category is required', 400, 'fail');
+    if (!sellerWalletAddress) throw new CustomError('Seller wallet address is required', 400, 'fail');
+    if (finalLogisticsProviders.length === 0 && finalLogisticsCosts.length > 0) {
+        throw new CustomError('Logistics providers are required if logistics costs are specified.', 400, 'fail');
+    }
+    if (finalLogisticsProviders.length > 0 && finalLogisticsCosts.length === 0) {
+        throw new CustomError('Logistics costs are required if logistics providers are specified.', 400, 'fail');
+    }
+    if (finalLogisticsProviders.length !== finalLogisticsCosts.length) {
+        throw new CustomError('Logistics providers and costs must have the same number of entries.', 400, 'fail');
+    }
 
     const productInput = {
       name,
@@ -46,7 +92,7 @@ export class ProductController {
       images: imageUrls,
       logisticsCost: logisticsCosts,
       isSponsored: Boolean(isSponsored || false),
-      logisticsProviders,
+      logisticsProviders: finalLogisticsProviders,
       useUSDT: Boolean(useUSDT || false),
     };
     const product = await ProductService.createProduct(productInput as any);

@@ -30,9 +30,10 @@
     "mongoose": "^8.13.2",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.2",
-    "multer-storage-cloudinary": "^4.0.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "viem": "^2.30.0",
+    "multer-storage-cloudinary": "^4.0.0",
     "web3": "^1.10.4",
     "winston": "^3.17.0",
     "ws": "^8.18.1"

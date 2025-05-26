@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { Address } from 'viem';
 
 dotenv.config();
 
@@ -11,7 +12,8 @@ interface Config {
   CELO_NODE_URL?: string;
   CONTRACT_ADDRESS?: string;
   USDT_ADDRESS?: string;
-  PRIVATE_KEY?: string;
+  PRIVATE_KEY?: Address;
+  IS_TESTNET: boolean;
 }
 
 const config: Config = {
@@ -23,7 +25,10 @@ const config: Config = {
   CELO_NODE_URL: process.env.CELO_NODE_URL,
   CONTRACT_ADDRESS: process.env.CONTRACT_ADDRESS,
   USDT_ADDRESS: process.env.USDT_ADDRESS,
-  PRIVATE_KEY: process.env.PRIVATE_KEY,
+  PRIVATE_KEY: process.env.PRIVATE_KEY && process.env.PRIVATE_KEY.startsWith('0x')
+    ? process.env.PRIVATE_KEY as Address
+    : undefined,
+  IS_TESTNET: process.env.IS_TESTNET === 'true',
 };
 
 export default config;
