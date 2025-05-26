@@ -83,7 +83,7 @@ router.get(
 // --- Read Routes for Purchases ---
 router.get(
   '/purchases/:purchaseId', // New endpoint to get individual purchase details
-  /**authenticate,**/
+  authenticate,
   ContractController.getPurchaseDetails,
 );
 

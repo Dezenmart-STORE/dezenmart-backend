@@ -2,6 +2,30 @@ import { Request, Response, NextFunction } from 'express';
 import { contractService } from '../server';
 import { CustomError } from '../middlewares/errorHandler';
 
+function serializeBigInt(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (typeof obj === 'bigint') {
+    return obj.toString();
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(serializeBigInt);
+  }
+  
+  if (typeof obj === 'object') {
+    const serialized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      serialized[key] = serializeBigInt(value);
+    }
+    return serialized;
+  }
+  
+  return obj;
+}
+
 export class ContractController {
   static async registerLogisticsProvider(
     req: Request,
@@ -15,7 +39,6 @@ export class ContractController {
           new CustomError('Valid provider address is required', 400, 'fail'),
         );
       }
-      console.log(`API: Registering logistics provider ${providerAddress}`);
 
       const hash =
         await contractService.registerLogisticsProvider(providerAddress);
@@ -26,7 +49,7 @@ export class ContractController {
         message: 'Logistics provider registration transaction sent',
         data: {
           transactionHash: hash,
-          receipt: receipt,
+          receipt: serializeBigInt(receipt)
         },
       });
     } catch (error) {
@@ -54,7 +77,7 @@ export class ContractController {
 
   static async resolveDispute(req: Request, res: Response, next: NextFunction) {
     try {
-      const { purchaseId } = req.params; // Changed from tradeId to purchaseId
+      const { purchaseId } = req.params;
       const { winner } = req.body;
 
       if (
@@ -72,10 +95,6 @@ export class ContractController {
         );
       }
 
-      console.log(
-        `API: Resolving dispute for purchase ${purchaseId}, winner: ${winner}`,
-      );
-
       const hash = await contractService.resolveDispute(
         BigInt(purchaseId),
         winner,
@@ -87,7 +106,7 @@ export class ContractController {
         message: 'Dispute resolution transaction sent',
         data: {
           transactionHash: hash,
-          receipt: receipt,
+          receipt: serializeBigInt(receipt)
         },
       });
     } catch (error) {
@@ -179,13 +198,6 @@ export class ContractController {
         );
       }
 
-      console.log('Creating trade with params:', {
-        productCost,
-        logisticsProviders,
-        logisticsCosts,
-        totalQuantity,
-      });
-
       // Create the trade - now returns both hash and tradeId
       const { hash, tradeId } = await contractService.createTrade(
         productCost.toString(),
@@ -193,8 +205,6 @@ export class ContractController {
         logisticsCosts.map((cost: number) => cost.toString()),
         BigInt(totalQuantity),
       );
-
-      console.log(`Trade creation Tx sent: ${hash}. Trade ID: ${tradeId}`);
 
       res.status(201).json({
         status: 'success',
@@ -251,16 +261,12 @@ export class ContractController {
         );
       }
 
-      console.log('Trade details:', trade);
-
       // Buy the trade - now returns both hash and purchaseId
       const { hash, purchaseId } = await contractService.buyTrade(
         parseInt(tradeId, 10),
         BigInt(quantity),
         logisticsProvider,
       );
-
-      console.log(`Purchase created: ${purchaseId} with hash: ${hash}`);
 
       res.status(200).json({
         status: 'success',
@@ -282,7 +288,7 @@ export class ContractController {
     next: NextFunction,
   ) {
     try {
-      const { purchaseId } = req.params; // Changed from tradeId to purchaseId
+      const { purchaseId } = req.params;
       
       if (
         !purchaseId ||
@@ -302,7 +308,7 @@ export class ContractController {
         message: 'Delivery confirmation transaction sent',
         data: {
           transactionHash: hash,
-          receipt: receipt,
+          receipt: serializeBigInt(receipt)
         },
       });
     } catch (error) {
@@ -337,7 +343,7 @@ export class ContractController {
         message: 'Purchase confirmation transaction sent',
         data: {
           transactionHash: hash,
-          receipt: receipt,
+          receipt: serializeBigInt(receipt)
         },
       });
     } catch (error) {
@@ -348,7 +354,7 @@ export class ContractController {
 
   static async cancelPurchase(req: Request, res: Response, next: NextFunction) {
     try {
-      const { purchaseId } = req.params; // Changed from tradeId to purchaseId
+      const { purchaseId } = req.params;
 
       if (
         !purchaseId ||
@@ -368,7 +374,7 @@ export class ContractController {
         message: 'Purchase cancellation transaction sent',
         data: {
           transactionHash: hash,
-          receipt: receipt,
+          receipt: serializeBigInt(receipt)
         },
       });
     } catch (error) {
@@ -379,7 +385,7 @@ export class ContractController {
 
   static async raiseDispute(req: Request, res: Response, next: NextFunction) {
     try {
-      const { purchaseId } = req.params; // Changed from tradeId to purchaseId
+      const { purchaseId } = req.params;
 
       if (
         !purchaseId ||
@@ -399,7 +405,7 @@ export class ContractController {
         message: 'Dispute raising transaction sent',
         data: {
           transactionHash: hash,
-          receipt: receipt,
+          receipt: serializeBigInt(receipt)
         },
       });
     } catch (error) {
@@ -425,7 +431,6 @@ export class ContractController {
       }
 
       const tradeDetails = await contractService.getTrade(parseInt(tradeId, 10));
-      console.log('Trade details:', tradeDetails);
 
       // Format the response to include human-readable amounts
       const formattedTrade = {
@@ -437,14 +442,10 @@ export class ContractController {
         logisticsCostsFormatted: tradeDetails.logisticsCosts.map((cost) =>
           contractService.formatUSDT(cost),
         ),
-        // totalQuantity: tradeDetails.totalQuantity.toString(),
         totalQuantity: JSON.stringify((tradeDetails.totalQuantity).toString()), 
-        // remainingQuantity: tradeDetails.remainingQuantity.toString(),
         remainingQuantity: JSON.stringify((tradeDetails.remainingQuantity).toString()),
-        // purchaseIds: tradeDetails.purchaseIds.map((id) => id.toString()),
         purchaseIds: JSON.stringify(tradeDetails.purchaseIds.map((id) => id.toString())),
-        logisticsProviders: tradeDetails.logisticsProviders.map((provider) => provider.toString()),
-        // logisticsCosts: tradeDetails.logisticsCosts.map((cost) => cost.toString()),  
+        logisticsProviders: tradeDetails.logisticsProviders.map((provider) => provider.toString()), 
         logisticsCosts: JSON.stringify(tradeDetails.logisticsCosts.map((cost) => cost.toString())),
         productCost: JSON.stringify(tradeDetails.productCost.toString()),
         escrowFee: JSON.stringify(tradeDetails.escrowFee.toString()),
@@ -505,7 +506,7 @@ export class ContractController {
 
       res.status(200).json({
         status: 'success',
-        data: formattedPurchase,
+        data: serializeBigInt(formattedPurchase),
       });
     } catch (error) {
       console.error('Error in getPurchaseDetails controller:', error);
@@ -624,7 +625,7 @@ export class ContractController {
         message: 'Escrow fees withdrawal transaction sent',
         data: {
           transactionHash: hash,
-          receipt: receipt,
+          receipt: serializeBigInt(receipt)
         },
       });
     } catch (error) {
@@ -644,7 +645,7 @@ export class ContractController {
         message: 'Buyer registration transaction sent',
         data: {
           transactionHash: hash,
-          receipt: receipt,
+          receipt: serializeBigInt(receipt)
         },
       });
     } catch (error) {
@@ -663,7 +664,7 @@ export class ContractController {
         message: 'Seller registration transaction sent',
         data: {
           transactionHash: hash,
-          receipt: receipt,
+          receipt: serializeBigInt(receipt),
         },
       });
     } catch (error) {
@@ -747,7 +748,7 @@ export class ContractController {
         data: {
           transactionHash: hash,
           amount: amount.toString(),
-          receipt: receipt,
+          receipt: serializeBigInt(receipt)
         },
       });
     } catch (error) {

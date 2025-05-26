@@ -174,13 +174,13 @@ export class DezenMartContractService {
   // Helper to perform USDT reads
   private async readUSDTContract(
     functionName: 'allowance' | 'balanceOf',
-    args: readonly [`0x${string}`, `0x${string}`]
+    args: readonly [`0x${string}`, `0x${string}`] | readonly [`0x${string}`]
   ): Promise<bigint> {
     return await this.publicClient.readContract({
       address: config.USDT_ADDRESS as `0x${string}`,
       abi: USDT_ABI,
       functionName,
-      args: args
+      args: args as any,
     });
   }
 
@@ -302,7 +302,7 @@ export class DezenMartContractService {
   // --- USDT Functions ---
 
   async getUSDTBalance(address: Address): Promise<bigint> {
-    return (await this.readUSDTContract('balanceOf', [address, address])) as bigint;
+    return (await this.readUSDTContract('balanceOf', [address])) as bigint;
   }
 
   async getUSDTAllowance(owner: Address, spender: Address): Promise<bigint> {
@@ -377,39 +377,37 @@ export class DezenMartContractService {
     quantity: bigint,
     logisticsProvider: Address,
   ): Promise<{ hash: Hash; purchaseId: bigint }> {
+    this.ensureWalletClient();
+
     // Get trade details to calculate required approval
     const trade = await this.getTrade(tradeId);
-    console.log('Trade details:', trade);
 
     // Find the logistics cost for the chosen provider
     const providerIndex = trade.logisticsProviders.findIndex(
       (provider) => provider.toLowerCase() === logisticsProvider.toLowerCase(),
     );
-    console.log('Provider index:', providerIndex);
 
     if (providerIndex === -1) {
       throw new Error('Invalid logistics provider');
     }
 
     const logisticsCost = trade.logisticsCosts[providerIndex];
-    console.log('Logistics cost:', logisticsCost);
     const totalCost = (trade.productCost + logisticsCost) * quantity;
-    console.log('Total cost:', totalCost);
 
     // Check current allowance
     const currentAllowance = await this.getUSDTAllowance(
       this.account!.address,
       config.CONTRACT_ADDRESS as `0x${string}`,
     );
-    console.log('Current allowance:', currentAllowance);
 
     // Approve USDT if needed
     if (currentAllowance < totalCost) {
-      console.log(`Approving USDT: ${formatUnits(totalCost, 6)} USDT`);
-      await this.approveUSDT(totalCost);
+      const approvalHash = await this.approveUSDT(totalCost);
 
       // Wait for approval transaction to be confirmed
       await new Promise((resolve) => setTimeout(resolve, 3000));
+      const approvalReceipt = await this.getTransactionReceipt(approvalHash);
+      if (!approvalReceipt.status) throw new Error('USDT approval transaction failed');
     }
 
     const hash = await this.writeContract('buyTrade', [
@@ -417,11 +415,9 @@ export class DezenMartContractService {
       quantity,
       logisticsProvider,
     ]);
-    console.log('Transaction hash:', hash);
 
     // Wait for transaction receipt to get the purchase ID from events
     const receipt = await this.getTransactionReceipt(hash);
-    console.log('Transaction receipt:', receipt);
 
     // Find the PurchaseCreated event in the receipt
     const purchaseCreatedEvent = receipt.logs.find((log) => {
@@ -446,7 +442,6 @@ export class DezenMartContractService {
       data: purchaseCreatedEvent.data,
       topics: purchaseCreatedEvent.topics,
     });
-    console.log('Decoded PurchaseCreated event:', decoded);
 
     const purchaseId = (decoded.args as any).purchaseId as bigint;
 
