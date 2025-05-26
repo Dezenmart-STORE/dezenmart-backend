@@ -31,6 +31,7 @@ export class WatchlistService {
       .skip(skip)
       .limit(limit)
       .populate('product', 'name price images seller')
+      .populate('user', 'name email')
       .sort({ createdAt: -1 });
   }
 

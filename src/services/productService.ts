@@ -85,7 +85,10 @@ export class ProductService {
   }
 
   static async getProducts() {
-    return await Product.find();
+    return await Product.find().populate(
+      'seller',
+      'name profileImage rating',
+    );
   }
 
   static async getProductById(id: string) {

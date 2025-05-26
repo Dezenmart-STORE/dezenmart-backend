@@ -3,12 +3,14 @@ import { MessageController } from '../controllers/messageController';
 import { MessageValidation } from '../utils/validations/messageValidation';
 import { validate } from '../utils/validation';
 import { authenticate } from '../middlewares/authMiddleware';
+import { uploadSingleImage } from '../middlewares/uploadMiddleware';
 
 const router = express.Router();
 
 router.post(
   '/',
   authenticate,
+  uploadSingleImage('messageFile'),
   validate(MessageValidation.send),
   MessageController.sendMessage,
 );

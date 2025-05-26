@@ -5,7 +5,7 @@ export const MessageValidation = {
   send: Joi.object({
     body: Joi.object({
       recipient: Schemas.id.required(),
-      content: Joi.string().min(1).max(1000).required(),
+      content: Joi.string().min(1).max(1000).allow('').optional(),
       order: Schemas.id.optional(),
     }),
   }),
