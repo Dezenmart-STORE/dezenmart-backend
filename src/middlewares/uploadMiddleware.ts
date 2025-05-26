@@ -1,23 +1,32 @@
 import multer from 'multer';
 import path from 'path';
 import { CustomError } from './errorHandler';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import cloudinary from '../configs/storage';
 
-// Configure Multer storage (Example: memory storage, better for cloud uploads)
-// const storage = multer.memoryStorage(); // Keeps files in memory as Buffers
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    let folderName = 'general';
+    if (file.fieldname === 'profileImage') {
+      folderName = 'profile_images';
+    } else if (file.fieldname === 'images') {
+      folderName = 'product_images';
+    } else if (file.fieldname === 'videos') {
+      folderName = 'product_videos';
+    } else if (file.fieldname === 'messageFile') {
+      folderName = 'message_files';
+    }
 
-// Configure Multer storage (Example: disk storage, for local saving)
-const diskStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/'); // Make sure 'uploads/' directory exists
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname),
-    );
+    return {
+      folder: `dezenmart/${folderName}`,
+      allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4'],
+      // transformation: [{ width: 500, height: 500, crop: 'limit' }], // Optional: transformations
+      public_id: `${file.fieldname}-${Date.now()}-${path.parse(file.originalname).name}`,
+    };
   },
 });
+
 
 // File filter function (optional but recommended)
 const fileFilter = (
@@ -25,7 +34,7 @@ const fileFilter = (
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
 ) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const allowedTypes = /jpeg|jpg|png|gif|webp|mp4/;
   const mimetype = allowedTypes.test(file.mimetype);
   const extname = allowedTypes.test(
     path.extname(file.originalname).toLowerCase(),
@@ -45,7 +54,7 @@ const fileFilter = (
 
 // Configure Multer instance
 export const upload = multer({
-  storage: diskStorage, // Use memoryStorage for cloud uploads, diskStorage for local
+  storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // Example: 5MB file size limit
   fileFilter: fileFilter,
 });

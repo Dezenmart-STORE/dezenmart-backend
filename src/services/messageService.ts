@@ -6,14 +6,18 @@ export class MessageService {
   static async sendMessage(
     senderId: string,
     recipientId: string,
-    content: string,
+    content?: string,
     orderId?: string,
+    fileUrl?: string,
+    fileType?: string,
   ) {
     const message = new Message({
       sender: senderId,
       recipient: recipientId,
       content,
       order: orderId,
+      fileUrl,
+      fileType,
     });
     await message.save();
 
@@ -25,6 +29,8 @@ export class MessageService {
         sender: senderId,
         content,
         orderId,
+        fileUrl,
+        fileType,
       },
     });
 

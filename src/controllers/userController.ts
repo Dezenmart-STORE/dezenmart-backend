@@ -27,7 +27,7 @@ export class UserController {
     const file = req.file as Express.Multer.File | undefined;
 
     if (file) {
-      const imageFilename = file.filename;
+      const imageFilename = file.path;
       updateData.profileImage = imageFilename;
     }
 

@@ -5,10 +5,18 @@ import { CustomError } from '../middlewares/errorHandler';
 export class ProductController {
   static createProduct = async (req: Request, res: Response) => {
     const files = req.files as Express.Multer.File[];
-    const imageFilenames: string[] = [];
+    let imageUrls: string[] = [];
 
     if (files && files.length > 0) {
-      files.forEach((file) => imageFilenames.push(file.filename));
+      imageUrls = files.map((file) => file.path);
+    }
+
+    if (imageUrls.length === 0) {
+      throw new CustomError('No images provided', 400, 'fail');
+    }
+
+    if (imageUrls.length > 5) {
+      throw new CustomError('You can only upload a maximum of 5 images', 400, 'fail');
     }
 
     const {
@@ -81,8 +89,8 @@ export class ProductController {
       seller: req.user.id,
       sellerWalletAddress,
       stock: Number(stock),
-      images: imageFilenames,
-      logisticsCost: finalLogisticsCosts,
+      images: imageUrls,
+      logisticsCost: logisticsCosts,
       isSponsored: Boolean(isSponsored || false),
       logisticsProviders: finalLogisticsProviders,
       useUSDT: Boolean(useUSDT || false),
@@ -109,13 +117,13 @@ export class ProductController {
     const productId = req.params.id;
 
     const files = req.files as Express.Multer.File[];
-    let imageFilenames: string[] = [];
+    let imageUrls: string[] = [];
 
     const updateData = { ...req.body };
 
     if (files && files.length > 0) {
-      imageFilenames = files.map((file) => file.filename);
-      updateData.images = imageFilenames;
+      imageUrls = files.map((file) => file.path);
+      updateData.images = imageUrls;
     }
 
     const product = await ProductService.updateProduct(productId, updateData);
