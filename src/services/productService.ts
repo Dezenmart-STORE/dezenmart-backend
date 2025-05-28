@@ -21,20 +21,60 @@ interface ICreateProductInput {
 
 export class ProductService {
   static async createProduct(productInput: ICreateProductInput): Promise<IProduct> {
-    // 1. Create the trade on the blockchain
-    const productCostStr = productInput.price.toString();
-    const totalQuantityStr = productInput.stock.toString();
-    const logisticsCostsArr = productInput.logisticsCost;
+    const { price, stock, logisticsProviders, logisticsCost, useUSDT } = productInput;
 
-    if (!productCostStr || !totalQuantityStr || !productInput.logisticsProviders || !logisticsCostsArr || typeof productInput.useUSDT === 'undefined') {
-      throw new CustomError('Missing required fields for trade creation within product data.', 400, 'fail');
+    // Validate essential numeric and boolean fields
+    if (typeof price !== 'number' || price <= 0) {
+      throw new CustomError('Price must be a positive number.', 400, 'fail');
     }
+    if (typeof stock !== 'number' || stock <= 0) {
+      throw new CustomError('Stock must be a positive number.', 400, 'fail');
+    }
+    if (typeof useUSDT === 'undefined') {
+      throw new CustomError('The useUSDT field (boolean) is required.', 400, 'fail');
+    }
+
+    // Validate logisticsProviders
+    if (
+      !logisticsProviders ||
+      !Array.isArray(logisticsProviders) ||
+      !logisticsProviders.every(lp => typeof lp === 'string' && lp.startsWith('0x'))
+    ) {
+      throw new CustomError(
+        'logisticsProviders must be an array of strings, each representing a valid wallet address (starting with "0x").',
+        400,
+        'fail',
+      );
+    }
+
+    // Validate logisticsCost
+    if (
+      !logisticsCost ||
+      !Array.isArray(logisticsCost) ||
+      !logisticsCost.every(cost => typeof cost === 'string' && !isNaN(parseFloat(cost)) && isFinite(Number(cost)))
+    ) {
+      throw new CustomError(
+        'logisticsCost must be an array of strings, each representing a valid number.',
+        400,
+        'fail',
+      );
+    }
+
+    if (logisticsProviders.length !== logisticsCost.length) {
+      throw new CustomError(
+        'logisticsProviders and logisticsCost arrays must have the same length.',
+        400,
+        'fail',
+      );
+    }
+
+    const productCostStr = price.toString();
 
     const tradeReceipt = await contractService.createTrade(
       productCostStr,
       productInput.logisticsProviders as `0x${string}`[],
-      logisticsCostsArr,
-      BigInt(totalQuantityStr),
+      productInput.logisticsCost,
+      BigInt(stock),
     );
 
     let tradeId;
@@ -68,7 +108,7 @@ export class ProductService {
     //     }
     //   }
     // }
-    tradeId = JSON.stringify(tradeReceipt.tradeId.toString());
+    tradeId = tradeReceipt.tradeId.toString();
 
     if (!tradeId) {
       console.error('Failed to extract tradeId. Full receipt:', JSON.stringify(tradeReceipt, null, 2));
