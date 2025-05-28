@@ -7,7 +7,7 @@ interface IOrder extends Document {
   amount: number;
   quantity: number;
   sellerWalletAddress: string;
-  logisticsProviderWalletAddress: string;
+  logisticsProviderWalletAddress: string[];
   status:
     | 'pending'
     | 'accepted'
@@ -34,7 +34,7 @@ const OrderSchema = new Schema<IOrder>(
     amount: { type: Number, required: true },
     quantity: { type: Number, required: true },
     sellerWalletAddress: { type: String },
-    logisticsProviderWalletAddress: { type: String },
+    logisticsProviderWalletAddress: [{ type: String }],
     status: {
       type: String,
       enum: [
