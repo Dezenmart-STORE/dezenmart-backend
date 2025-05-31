@@ -6,7 +6,7 @@ export const OrderValidation = {
     body: Joi.object({
       product: Schemas.id.required(),
       quantity: Joi.number().positive().precision(2).required(),
-      logisticsProviderWalletAddress: Joi.array()
+      logisticsProviderWalletAddress: Joi.string()
     }),
   }),
   updateStatus: Joi.object({
