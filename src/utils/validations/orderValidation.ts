@@ -9,23 +9,23 @@ export const OrderValidation = {
       logisticsProviderWalletAddress: Joi.string()
     }),
   }),
-  updateStatus: Joi.object({
-    params: Joi.object({
-      id: Schemas.id.required(),
-    }),
-    body: Joi.object({
-      status: Joi.string()
-        .valid(
-          'pending',
-          'accepted',
-          'rejected',
-          'completed',
-          'disputed',
-          'refunded',
-        )
-        .required(),
-    }),
-  }),
+  // updateStatus: Joi.object({
+  //   params: Joi.object({
+  //     id: Schemas.id.required(),
+  //   }),
+  //   body: Joi.object({
+  //     status: Joi.string()
+  //       .valid(
+  //         'pending',
+  //         'accepted',
+  //         'rejected',
+  //         'completed',
+  //         'disputed',
+  //         'refunded',
+  //       )
+  //       .required(),
+  //   }),
+  // }),
   dispute: Joi.object({
     params: Joi.object({
       id: Schemas.id.required(),

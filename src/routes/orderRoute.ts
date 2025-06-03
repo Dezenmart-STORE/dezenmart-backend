@@ -16,8 +16,8 @@ router.get('/:id', authenticate, OrderController.getOrderDetails);
 router.put(
   '/:id/status',
   authenticate,
-  validate(OrderValidation.updateStatus),
-  OrderController.updateOrderStatus,
+  // validate(OrderValidation.updateStatus),
+  OrderController.updateOrder,
 );
 router.get(
   '/',
