@@ -22,7 +22,6 @@ export const OrderValidation = {
           'completed',
           'disputed',
           'refunded',
-          'delivery_confirmed',
         )
         .required(),
     }),
@@ -46,7 +45,6 @@ export const OrderValidation = {
           'completed',
           'disputed',
           'refunded',
-          'delivery_confirmed',
         )
         .optional(),
     }),
