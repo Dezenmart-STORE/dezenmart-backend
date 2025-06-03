@@ -8,6 +8,7 @@ interface IOrder extends Document {
   quantity: number;
   sellerWalletAddress: string;
   logisticsProviderWalletAddress: string[];
+  purchaseId?: string;
   status:
     | 'pending'
     | 'accepted'
@@ -35,6 +36,7 @@ const OrderSchema = new Schema<IOrder>(
     quantity: { type: Number, required: true },
     sellerWalletAddress: { type: String },
     logisticsProviderWalletAddress: [{ type: String }],
+    purchaseId: { type: String },
     status: {
       type: String,
       enum: [
@@ -44,7 +46,6 @@ const OrderSchema = new Schema<IOrder>(
         'completed',
         'disputed',
         'refunded',
-        'delivery_confirmed',
       ],
       default: 'pending',
     },
