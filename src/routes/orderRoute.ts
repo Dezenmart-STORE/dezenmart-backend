@@ -14,7 +14,7 @@ router.post(
 );
 router.get('/:id', authenticate, OrderController.getOrderDetails);
 router.put(
-  '/:id/status',
+  '/:id',
   authenticate,
   // validate(OrderValidation.updateStatus),
   OrderController.updateOrder,
