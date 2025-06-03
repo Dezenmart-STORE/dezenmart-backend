@@ -69,16 +69,19 @@ export class OrderService {
     return order;
   }
 
-  static async updateOrderStatus(
+  static async updateOrder(
     id: string,
-    status:
-      | 'pending'
-      | 'accepted'
-      | 'rejected'
-      | 'completed'
-      | 'disputed'
-      | 'refunded'
-      | 'delivery_confirmed',
+    updates: {
+      status?:
+        | 'pending'
+        | 'accepted'
+        | 'rejected'
+        | 'completed'
+        | 'disputed'
+        | 'refunded'
+        | 'delivery_confirmed';
+      purchaseId?: string;
+    },
     userId: string,
   ) {
     const order = await Order.findById(id);
@@ -92,27 +95,34 @@ export class OrderService {
       throw new CustomError('Unauthorized to update this order', 403, 'fail');
     }
 
-    order.status = status;
-    const updatedOrder = await order.save();
+    let statusChanged = false;
 
-    if (status === 'completed') {
-      await RewardService.processOrderRewards(id);
+    if (updates.status && order.status !== updates.status) {
+      order.status = updates.status;
+      statusChanged = true;
+    }
+    if (updates.purchaseId) {
+      order.purchaseId = updates.purchaseId;
     }
 
-    // Process rewards when delivery is confirmed
-    if (status === 'delivery_confirmed') {
+    const updatedOrder = await order.save();
+
+    if (updates.status === 'completed') {
+      await RewardService.processOrderRewards(id);
       await RewardService.processDeliveryConfirmation(id);
     }
 
-    const recipient =
-      order.seller.toString() === userId ? order.buyer : order.seller;
+    if (statusChanged) {
+      const recipient =
+        order.seller.toString() === userId ? order.buyer : order.seller;
 
-    await NotificationService.createNotification({
-      recipient: recipient.toString(),
-      type: 'ORDER_UPDATE',
-      message: `Order status updated to ${status}`,
-      metadata: { orderId: id },
-    });
+      await NotificationService.createNotification({
+        recipient: recipient.toString(),
+        type: 'ORDER_UPDATE',
+        message: `Order status updated to ${updates.status}`,
+        metadata: { orderId: id },
+      });
+    }
 
     return updatedOrder;
   }

@@ -17,10 +17,10 @@ export class OrderController {
     res.json(order);
   };
 
-  static updateOrderStatus = async (req: Request, res: Response) => {
-    const order = await OrderService.updateOrderStatus(
+  static updateOrder = async (req: Request, res: Response) => {
+    const order = await OrderService.updateOrder(
       req.params.id,
-      req.body.status,
+      req.body,
       req.user.id,
     );
     res.json(order);
