@@ -23,7 +23,11 @@ router.get(
   '/',
   authenticate,
   validate(OrderValidation.getUserOrders),
-  OrderController.getUserOrders,
+  (req, res, next) => {
+    OrderController.getUserOrders(req, res)
+      .then(() => undefined)
+      .catch(next);
+  },
 );
 router.post(
   '/:id/dispute',

@@ -11,6 +11,7 @@ export interface IUser extends Document {
   isMerchant: boolean;
   rating?: number;
   totalPoints: number;
+  orders: Types.ObjectId[];
   availablePoints: number;
   milestones: {
     sales: number;
@@ -37,6 +38,7 @@ const UserSchema = new Schema<IUser>(
     isMerchant: { type: Boolean, default: false },
     rating: { type: Number, default: 0 },
     totalPoints: { type: Number, default: 0 },
+    orders: [{ type: Schema.Types.ObjectId, ref: 'Order' }],
     availablePoints: { type: Number, default: 0 },
     milestones: {
       sales: { type: Number, default: 0 },
