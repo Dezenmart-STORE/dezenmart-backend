@@ -37,7 +37,23 @@ export class UserService {
   }
 
   static async getUserById(id: string) {
-    return await User.findById(id).select('-password');
+    return await User.findById(id)
+      .select('-password')
+      .populate({
+        path: 'orders',
+        select: 'product amount status createdAt quantity purchaseId seller',
+        populate: [
+          {
+            path: 'product',
+            select: 'name images price',
+          },
+          {
+            path: 'seller',
+            select: 'name profileImage',
+          },
+        ],
+        options: { sort: { createdAt: -1 }, limit: 10 },
+      });
   }
 
   static async updateUser(id: string, data: Partial<IUser>) {
