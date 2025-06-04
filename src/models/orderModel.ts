@@ -33,7 +33,7 @@ const OrderSchema = new Schema<IOrder>(
     buyer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     seller: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     amount: { type: Number, required: true },
-    quantity: { type: Number, required: true },
+    quantity: { type: Number },
     sellerWalletAddress: { type: String },
     logisticsProviderWalletAddress: [{ type: String }],
     purchaseId: { type: String },
