@@ -328,9 +328,9 @@ export class DezenMartContractService {
     totalQuantity: bigint,
   ): Promise<{ hash: Hash; tradeId: bigint }> {
     // Convert USDT amounts to Gwei (assuming 6 decimals for USDT)
-    const productCost = parseUnits(productCostInUSDT, 6);
+    const productCost = parseUnits(productCostInUSDT, 18);
     const logisticsCosts = logisticsCostsInUSDT.map((cost) =>
-      parseUnits(cost, 6),
+      parseUnits(cost, 18),
     );
 
     const hash = await this.writeContract('createTrade', [
