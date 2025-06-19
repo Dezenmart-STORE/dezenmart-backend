@@ -12,13 +12,14 @@ import {
   decodeEventLog,
   parseAbiItem,
   GetLogsReturnType,
+  encodeFunctionData,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { celo, celoAlfajores } from 'viem/chains';
+import { getDataSuffix, submitReferral } from '@divvi/referral-sdk';
 import dotenv from 'dotenv';
 import abi from '../abi/dezenmartAbi.json';
 import config from '../configs/config';
-import { StringDecoder } from 'string_decoder';
 
 dotenv.config();
 
@@ -56,6 +57,13 @@ export interface ContractConfig {
   rpcUrl?: string;
 }
 
+// Divvi configuration interface
+export interface DivviConfig {
+  consumer: Address; // Your Divvi identifier
+  providers: Address[]; // Addresses of the Rewards Campaigns you signed up for
+  enabled?: boolean; // Flag to enable/disable Divvi tracking
+}
+
 // USDT Contract ABI (minimal for approve and allowance)
 const USDT_ABI = [
   {
@@ -91,12 +99,15 @@ export class DezenMartContractService {
   private publicClient;
   private walletClient;
   private account;
-  // private configure: ContractConfig;
   private contract;
   private usdtContract;
   private eventUnsubscribers: (() => void)[] = [];
+  private divviConfig?: DivviConfig;
 
-  constructor() {
+  constructor(divviConfig?: DivviConfig) {
+    // Store Divvi configuration
+    this.divviConfig = divviConfig;
+
     // Choose the appropriate chain
     const chain = config.IS_TESTNET ? celoAlfajores : celo;
     const rpcUrl =
@@ -150,6 +161,37 @@ export class DezenMartContractService {
     }
   }
 
+  // Helper to get Divvi data suffix
+  private getDivviDataSuffix(): string {
+    if (!this.divviConfig?.enabled || !this.divviConfig.consumer) {
+      return '';
+    }
+
+    return getDataSuffix({
+      consumer: this.divviConfig.consumer,
+      providers: this.divviConfig.providers || [],
+    });
+  }
+
+  // Helper to submit Divvi referral
+  private async submitDivviReferral(txHash: Hash): Promise<void> {
+    if (!this.divviConfig?.enabled) {
+      return;
+    }
+
+    try {
+      const chainId = await this.walletClient!.getChainId();
+      await submitReferral({
+        txHash,
+        chainId,
+      });
+      console.log(`Divvi referral submitted for transaction: ${txHash}`);
+    } catch (error) {
+      console.error('Failed to submit Divvi referral:', error);
+      // Don't throw error to avoid breaking the main transaction flow
+    }
+  }
+
   // Helper to perform contract reads
   private async readContract(functionName: string, args: any[] = []) {
     return await this.publicClient.readContract({
@@ -160,21 +202,51 @@ export class DezenMartContractService {
     });
   }
 
-  // Helper to perform contract writes
-  private async writeContract(functionName: string, args: any[] = []) {
+  // Enhanced helper to perform contract writes with Divvi integration
+  private async writeContract(
+    functionName: string,
+    args: any[] = [],
+    includeDivvi: boolean = false,
+  ) {
     this.ensureWalletClient();
-    return await this.walletClient!.writeContract({
-      address: config.CONTRACT_ADDRESS as `0x${string}`,
-      abi: abi.DEZENMART_ABI,
-      functionName,
-      args,
-    });
+
+    if (includeDivvi && this.divviConfig?.enabled) {
+      // Encode the function call data
+      const data = encodeFunctionData({
+        abi: abi.DEZENMART_ABI,
+        functionName,
+        args,
+      });
+
+      // Get Divvi data suffix
+      const dataSuffix = this.getDivviDataSuffix();
+
+      // Send transaction with Divvi data suffix appended
+      const txHash = await this.walletClient!.sendTransaction({
+        account: this.account!.address,
+        to: config.CONTRACT_ADDRESS as `0x${string}`,
+        data: (data + dataSuffix.slice(2)) as `0x${string}`, // Remove '0x' from dataSuffix before concatenating
+      });
+
+      // Submit Divvi referral in the background
+      this.submitDivviReferral(txHash).catch(console.error);
+
+      return txHash;
+    } else {
+      // Standard contract write without Divvi
+      return await this.walletClient!.writeContract({
+        address: config.CONTRACT_ADDRESS as `0x${string}`,
+        abi: abi.DEZENMART_ABI,
+        functionName,
+        args,
+      });
+    }
   }
 
   // Helper to perform USDT reads
   private async readUSDTContract(
     functionName: 'allowance' | 'balanceOf',
-    args: readonly [`0x${string}`, `0x${string}`] | readonly [`0x${string}`]
+    args: readonly [`0x${string}`, `0x${string}`] | readonly [`0x${string}`],
   ): Promise<bigint> {
     return await this.publicClient.readContract({
       address: config.USDT_ADDRESS as `0x${string}`,
@@ -187,7 +259,8 @@ export class DezenMartContractService {
   // Helper to perform USDT writes
   private async writeUSDTContract(
     functionName: 'approve',
-    args: [`0x${string}`, bigint]) {
+    args: [`0x${string}`, bigint],
+  ) {
     this.ensureWalletClient();
     return await this.walletClient!.writeContract({
       address: config.USDT_ADDRESS as `0x${string}`,
@@ -195,6 +268,16 @@ export class DezenMartContractService {
       functionName,
       args,
     });
+  }
+
+  // Update Divvi configuration
+  updateDivviConfig(config: DivviConfig): void {
+    this.divviConfig = config;
+  }
+
+  // Get current Divvi configuration
+  getDivviConfig(): DivviConfig | undefined {
+    return this.divviConfig;
   }
 
   // --- Registration Functions ---
@@ -319,7 +402,7 @@ export class DezenMartContractService {
     ]);
   }
 
-  // --- Trade Functions ---
+  // --- Trade Functions with Divvi Integration ---
 
   async createTrade(
     productCostInUSDT: string,
@@ -327,18 +410,18 @@ export class DezenMartContractService {
     logisticsCostsInUSDT: string[],
     totalQuantity: bigint,
   ): Promise<{ hash: Hash; tradeId: bigint }> {
-    // Convert USDT amounts to Gwei (assuming 6 decimals for USDT)
+    // Convert USDT amounts to Wei (assuming 18 decimals for your token)
     const productCost = parseUnits(productCostInUSDT, 18);
     const logisticsCosts = logisticsCostsInUSDT.map((cost) =>
       parseUnits(cost, 18),
     );
 
-    const hash = await this.writeContract('createTrade', [
-      productCost,
-      logisticsProviders,
-      logisticsCosts,
-      totalQuantity,
-    ]);
+    // Call with Divvi integration enabled
+    const hash = await this.writeContract(
+      'createTrade',
+      [productCost, logisticsProviders, logisticsCosts, totalQuantity],
+      true,
+    ); // Enable Divvi tracking
 
     // Wait for transaction receipt to get the trade ID from events
     const receipt = await this.getTransactionReceipt(hash);
@@ -407,7 +490,8 @@ export class DezenMartContractService {
       // Wait for approval transaction to be confirmed
       await new Promise((resolve) => setTimeout(resolve, 3000));
       const approvalReceipt = await this.getTransactionReceipt(approvalHash);
-      if (!approvalReceipt.status) throw new Error('USDT approval transaction failed');
+      if (!approvalReceipt.status)
+        throw new Error('USDT approval transaction failed');
     }
 
     const hash = await this.writeContract('buyTrade', [
@@ -448,14 +532,16 @@ export class DezenMartContractService {
     return { hash, purchaseId };
   }
 
-  // --- Purchase Management Functions ---
+  // --- Purchase Management Functions with Divvi Integration ---
 
   async confirmDelivery(purchaseId: string): Promise<Hash> {
-    return await this.writeContract('confirmDelivery', [purchaseId]);
+    // Call with Divvi integration enabled
+    return await this.writeContract('confirmDelivery', [purchaseId], true);
   }
 
   async confirmPurchase(purchaseId: string): Promise<Hash> {
-    return await this.writeContract('confirmPurchase', [purchaseId]);
+    // Call with Divvi integration enabled
+    return await this.writeContract('confirmPurchase', [purchaseId], true);
   }
 
   async cancelPurchase(purchaseId: bigint): Promise<Hash> {
@@ -534,11 +620,11 @@ export class DezenMartContractService {
               data: log.data,
               topics: log.topics,
             });
-            if (decoded.eventName === 'TradeCreated') {
+            if (decoded.eventName === 'PurchaseCreated') {
               callback(decoded.args as any);
             }
           } catch (error) {
-            console.error('Error decoding TradeCreated event:', error);
+            console.error('Error decoding PurchaseCreated event:', error);
           }
         });
       },
@@ -563,11 +649,11 @@ export class DezenMartContractService {
               data: log.data,
               topics: log.topics,
             });
-            if (decoded.eventName === 'TradeCreated') {
+            if (decoded.eventName === 'DeliveryConfirmed') {
               callback(decoded.args as any);
             }
           } catch (error) {
-            console.error('Error decoding TradeCreated event:', error);
+            console.error('Error decoding DeliveryConfirmed event:', error);
           }
         });
       },
@@ -592,11 +678,11 @@ export class DezenMartContractService {
               data: log.data,
               topics: log.topics,
             });
-            if (decoded.eventName === 'TradeCreated') {
+            if (decoded.eventName === 'DisputeRaised') {
               callback(decoded.args as any);
             }
           } catch (error) {
-            console.error('Error decoding TradeCreated event:', error);
+            console.error('Error decoding DisputeRaised event:', error);
           }
         });
       },
@@ -621,11 +707,11 @@ export class DezenMartContractService {
               data: log.data,
               topics: log.topics,
             });
-            if (decoded.eventName === 'TradeCreated') {
-              callback(decoded.args as any); // ✅ Works!
+            if (decoded.eventName === 'DisputeResolved') {
+              callback(decoded.args as any);
             }
           } catch (error) {
-            console.error('Error decoding TradeCreated event:', error);
+            console.error('Error decoding DisputeResolved event:', error);
           }
         });
       },
@@ -691,26 +777,33 @@ export class DezenMartContractService {
   }
 }
 
-// Factory function for easy initialization
-// export function createDezenMartService(
-//   config: ContractConfig,
-// ): DezenMartContractService {
-//   return new DezenMartContractService(config);
-// }
+// Factory function for easy initialization with Divvi support
+export function createDezenMartService(
+  divviConfig?: DivviConfig,
+): DezenMartContractService {
+  return new DezenMartContractService(divviConfig);
+}
 
 // Usage example:
 /*
+// Initialize the service with Divvi configuration
 const contractService = createDezenMartService({
-  contractAddress: '0x...',
-  usdtAddress: '0x...',
-  privateKey: '0x...',
-  isTestnet: true,
+  consumer: '0x123...', // Your Divvi identifier
+  providers: ['0xabc...', '0xdef...'], // Rewards campaign addresses
+  enabled: true, // Enable Divvi tracking
+});
+
+// Or update Divvi config later
+contractService.updateDivviConfig({
+  consumer: '0x123...',
+  providers: ['0xabc...'],
+  enabled: true,
 });
 
 // Register as seller
 await contractService.registerSeller();
 
-// Create a trade and get both transaction hash and trade ID
+// Create a trade with Divvi tracking (automatically enabled for createTrade)
 const { hash: tradeHash, tradeId } = await contractService.createTrade(
   '100', // 100 USDT product cost
   ['0x...'], // logistics provider addresses
@@ -719,18 +812,20 @@ const { hash: tradeHash, tradeId } = await contractService.createTrade(
 );
 
 console.log(`Trade ${tradeId} created with hash: ${tradeHash}`);
+// Divvi referral will be automatically submitted in the background
 
-// Buy a trade and get both transaction hash and purchase ID
-const { hash: purchaseHash, purchaseId } = await contractService.buyTrade(
-  tradeId,
-  BigInt(5), // quantity
-  '0x...' // logistics provider
-);
+// Confirm delivery with Divvi tracking (automatically enabled)
+const confirmHash = await contractService.confirmDelivery('purchaseId123');
+console.log(`Delivery confirmed with hash: ${confirmHash}`);
 
-console.log(`Purchase ${purchaseId} created with hash: ${purchaseHash}`);
+// Confirm purchase with Divvi tracking (automatically enabled)
+const purchaseConfirmHash = await contractService.confirmPurchase('purchaseId123');
+console.log(`Purchase confirmed with hash: ${purchaseConfirmHash}`);
 
-// Listen for events
-contractService.watchTradeCreated(({ tradeId, seller, productCost, totalQuantity }) => {
-  console.log(`New trade created: ${tradeId} by ${seller}`);
+// Disable Divvi tracking temporarily
+contractService.updateDivviConfig({
+  consumer: '0x123...',
+  providers: [],
+  enabled: false,
 });
 */
