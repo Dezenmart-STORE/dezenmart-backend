@@ -14,6 +14,8 @@ interface Config {
   USDT_ADDRESS?: string;
   PRIVATE_KEY?: Address;
   IS_TESTNET: boolean;
+  SELF_APP_SCOPE: string;
+  SELF_BACKEND_URL: string;
 }
 
 const config: Config = {
@@ -25,10 +27,15 @@ const config: Config = {
   CELO_NODE_URL: process.env.CELO_NODE_URL,
   CONTRACT_ADDRESS: process.env.CONTRACT_ADDRESS,
   USDT_ADDRESS: process.env.USDT_ADDRESS,
-  PRIVATE_KEY: process.env.PRIVATE_KEY && process.env.PRIVATE_KEY.startsWith('0x')
-    ? process.env.PRIVATE_KEY as Address
-    : undefined,
+  PRIVATE_KEY:
+    process.env.PRIVATE_KEY && process.env.PRIVATE_KEY.startsWith('0x')
+      ? (process.env.PRIVATE_KEY as Address)
+      : undefined,
   IS_TESTNET: process.env.IS_TESTNET === 'true',
+  SELF_APP_SCOPE: process.env.SELF_APP_SCOPE || 'dezenmart-app',
+  SELF_BACKEND_URL:
+    process.env.SELF_BACKEND_URL ||
+    'http://localhost:3000/api/v1/users/verify-self',
 };
 
 export default config;

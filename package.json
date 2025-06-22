@@ -21,6 +21,7 @@
   "description": "",
   "dependencies": {
     "@celo/contractkit": "^9.2.1",
+    "@selfxyz/core": "^0.0.25",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.5",

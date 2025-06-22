@@ -22,6 +22,13 @@ export interface IUser extends Document {
   referredBy?: Schema.Types.ObjectId;
   referralCount: number;
   isReferralCodeUsed: boolean;
+  selfId?: string; // Unique identifier from Self Protocol proof
+  selfVerification?: {
+    nullifier: string; // From publicSignals, unique per verification
+    verificationLevel: string; // e.g., 'basic', 'advanced', 'kyc'
+    isVerified: boolean; // Overall verification status
+    credentialSubject?: any; // Full credential subject from the proof
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,8 +63,21 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    selfId: { type: String, unique: true, sparse: true },
+    selfVerification: {
+      nullifier: { type: String, unique: true, sparse: true },
+      verificationLevel: { type: String },
+      isVerified: { type: Boolean, default: false },
+      credentialSubject: { type: Schema.Types.Mixed },
+    },
   },
   { timestamps: true },
 );
+
+// Index for efficient Self Protocol queries
+UserSchema.index({ 'selfVerification.isVerified': 1 });
+UserSchema.index({ 'selfVerification.verificationLevel': 1 });
+UserSchema.index({ 'selfVerification.nullifier': 1 });
+UserSchema.index({ selfId: 1 }, { unique: true, sparse: true });
 
 export const User = model<IUser>('User', UserSchema);
