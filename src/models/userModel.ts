@@ -77,7 +77,5 @@ const UserSchema = new Schema<IUser>(
 // Index for efficient Self Protocol queries
 UserSchema.index({ 'selfVerification.isVerified': 1 });
 UserSchema.index({ 'selfVerification.verificationLevel': 1 });
-UserSchema.index({ 'selfVerification.nullifier': 1 });
-UserSchema.index({ selfId: 1 }, { unique: true, sparse: true });
 
 export const User = model<IUser>('User', UserSchema);
