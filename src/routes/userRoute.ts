@@ -39,5 +39,16 @@ router.get(
   validate(UserValidation.getAllUsers),
   UserController.getAllUsers,
 );
+router.post('/verify-self', authenticate, UserController.verifySelf);
+router.get(
+  '/self/status',
+  authenticate,
+  UserController.getSelfVerificationStatus,
+);
+router.delete(
+  '/self/revoke',
+  authenticate,
+  UserController.revokeSelfVerification,
+);
 
 export default router;
