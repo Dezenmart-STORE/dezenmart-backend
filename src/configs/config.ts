@@ -33,9 +33,7 @@ const config: Config = {
       : undefined,
   IS_TESTNET: process.env.IS_TESTNET === 'true',
   SELF_APP_SCOPE: process.env.SELF_APP_SCOPE || 'dezenmart-app',
-  SELF_BACKEND_URL:
-    process.env.SELF_BACKEND_URL ||
-    'http://localhost:3000/api/v1/users/verify-self',
+  SELF_BACKEND_URL: process.env.SELF_BACKEND_URL || '',
 };
 
 export default config;
