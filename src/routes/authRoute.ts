@@ -15,7 +15,8 @@ router.get('/google', passport.authenticate('google'));
 router.get(
   '/google/callback',
   (req: Request, res: Response, next: NextFunction) => {
-    const frontendUrl = process.env.FRONTEND_URL;
+    const frontendUrl =
+      process.env.DEZENMART_FRONTEND_URL || process.env.DEZENTRA_FRONTEND_URL;
     passport.authenticate(
       'google',
       (err: any, authResult: AuthResult | false, info: any) => {
@@ -40,7 +41,7 @@ router.get(
             token: authResult.token,
             userId: (authResult.user as any)._id.toString(),
           }).toString();
-          
+
           return res.redirect(`${frontendUrl}/auth/google?${queryParams}`);
         });
       },
