@@ -33,24 +33,88 @@ interface SelfValidationDetails {
 export class UserService {
   static async findOrCreateUser(
     profile: any,
+    termsAccepted: boolean = true,
   ): Promise<{ user: IUser; token: string }> {
+    if (!termsAccepted) {
+      throw new CustomError(
+        'You must accept the Terms and Conditions to create an account.',
+        400,
+        'fail',
+      );
+    }
+
     let user = await User.findOne({ googleId: profile.id });
 
     if (!user) {
       user = await User.findOne({ email: profile.emails[0].value });
 
       if (user) {
+        // Existing user logging in with Google for the first time
+        if (!user.hasAcceptedTerms) {
+          throw new CustomError(
+            'You are required to accept the Terms and Conditions to continue.',
+            400,
+            'terms_required',
+          );
+        }
+
         user.googleId = profile.id;
         await user.save();
       } else {
+        // New user - create with terms accepted
         user = new User({
           googleId: profile.id,
           email: profile.emails[0].value,
           name: profile.displayName,
           profileImage: profile.photos[0]?.value,
+          hasAcceptedTerms: true, // Set to true since terms were accepted
         });
         await user.save();
       }
+    } else {
+      // Existing user with Google ID
+      if (!user.hasAcceptedTerms) {
+        throw new CustomError(
+          'You must accept the Terms and Conditions to continue.',
+          400,
+          'terms_required',
+        );
+      }
+    }
+
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET!,
+      { expiresIn: '7d' },
+    );
+    return { user, token };
+  }
+
+  // New method to handle terms acceptance during OAuth flow
+  static async acceptTermsAndCreateUser(
+    profile: any,
+  ): Promise<{ user: IUser; token: string }> {
+    let user = await User.findOne({
+      $or: [{ googleId: profile.id }, { email: profile.email }],
+    });
+
+    if (user) {
+      // Update existing user's terms acceptance
+      user.hasAcceptedTerms = true;
+      if (!user.googleId) {
+        user.googleId = profile.id;
+      }
+      await user.save();
+    } else {
+      // Create new user with terms accepted
+      user = new User({
+        googleId: profile.id,
+        email: profile.email,
+        name: profile.displayName,
+        profileImage: profile.photos?.[0]?.value,
+        hasAcceptedTerms: true,
+      });
+      await user.save();
     }
 
     const token = jwt.sign(
@@ -318,5 +382,26 @@ export class UserService {
     }
 
     return updatedUser;
+  }
+
+  static async acceptTerms(userId: string): Promise<IUser> {
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { hasAcceptedTerms: true },
+      { new: true },
+    );
+
+    if (!updatedUser) {
+      throw new CustomError('User not found', 404, 'fail');
+    }
+
+    return updatedUser;
+  }
+
+  // Method to accept terms with profile data (for OAuth flow)
+  static async acceptTermsWithProfile(
+    profileData: any,
+  ): Promise<{ user: IUser; token: string }> {
+    return await UserService.acceptTermsAndCreateUser(profileData);
   }
 }

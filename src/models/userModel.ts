@@ -29,6 +29,7 @@ export interface IUser extends Document {
     isVerified: boolean; // Overall verification status
     credentialSubject?: any; // Full credential subject from the proof
   };
+  hasAcceptedTerms: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,6 +71,7 @@ const UserSchema = new Schema<IUser>(
       isVerified: { type: Boolean, default: false },
       credentialSubject: { type: Schema.Types.Mixed },
     },
+    hasAcceptedTerms: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
