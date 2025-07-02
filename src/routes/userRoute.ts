@@ -50,5 +50,16 @@ router.delete(
   authenticate,
   UserController.revokeSelfVerification,
 );
+router.post(
+  '/accept-terms',
+  authenticate,
+  UserController.acceptTermsAndContinue,
+);
+router.get('/terms-status', authenticate, UserController.getTermsStatus);
+router.post(
+  '/accept-terms-existing',
+  authenticate,
+  UserController.acceptTermsExistingUser,
+);
 
 export default router;

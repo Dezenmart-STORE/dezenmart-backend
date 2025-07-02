@@ -2,6 +2,13 @@ import { Request, Response } from 'express';
 import { UserService } from '../services/userService';
 import { CustomError } from '../middlewares/errorHandler';
 
+declare module 'express-session' {
+  interface SessionData {
+    pendingProfile?: any;
+    termsAccepted?: boolean;
+  }
+}
+
 export class UserController {
   static getUserByEmail = async (req: Request, res: Response) => {
     const user = await UserService.getUserByEmail(req.params.email);
@@ -181,6 +188,148 @@ export class UserController {
         500,
         'error',
       );
+    }
+  };
+
+  static acceptTermsAndContinue = async (req: Request, res: Response) => {
+    try {
+      const { accepted } = req.body;
+
+      if (!accepted) {
+        throw new CustomError(
+          'You must accept the Terms and Conditions to continue.',
+          400,
+          'fail',
+        );
+      }
+
+      // Check if there's a pending profile in session
+      const pendingProfile = req.session?.pendingProfile;
+      if (!pendingProfile) {
+        throw new CustomError(
+          'No pending authentication found. Please start the sign-up process again.',
+          400,
+          'fail',
+        );
+      }
+
+      // Accept terms and create/update user
+      const { user, token } =
+        await UserService.acceptTermsWithProfile(pendingProfile);
+
+      // Clear session data
+      delete req.session!.pendingProfile;
+
+      // Set token in cookie
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Terms accepted and account created successfully.',
+        data: {
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            hasAcceptedTerms: user.hasAcceptedTerms,
+          },
+          token,
+        },
+      });
+    } catch (error) {
+      console.error('Error accepting terms:', error);
+
+      if (error instanceof CustomError) {
+        throw error;
+      }
+
+      throw new CustomError(
+        'Failed to accept terms and create account.',
+        500,
+        'error',
+      );
+    }
+  };
+
+  // Get terms acceptance status for existing user
+  static getTermsStatus = async (req: Request, res: Response) => {
+    try {
+      const { email } = req.query;
+
+      if (!email) {
+        throw new CustomError('Email is required.', 400, 'fail');
+      }
+
+      const user = await UserService.getUserByEmail(email as string);
+
+      res.status(200).json({
+        status: 'success',
+        data: {
+          hasAcceptedTerms: user?.hasAcceptedTerms || false,
+          userExists: !!user,
+        },
+      });
+    } catch (error) {
+      console.error('Error checking terms status:', error);
+
+      if (error instanceof CustomError) {
+        throw error;
+      }
+
+      throw new CustomError('Failed to check terms status.', 500, 'error');
+    }
+  };
+
+  // Accept terms for existing user
+  static acceptTermsExistingUser = async (req: Request, res: Response) => {
+    try {
+      const { email, accepted } = req.body;
+
+      if (!accepted) {
+        throw new CustomError(
+          'You must accept the Terms and Conditions to continue.',
+          400,
+          'fail',
+        );
+      }
+
+      if (!email) {
+        throw new CustomError('Email is required.', 400, 'fail');
+      }
+
+      const user = await UserService.getUserByEmail(email);
+
+      if (!user) {
+        throw new CustomError('User not found.', 404, 'fail');
+      }
+
+      // Update user's terms acceptance
+      const updatedUser = await UserService.acceptTerms(
+        (user as { _id: string })._id.toString(),
+      );
+
+      // Mark terms as accepted in session for OAuth flow
+      req.session!.termsAccepted = true;
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Terms and Conditions accepted successfully.',
+        data: {
+          hasAcceptedTerms: updatedUser.hasAcceptedTerms,
+        },
+      });
+    } catch (error) {
+      console.error('Error accepting terms for existing user:', error);
+
+      if (error instanceof CustomError) {
+        throw error;
+      }
+
+      throw new CustomError('Failed to accept terms.', 500, 'error');
     }
   };
 }
