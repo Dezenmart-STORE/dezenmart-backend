@@ -50,11 +50,7 @@ router.delete(
   authenticate,
   UserController.revokeSelfVerification,
 );
-router.post(
-  '/accept-terms',
-  authenticate,
-  UserController.acceptTermsAndContinue,
-);
+router.post('/accept-terms', UserController.acceptTermsAndContinue);
 router.get('/terms-status', authenticate, UserController.getTermsStatus);
 router.post(
   '/accept-terms-existing',
