@@ -15,6 +15,8 @@ router.put(
   validate(UserValidation.updateProfile),
   UserController.updateProfile,
 );
+router.post('/accept-terms', authenticate, UserController.acceptTerms);
+router.get('/terms-status', authenticate, UserController.getTermsStatus);
 router.get(
   '/:id',
   authenticate,
@@ -49,13 +51,6 @@ router.delete(
   '/self/revoke',
   authenticate,
   UserController.revokeSelfVerification,
-);
-router.post('/accept-terms', UserController.acceptTermsAndContinue);
-router.get('/terms-status', authenticate, UserController.getTermsStatus);
-router.post(
-  '/accept-terms-existing',
-  authenticate,
-  UserController.acceptTermsExistingUser,
 );
 
 export default router;
