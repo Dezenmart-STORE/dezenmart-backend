@@ -20,8 +20,11 @@ interface ICreateProductInput {
 }
 
 export class ProductService {
-  static async createProduct(productInput: ICreateProductInput): Promise<IProduct> {
-    const { price, stock, logisticsProviders, logisticsCost, useUSDT } = productInput;
+  static async createProduct(
+    productInput: ICreateProductInput,
+  ): Promise<IProduct> {
+    const { price, stock, logisticsProviders, logisticsCost, useUSDT } =
+      productInput;
 
     // Validate essential numeric and boolean fields
     if (typeof price !== 'number' || price <= 0) {
@@ -31,14 +34,20 @@ export class ProductService {
       throw new CustomError('Stock must be a positive number.', 400, 'fail');
     }
     if (typeof useUSDT === 'undefined') {
-      throw new CustomError('The useUSDT field (boolean) is required.', 400, 'fail');
+      throw new CustomError(
+        'The useUSDT field (boolean) is required.',
+        400,
+        'fail',
+      );
     }
 
     // Validate logisticsProviders
     if (
       !logisticsProviders ||
       !Array.isArray(logisticsProviders) ||
-      !logisticsProviders.every(lp => typeof lp === 'string' && lp.startsWith('0x'))
+      !logisticsProviders.every(
+        (lp) => typeof lp === 'string' && lp.startsWith('0x'),
+      )
     ) {
       throw new CustomError(
         'logisticsProviders must be an array of strings, each representing a valid wallet address (starting with "0x").',
@@ -51,7 +60,12 @@ export class ProductService {
     if (
       !logisticsCost ||
       !Array.isArray(logisticsCost) ||
-      !logisticsCost.every(cost => typeof cost === 'string' && !isNaN(parseFloat(cost)) && isFinite(Number(cost)))
+      !logisticsCost.every(
+        (cost) =>
+          typeof cost === 'string' &&
+          !isNaN(parseFloat(cost)) &&
+          isFinite(Number(cost)),
+      )
     ) {
       throw new CustomError(
         'logisticsCost must be an array of strings, each representing a valid number.',
@@ -79,24 +93,24 @@ export class ProductService {
 
     let tradeId;
     // if (tradeReceipt && tradeReceipt.events) {
-    //   if (Array.isArray(tradeReceipt.events.LogisticsSelected) && 
+    //   if (Array.isArray(tradeReceipt.events.LogisticsSelected) &&
     //       tradeReceipt.events.LogisticsSelected.length > 0) {
     //     tradeId = tradeReceipt.events.LogisticsSelected[0].returnValues.tradeId.toString();
     //   }
-    //   else if (tradeReceipt.events.LogisticsSelected && 
-    //       tradeReceipt.events.LogisticsSelected.returnValues && 
+    //   else if (tradeReceipt.events.LogisticsSelected &&
+    //       tradeReceipt.events.LogisticsSelected.returnValues &&
     //       tradeReceipt.events.LogisticsSelected.returnValues.tradeId) {
     //     tradeId = tradeReceipt.events.LogisticsSelected.returnValues.tradeId.toString();
     //   }
-    //   else if (tradeReceipt.events.TradeCreated && 
-    //            tradeReceipt.events.TradeCreated.returnValues && 
+    //   else if (tradeReceipt.events.TradeCreated &&
+    //            tradeReceipt.events.TradeCreated.returnValues &&
     //            tradeReceipt.events.TradeCreated.returnValues.tradeId) {
     //     tradeId = tradeReceipt.events.TradeCreated.returnValues.tradeId.toString();
     //   }
     //   else {
     //     for (const eventName in tradeReceipt.events) {
     //       const event = tradeReceipt.events[eventName];
-          
+
     //       if (Array.isArray(event) && event.length > 0 && event[0].returnValues && event[0].returnValues.tradeId) {
     //         tradeId = event[0].returnValues.tradeId.toString();
     //         break;
@@ -111,8 +125,15 @@ export class ProductService {
     tradeId = tradeReceipt.tradeId.toString();
 
     if (!tradeId) {
-      console.error('Failed to extract tradeId. Full receipt:', JSON.stringify(tradeReceipt, null, 2));
-      throw new CustomError('Trade created on blockchain, but failed to retrieve tradeId from events. Product not saved.', 500, 'error');
+      console.error(
+        'Failed to extract tradeId. Full receipt:',
+        JSON.stringify(tradeReceipt, null, 2),
+      );
+      throw new CustomError(
+        'Trade created on blockchain, but failed to retrieve tradeId from events. Product not saved.',
+        500,
+        'error',
+      );
     }
 
     // 2. Create the product in the database with the tradeId
@@ -125,10 +146,7 @@ export class ProductService {
   }
 
   static async getProducts() {
-    return await Product.find().populate(
-      'seller',
-      'name profileImage rating',
-    );
+    return await Product.find().populate('seller', 'name profileImage rating');
   }
 
   static async getProductById(id: string) {
@@ -177,6 +195,13 @@ export class ProductService {
     }
 
     return await Product.find(searchQuery).populate(
+      'seller',
+      'name profileImage rating',
+    );
+  }
+
+  static async getProductsBySeller(sellerId: string) {
+    return await Product.find({ seller: sellerId }).populate(
       'seller',
       'name profileImage rating',
     );

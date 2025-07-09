@@ -36,6 +36,11 @@ router.put(
   validate(ProductValidation.update),
   ProductController.updateProduct,
 );
+router.get(
+  '/seller/:sellerId',
+  authenticate,
+  ProductController.getProductsBySeller,
+);
 router.delete('/:id', authenticate, ProductController.deleteProduct);
 
 export default router;
