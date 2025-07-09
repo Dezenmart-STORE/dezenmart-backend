@@ -1,6 +1,7 @@
 import express from 'express';
 import { ContractController } from '../controllers/contractController';
-import { authenticate } from '../middlewares/authMiddleware';
+import { authenticate, authorizeRoles } from '../middlewares/authMiddleware';
+import { Role } from '../models/userModel';
 
 const router = express.Router();
 
@@ -8,29 +9,26 @@ const router = express.Router();
 router.post(
   '/admin/register-logistics',
   authenticate,
-  //   adminMiddleware,
+  authorizeRoles(Role.ADMIN),
   ContractController.registerLogisticsProvider,
 );
 
 router.post(
   '/admin/resolve-dispute/:purchaseId', // Changed from tradeId to purchaseId
   authenticate,
-  //   adminMiddleware,
+  authorizeRoles(Role.ADMIN),
   ContractController.resolveDispute,
 );
 
 router.post(
   '/admin/withdraw-fees', // Simplified since there's only one withdraw method now
   authenticate,
-  //   adminMiddleware,
+  authorizeRoles(Role.ADMIN),
   ContractController.withdrawEscrowFees,
 );
 
 // --- Registration Routes ---
-router.post(
-  '/register/buyer',
-  authenticate, ContractController.registerBuyer,
-);
+router.post('/register/buyer', authenticate, ContractController.registerBuyer);
 router.post(
   '/register/seller',
   authenticate,
