@@ -16,7 +16,11 @@ export class ProductController {
     }
 
     if (imageUrls.length > 5) {
-      throw new CustomError('You can only upload a maximum of 5 images', 400, 'fail');
+      throw new CustomError(
+        'You can only upload a maximum of 5 images',
+        400,
+        'fail',
+      );
     }
 
     const {
@@ -30,9 +34,9 @@ export class ProductController {
       logisticsProviders,
       logisticsCosts,
       useUSDT,
-      isSponsored
+      isSponsored,
     } = req.body;
- 
+
     const parseArrayField = (fieldValue: any): string[] => {
       if (fieldValue === undefined || fieldValue === null) {
         return [];
@@ -50,7 +54,7 @@ export class ProductController {
           }
         } catch (e) {
           if (fieldValue.includes(',')) {
-            return fieldValue.split(',').map(s => String(s.trim()));
+            return fieldValue.split(',').map((s) => String(s.trim()));
           } else {
             if (fieldValue.trim() === '') return [];
             return [String(fieldValue)];
@@ -66,18 +70,40 @@ export class ProductController {
 
     // Validate required fields after parsing
     if (!name) throw new CustomError('Product name is required', 400, 'fail');
-    if (price === undefined || price === null || isNaN(Number(price))) throw new CustomError('Valid product price is required', 400, 'fail');
-    if (stock === undefined || stock === null || isNaN(Number(stock))) throw new CustomError('Valid product stock is required', 400, 'fail');
-    if (!category) throw new CustomError('Product category is required', 400, 'fail');
-    if (!sellerWalletAddress) throw new CustomError('Seller wallet address is required', 400, 'fail');
-    if (finalLogisticsProviders.length === 0 && finalLogisticsCosts.length > 0) {
-        throw new CustomError('Logistics providers are required if logistics costs are specified.', 400, 'fail');
+    if (price === undefined || price === null || isNaN(Number(price)))
+      throw new CustomError('Valid product price is required', 400, 'fail');
+    if (stock === undefined || stock === null || isNaN(Number(stock)))
+      throw new CustomError('Valid product stock is required', 400, 'fail');
+    if (!category)
+      throw new CustomError('Product category is required', 400, 'fail');
+    if (!sellerWalletAddress)
+      throw new CustomError('Seller wallet address is required', 400, 'fail');
+    if (
+      finalLogisticsProviders.length === 0 &&
+      finalLogisticsCosts.length > 0
+    ) {
+      throw new CustomError(
+        'Logistics providers are required if logistics costs are specified.',
+        400,
+        'fail',
+      );
     }
-    if (finalLogisticsProviders.length > 0 && finalLogisticsCosts.length === 0) {
-        throw new CustomError('Logistics costs are required if logistics providers are specified.', 400, 'fail');
+    if (
+      finalLogisticsProviders.length > 0 &&
+      finalLogisticsCosts.length === 0
+    ) {
+      throw new CustomError(
+        'Logistics costs are required if logistics providers are specified.',
+        400,
+        'fail',
+      );
     }
     if (finalLogisticsProviders.length !== finalLogisticsCosts.length) {
-        throw new CustomError('Logistics providers and costs must have the same number of entries.', 400, 'fail');
+      throw new CustomError(
+        'Logistics providers and costs must have the same number of entries.',
+        400,
+        'fail',
+      );
     }
 
     const productInput = {
@@ -156,6 +182,12 @@ export class ProductController {
   static searchProducts = async (req: Request, res: Response) => {
     const { q, ...filters } = req.query;
     const products = await ProductService.searchProducts(q as string, filters);
+    res.json(products);
+  };
+
+  static getProductsBySeller = async (req: Request, res: Response) => {
+    const sellerId = req.params.sellerId;
+    const products = await ProductService.getProductsBySeller(sellerId);
     res.json(products);
   };
 }
