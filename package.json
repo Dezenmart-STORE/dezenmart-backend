@@ -21,12 +21,13 @@
   "description": "",
   "dependencies": {
     "@celo/contractkit": "^9.2.1",
+    "@mento-protocol/mento-sdk": "^1.10.3",
     "@selfxyz/core": "^0.0.25",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "ethers": "^6.13.5",
+    "ethers": "^5.8.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "helmet": "^8.1.0",
@@ -42,6 +43,9 @@
     "web3": "^1.10.4",
     "winston": "^3.17.0",
     "ws": "^8.18.1"
+  },
+  "overrides": {
+    "viem": "^2.30.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
