@@ -1,20 +1,21 @@
 import { Request, Response, NextFunction } from 'express';
 import { contractService } from '../server';
 import { CustomError } from '../middlewares/errorHandler';
+import { Address } from 'viem';
 
 function serializeBigInt(obj: any): any {
   if (obj === null || obj === undefined) {
     return obj;
   }
-  
+
   if (typeof obj === 'bigint') {
     return obj.toString();
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(serializeBigInt);
   }
-  
+
   if (typeof obj === 'object') {
     const serialized: any = {};
     for (const [key, value] of Object.entries(obj)) {
@@ -22,11 +23,36 @@ function serializeBigInt(obj: any): any {
     }
     return serialized;
   }
-  
+
   return obj;
 }
 
 export class ContractController {
+  // Helper method to validate Ethereum addresses
+  private static isValidAddress(address: string): boolean {
+    return /^0x[a-fA-F0-9]{40}$/.test(address);
+  }
+
+  // Helper method to validate and parse positive numbers
+  private static validatePositiveNumber(value: any, fieldName: string): number {
+    if (!value || isNaN(Number(value)) || Number(value) <= 0) {
+      throw new CustomError(`Valid ${fieldName} is required`, 400, 'fail');
+    }
+    return Number(value);
+  }
+
+  // Helper method to validate and parse positive integers
+  private static validatePositiveInteger(
+    value: any,
+    fieldName: string,
+  ): number {
+    const num = parseInt(value, 10);
+    if (!value || isNaN(num) || num < 0) {
+      throw new CustomError(`Valid ${fieldName} is required`, 400, 'fail');
+    }
+    return num;
+  }
+
   static async registerLogisticsProvider(
     req: Request,
     res: Response,
@@ -34,7 +60,11 @@ export class ContractController {
   ) {
     try {
       const { providerAddress } = req.body;
-      if (!providerAddress || !/^0x[a-fA-F0-9]{40}$/.test(providerAddress)) {
+
+      if (
+        !providerAddress ||
+        !ContractController.isValidAddress(providerAddress)
+      ) {
         return next(
           new CustomError('Valid provider address is required', 400, 'fail'),
         );
@@ -49,7 +79,7 @@ export class ContractController {
         message: 'Logistics provider registration transaction sent',
         data: {
           transactionHash: hash,
-          receipt: serializeBigInt(receipt)
+          receipt: serializeBigInt(receipt),
         },
       });
     } catch (error) {
@@ -80,23 +110,19 @@ export class ContractController {
       const { purchaseId } = req.params;
       const { winner } = req.body;
 
-      if (
-        !purchaseId ||
-        isNaN(parseInt(purchaseId, 10)) ||
-        parseInt(purchaseId, 10) < 0
-      ) {
-        return next(
-          new CustomError('Valid Purchase ID is required', 400, 'fail'),
-        );
-      }
-      if (!winner || !/^0x[a-fA-F0-9]{40}$/.test(winner)) {
+      const purchaseIdNum = ContractController.validatePositiveInteger(
+        purchaseId,
+        'Purchase ID',
+      );
+
+      if (!winner || !ContractController.isValidAddress(winner)) {
         return next(
           new CustomError('Valid winner address is required', 400, 'fail'),
         );
       }
 
       const hash = await contractService.resolveDispute(
-        BigInt(purchaseId),
+        BigInt(purchaseIdNum),
         winner,
       );
       const receipt = await contractService.getTransactionReceipt(hash);
@@ -106,7 +132,7 @@ export class ContractController {
         message: 'Dispute resolution transaction sent',
         data: {
           transactionHash: hash,
-          receipt: serializeBigInt(receipt)
+          receipt: serializeBigInt(receipt),
         },
       });
     } catch (error) {
@@ -117,19 +143,34 @@ export class ContractController {
 
   static async createTrade(req: Request, res: Response, next: NextFunction) {
     try {
-      const { productCost, logisticsProviders, logisticsCosts, totalQuantity } =
-        req.body;
+      const {
+        productCost,
+        logisticsProviders,
+        logisticsCosts,
+        totalQuantity,
+        tokenAddress,
+      } = req.body;
 
       // Validate product cost
-      if (
-        !productCost ||
-        isNaN(Number(productCost)) ||
-        Number(productCost) <= 0
-      ) {
+      const productCostNum = ContractController.validatePositiveNumber(
+        productCost,
+        'product cost',
+      );
+
+      // Validate token address
+      if (!tokenAddress || !ContractController.isValidAddress(tokenAddress)) {
         return next(
-          new CustomError('Valid product cost is required', 400, 'fail'),
+          new CustomError('Valid token address is required', 400, 'fail'),
         );
       }
+
+      // Validate if it's a supported token (optional - depends on your business logic)
+      // You can uncomment this if you want to restrict to predefined tokens
+      // if (!contractService.isValidPaymentToken(tokenAddress)) {
+      //   return next(
+      //     new CustomError('Unsupported payment token', 400, 'fail'),
+      //   );
+      // }
 
       // Validate logistics providers and costs
       if (
@@ -167,7 +208,7 @@ export class ContractController {
 
       // Validate each provider address
       for (const provider of logisticsProviders) {
-        if (!/^0x[a-fA-F0-9]{40}$/.test(provider)) {
+        if (!ContractController.isValidAddress(provider)) {
           return next(
             new CustomError(
               `Invalid logistics provider address: ${provider}`,
@@ -179,39 +220,35 @@ export class ContractController {
       }
 
       // Validate each cost
+      const validatedCosts: number[] = [];
       for (const cost of logisticsCosts) {
-        if (isNaN(Number(cost)) || Number(cost) <= 0) {
-          return next(
-            new CustomError(`Invalid logistics cost: ${cost}`, 400, 'fail'),
-          );
-        }
-      }
-
-      // Validate total quantity
-      if (
-        !totalQuantity ||
-        isNaN(Number(totalQuantity)) ||
-        Number(totalQuantity) <= 0
-      ) {
-        return next(
-          new CustomError('Valid total quantity is required', 400, 'fail'),
+        validatedCosts.push(
+          ContractController.validatePositiveNumber(cost, 'logistics cost'),
         );
       }
 
-      // Create the trade - now returns both hash and tradeId
+      // Validate total quantity
+      const totalQuantityNum = ContractController.validatePositiveNumber(
+        totalQuantity,
+        'total quantity',
+      );
+
+      // Create the trade
       const { hash, tradeId } = await contractService.createTrade(
-        productCost.toString(),
+        productCostNum.toString(),
         logisticsProviders,
-        logisticsCosts.map((cost: number) => cost.toString()),
-        BigInt(totalQuantity),
+        validatedCosts.map((cost) => cost.toString()),
+        BigInt(totalQuantityNum),
+        tokenAddress as Address,
       );
 
       res.status(201).json({
         status: 'success',
-        message: `Trade created successfully`,
+        message: 'Trade created successfully',
         data: {
           transactionHash: hash,
           tradeId: tradeId.toString(),
+          tokenAddress,
         },
       });
     } catch (error) {
@@ -223,26 +260,24 @@ export class ContractController {
   static async buyTrade(req: Request, res: Response, next: NextFunction) {
     try {
       const { tradeId } = req.params;
-      const { quantity, logisticsProvider } = req.body;
+      const { quantity, logisticsProvider, tokenAddress } = req.body;
 
       // Validate tradeId
-      if (
-        !tradeId ||
-        isNaN(parseInt(tradeId, 10)) ||
-        parseInt(tradeId, 10) < 0
-      ) {
-        return next(new CustomError('Valid Trade ID is required', 400, 'fail'));
-      }
+      const tradeIdNum = ContractController.validatePositiveInteger(
+        tradeId,
+        'Trade ID',
+      );
 
       // Validate quantity
-      if (!quantity || isNaN(Number(quantity)) || Number(quantity) <= 0) {
-        return next(new CustomError('Valid quantity is required', 400, 'fail'));
-      }
+      const quantityNum = ContractController.validatePositiveNumber(
+        quantity,
+        'quantity',
+      );
 
       // Validate logistics provider
       if (
         !logisticsProvider ||
-        !/^0x[a-fA-F0-9]{40}$/.test(logisticsProvider)
+        !ContractController.isValidAddress(logisticsProvider)
       ) {
         return next(
           new CustomError(
@@ -253,19 +288,42 @@ export class ContractController {
         );
       }
 
-      // Get trade to verify it exists
-      const trade = await contractService.getTrade(parseInt(tradeId, 10));
+      // Validate token address
+      if (!tokenAddress || !ContractController.isValidAddress(tokenAddress)) {
+        return next(
+          new CustomError('Valid token address is required', 400, 'fail'),
+        );
+      }
+
+      // Get trade to verify it exists and is active
+      const trade = await contractService.getTrade(tradeIdNum);
       if (!trade || !trade.active) {
         return next(
           new CustomError('Trade not found or inactive', 404, 'fail'),
         );
       }
 
-      // Buy the trade - now returns both hash and purchaseId
+      // Verify the logistics provider is valid for this trade
+      const providerExists = trade.logisticsProviders.some(
+        (provider) =>
+          provider.toLowerCase() === logisticsProvider.toLowerCase(),
+      );
+      if (!providerExists) {
+        return next(
+          new CustomError(
+            'Invalid logistics provider for this trade',
+            400,
+            'fail',
+          ),
+        );
+      }
+
+      // Buy the trade
       const { hash, purchaseId } = await contractService.buyTrade(
-        parseInt(tradeId, 10),
-        BigInt(quantity),
+        tradeIdNum,
+        BigInt(quantityNum),
         logisticsProvider,
+        tokenAddress as Address,
       );
 
       res.status(200).json({
@@ -274,6 +332,7 @@ export class ContractController {
         data: {
           transactionHash: hash,
           purchaseId: purchaseId.toString(),
+          tokenAddress,
         },
       });
     } catch (error) {
@@ -289,18 +348,15 @@ export class ContractController {
   ) {
     try {
       const { purchaseId } = req.params;
-      
-      if (
-        !purchaseId ||
-        isNaN(parseInt(purchaseId, 10)) ||
-        parseInt(purchaseId, 10) < 0
-      ) {
-        return next(
-          new CustomError('Valid Purchase ID is required', 400, 'fail'),
-        );
-      }
 
-      const hash = await contractService.confirmDelivery(purchaseId);
+      const purchaseIdNum = ContractController.validatePositiveInteger(
+        purchaseId,
+        'Purchase ID',
+      );
+
+      const hash = await contractService.confirmDelivery(
+        purchaseIdNum.toString(),
+      );
       const receipt = await contractService.getTransactionReceipt(hash);
 
       res.status(200).json({
@@ -308,7 +364,7 @@ export class ContractController {
         message: 'Delivery confirmation transaction sent',
         data: {
           transactionHash: hash,
-          receipt: serializeBigInt(receipt)
+          receipt: serializeBigInt(receipt),
         },
       });
     } catch (error) {
@@ -325,17 +381,14 @@ export class ContractController {
     try {
       const { purchaseId } = req.params;
 
-      if (
-        !purchaseId ||
-        isNaN(parseInt(purchaseId, 10)) ||
-        parseInt(purchaseId, 10) < 0
-      ) {
-        return next(
-          new CustomError('Valid Purchase ID is required', 400, 'fail'),
-        );
-      }
+      const purchaseIdNum = ContractController.validatePositiveInteger(
+        purchaseId,
+        'Purchase ID',
+      );
 
-      const hash = await contractService.confirmPurchase(purchaseId);
+      const hash = await contractService.confirmPurchase(
+        purchaseIdNum.toString(),
+      );
       const receipt = await contractService.getTransactionReceipt(hash);
 
       res.status(200).json({
@@ -343,7 +396,7 @@ export class ContractController {
         message: 'Purchase confirmation transaction sent',
         data: {
           transactionHash: hash,
-          receipt: serializeBigInt(receipt)
+          receipt: serializeBigInt(receipt),
         },
       });
     } catch (error) {
@@ -356,17 +409,12 @@ export class ContractController {
     try {
       const { purchaseId } = req.params;
 
-      if (
-        !purchaseId ||
-        isNaN(parseInt(purchaseId, 10)) ||
-        parseInt(purchaseId, 10) < 0
-      ) {
-        return next(
-          new CustomError('Valid Purchase ID is required', 400, 'fail'),
-        );
-      }
+      const purchaseIdNum = ContractController.validatePositiveInteger(
+        purchaseId,
+        'Purchase ID',
+      );
 
-      const hash = await contractService.cancelPurchase(BigInt(purchaseId));
+      const hash = await contractService.cancelPurchase(BigInt(purchaseIdNum));
       const receipt = await contractService.getTransactionReceipt(hash);
 
       res.status(200).json({
@@ -374,7 +422,7 @@ export class ContractController {
         message: 'Purchase cancellation transaction sent',
         data: {
           transactionHash: hash,
-          receipt: serializeBigInt(receipt)
+          receipt: serializeBigInt(receipt),
         },
       });
     } catch (error) {
@@ -387,17 +435,12 @@ export class ContractController {
     try {
       const { purchaseId } = req.params;
 
-      if (
-        !purchaseId ||
-        isNaN(parseInt(purchaseId, 10)) ||
-        parseInt(purchaseId, 10) < 0
-      ) {
-        return next(
-          new CustomError('Valid Purchase ID is required', 400, 'fail'),
-        );
-      }
+      const purchaseIdNum = ContractController.validatePositiveInteger(
+        purchaseId,
+        'Purchase ID',
+      );
 
-      const hash = await contractService.raiseDispute(BigInt(purchaseId));
+      const hash = await contractService.raiseDispute(BigInt(purchaseIdNum));
       const receipt = await contractService.getTransactionReceipt(hash);
 
       res.status(200).json({
@@ -405,7 +448,7 @@ export class ContractController {
         message: 'Dispute raising transaction sent',
         data: {
           transactionHash: hash,
-          receipt: serializeBigInt(receipt)
+          receipt: serializeBigInt(receipt),
         },
       });
     } catch (error) {
@@ -422,34 +465,40 @@ export class ContractController {
     try {
       const { tradeId } = req.params;
 
-      if (
-        !tradeId ||
-        isNaN(parseInt(tradeId, 10)) ||
-        parseInt(tradeId, 10) < 0
-      ) {
-        return next(new CustomError('Valid Trade ID is required', 400, 'fail'));
-      }
+      const tradeIdNum = ContractController.validatePositiveInteger(
+        tradeId,
+        'Trade ID',
+      );
 
-      const tradeDetails = await contractService.getTrade(parseInt(tradeId, 10));
+      const tradeDetails = await contractService.getTrade(tradeIdNum);
 
-      // Format the response to include human-readable amounts
+      // Note: You'll need to modify your contract to return token address info
+      // or store it separately. For now, we'll format using a default token
+      // This is a limitation that needs to be addressed in your contract design
+
       const formattedTrade = {
-        ...tradeDetails,
-        productCostFormatted: contractService.formatUSDT(
+        seller: tradeDetails.seller,
+        logisticsProviders: tradeDetails.logisticsProviders,
+        logisticsCosts: tradeDetails.logisticsCosts.map((cost) =>
+          cost.toString(),
+        ),
+        productCost: tradeDetails.productCost.toString(),
+        escrowFee: tradeDetails.escrowFee.toString(),
+        totalQuantity: tradeDetails.totalQuantity.toString(),
+        remainingQuantity: tradeDetails.remainingQuantity.toString(),
+        active: tradeDetails.active,
+        purchaseIds: tradeDetails.purchaseIds.map((id) => id.toString()),
+        // Add formatted versions for common tokens
+        // You may want to add tokenAddress field to your Trade struct
+        productCostFormattedUSDT: contractService.formatUSDT(
           tradeDetails.productCost,
         ),
-        escrowFeeFormatted: contractService.formatUSDT(tradeDetails.escrowFee),
-        logisticsCostsFormatted: tradeDetails.logisticsCosts.map((cost) =>
+        escrowFeeFormattedUSDT: contractService.formatUSDT(
+          tradeDetails.escrowFee,
+        ),
+        logisticsCostsFormattedUSDT: tradeDetails.logisticsCosts.map((cost) =>
           contractService.formatUSDT(cost),
         ),
-        totalQuantity: JSON.stringify((tradeDetails.totalQuantity).toString()), 
-        remainingQuantity: JSON.stringify((tradeDetails.remainingQuantity).toString()),
-        purchaseIds: JSON.stringify(tradeDetails.purchaseIds.map((id) => id.toString())),
-        logisticsProviders: tradeDetails.logisticsProviders.map((provider) => provider.toString()), 
-        logisticsCosts: JSON.stringify(tradeDetails.logisticsCosts.map((cost) => cost.toString())),
-        productCost: JSON.stringify(tradeDetails.productCost.toString()),
-        escrowFee: JSON.stringify(tradeDetails.escrowFee.toString()),
-        purchaseId: JSON.stringify(tradeDetails.purchaseIds.map((provider) => provider.toString())),
       };
 
       res.status(200).json({
@@ -476,37 +525,38 @@ export class ContractController {
     try {
       const { purchaseId } = req.params;
 
-      if (
-        !purchaseId ||
-        isNaN(parseInt(purchaseId, 10)) ||
-        parseInt(purchaseId, 10) < 0
-      ) {
-        return next(
-          new CustomError('Valid Purchase ID is required', 400, 'fail'),
-        );
-      }
-
-      const purchaseDetails = await contractService.getPurchase(
-        BigInt(purchaseId),
+      const purchaseIdNum = ContractController.validatePositiveInteger(
+        purchaseId,
+        'Purchase ID',
       );
 
-      // Format the response to include human-readable amounts
+      const purchaseDetails = await contractService.getPurchase(
+        BigInt(purchaseIdNum),
+      );
+
       const formattedPurchase = {
-        ...purchaseDetails,
         purchaseId: purchaseDetails.purchaseId.toString(),
         tradeId: purchaseDetails.tradeId.toString(),
+        buyer: purchaseDetails.buyer,
         quantity: purchaseDetails.quantity.toString(),
-        totalAmountFormatted: contractService.formatUSDT(
+        totalAmount: purchaseDetails.totalAmount.toString(),
+        delivered: purchaseDetails.delivered,
+        confirmed: purchaseDetails.confirmed,
+        disputed: purchaseDetails.disputed,
+        chosenLogisticsProvider: purchaseDetails.chosenLogisticsProvider,
+        logisticsCost: purchaseDetails.logisticsCost.toString(),
+        // Add formatted versions
+        totalAmountFormattedUSDT: contractService.formatUSDT(
           purchaseDetails.totalAmount,
         ),
-        logisticsCostFormatted: contractService.formatUSDT(
+        logisticsCostFormattedUSDT: contractService.formatUSDT(
           purchaseDetails.logisticsCost,
         ),
       };
 
       res.status(200).json({
         status: 'success',
-        data: serializeBigInt(formattedPurchase),
+        data: formattedPurchase,
       });
     } catch (error) {
       console.error('Error in getPurchaseDetails controller:', error);
@@ -528,14 +578,21 @@ export class ContractController {
     try {
       const purchases = await contractService.getBuyerPurchases();
 
-      // Format the purchases for better readability
       const formattedPurchases = purchases.map((purchase) => ({
-        ...purchase,
         purchaseId: purchase.purchaseId.toString(),
         tradeId: purchase.tradeId.toString(),
+        buyer: purchase.buyer,
         quantity: purchase.quantity.toString(),
-        totalAmountFormatted: contractService.formatUSDT(purchase.totalAmount),
-        logisticsCostFormatted: contractService.formatUSDT(
+        totalAmount: purchase.totalAmount.toString(),
+        delivered: purchase.delivered,
+        confirmed: purchase.confirmed,
+        disputed: purchase.disputed,
+        chosenLogisticsProvider: purchase.chosenLogisticsProvider,
+        logisticsCost: purchase.logisticsCost.toString(),
+        totalAmountFormattedUSDT: contractService.formatUSDT(
+          purchase.totalAmount,
+        ),
+        logisticsCostFormattedUSDT: contractService.formatUSDT(
           purchase.logisticsCost,
         ),
       }));
@@ -558,17 +615,21 @@ export class ContractController {
     try {
       const trades = await contractService.getSellerTrades();
 
-      // Format the trades for better readability
       const formattedTrades = trades.map((trade) => ({
-        ...trade,
-        productCostFormatted: contractService.formatUSDT(trade.productCost),
-        escrowFeeFormatted: contractService.formatUSDT(trade.escrowFee),
-        logisticsCostsFormatted: trade.logisticsCosts.map((cost) =>
-          contractService.formatUSDT(cost),
-        ),
+        seller: trade.seller,
+        logisticsProviders: trade.logisticsProviders,
+        logisticsCosts: trade.logisticsCosts.map((cost) => cost.toString()),
+        productCost: trade.productCost.toString(),
+        escrowFee: trade.escrowFee.toString(),
         totalQuantity: trade.totalQuantity.toString(),
         remainingQuantity: trade.remainingQuantity.toString(),
+        active: trade.active,
         purchaseIds: trade.purchaseIds.map((id) => id.toString()),
+        productCostFormattedUSDT: contractService.formatUSDT(trade.productCost),
+        escrowFeeFormattedUSDT: contractService.formatUSDT(trade.escrowFee),
+        logisticsCostsFormattedUSDT: trade.logisticsCosts.map((cost) =>
+          contractService.formatUSDT(cost),
+        ),
       }));
 
       res.status(200).json({
@@ -589,14 +650,21 @@ export class ContractController {
     try {
       const purchases = await contractService.getProviderTrades();
 
-      // Format the purchases for better readability
       const formattedPurchases = purchases.map((purchase) => ({
-        ...purchase,
         purchaseId: purchase.purchaseId.toString(),
         tradeId: purchase.tradeId.toString(),
+        buyer: purchase.buyer,
         quantity: purchase.quantity.toString(),
-        totalAmountFormatted: contractService.formatUSDT(purchase.totalAmount),
-        logisticsCostFormatted: contractService.formatUSDT(
+        totalAmount: purchase.totalAmount.toString(),
+        delivered: purchase.delivered,
+        confirmed: purchase.confirmed,
+        disputed: purchase.disputed,
+        chosenLogisticsProvider: purchase.chosenLogisticsProvider,
+        logisticsCost: purchase.logisticsCost.toString(),
+        totalAmountFormattedUSDT: contractService.formatUSDT(
+          purchase.totalAmount,
+        ),
+        logisticsCostFormattedUSDT: contractService.formatUSDT(
           purchase.logisticsCost,
         ),
       }));
@@ -625,7 +693,7 @@ export class ContractController {
         message: 'Escrow fees withdrawal transaction sent',
         data: {
           transactionHash: hash,
-          receipt: serializeBigInt(receipt)
+          receipt: serializeBigInt(receipt),
         },
       });
     } catch (error) {
@@ -645,7 +713,7 @@ export class ContractController {
         message: 'Buyer registration transaction sent',
         data: {
           transactionHash: hash,
-          receipt: serializeBigInt(receipt)
+          receipt: serializeBigInt(receipt),
         },
       });
     } catch (error) {
@@ -673,16 +741,129 @@ export class ContractController {
     }
   }
 
-  // USDT utility endpoints
+  // Token utility endpoints
+  static async getTokenBalance(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const { tokenAddress, userAddress } = req.params;
+
+      if (!tokenAddress || !ContractController.isValidAddress(tokenAddress)) {
+        return next(
+          new CustomError('Valid token address is required', 400, 'fail'),
+        );
+      }
+
+      if (!userAddress || !ContractController.isValidAddress(userAddress)) {
+        return next(
+          new CustomError('Valid user address is required', 400, 'fail'),
+        );
+      }
+
+      const balance = await contractService.getTokenBalance(
+        tokenAddress as Address,
+        userAddress as Address,
+      );
+      const decimals = await contractService.getTokenDecimals(
+        tokenAddress as Address,
+      );
+
+      res.status(200).json({
+        status: 'success',
+        data: {
+          tokenAddress,
+          userAddress,
+          balance: balance.toString(),
+          balanceFormatted: contractService.formatToken(balance, decimals),
+          decimals,
+        },
+      });
+    } catch (error) {
+      console.error('Error in getTokenBalance controller:', error);
+      next(error);
+    }
+  }
+
+  static async approveToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { tokenAddress } = req.params;
+      const { amount } = req.body;
+
+      if (!tokenAddress || !ContractController.isValidAddress(tokenAddress)) {
+        return next(
+          new CustomError('Valid token address is required', 400, 'fail'),
+        );
+      }
+
+      const amountNum = ContractController.validatePositiveNumber(
+        amount,
+        'amount',
+      );
+
+      const decimals = await contractService.getTokenDecimals(
+        tokenAddress as Address,
+      );
+      const amountBigInt = contractService.parseToken(
+        amountNum.toString(),
+        decimals,
+      );
+
+      const hash = await contractService.approveToken(
+        tokenAddress as Address,
+        amountBigInt,
+      );
+      const receipt = await contractService.getTransactionReceipt(hash);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Token approval transaction sent',
+        data: {
+          transactionHash: hash,
+          tokenAddress,
+          amount: amountNum.toString(),
+          amountFormatted: contractService.formatToken(amountBigInt, decimals),
+          receipt: serializeBigInt(receipt),
+        },
+      });
+    } catch (error) {
+      console.error('Error in approveToken controller:', error);
+      next(error);
+    }
+  }
+
+  static async getPaymentTokens(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const tokens = contractService.getPaymentTokens();
+
+      res.status(200).json({
+        status: 'success',
+        data: {
+          supportedTokens: tokens,
+          count: Object.keys(tokens).length,
+        },
+      });
+    } catch (error) {
+      console.error('Error in getPaymentTokens controller:', error);
+      next(error);
+    }
+  }
+
+  // Legacy USDT endpoints (for backward compatibility)
   static async getUSDTBalance(req: Request, res: Response, next: NextFunction) {
     try {
       const { address } = req.params;
 
-      if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      if (!address || !ContractController.isValidAddress(address)) {
         return next(new CustomError('Valid address is required', 400, 'fail'));
       }
 
-      const balance = await contractService.getUSDTBalance(address as `0x${string}`);
+      const balance = await contractService.getUSDTBalance(address as Address);
 
       res.status(200).json({
         status: 'success',
@@ -698,47 +879,17 @@ export class ContractController {
     }
   }
 
-   // Enhanced balance checking endpoint
-  //  static async checkAccountBalances(req: Request, res: Response, next: NextFunction) {
-  //   try {
-  //     const { address } = req.params;
-      
-  //     // Use provided address or default to service account
-  //     const targetAddress = address ? address as `0x${string}` : undefined;
-      
-  //     if (address && !/^0x[a-fA-F0-9]{40}$/.test(address)) {
-  //       return next(new CustomError('Valid address is required', 400, 'fail'));
-  //     }
-
-  //     const balances = await contractService.checkBalances(targetAddress);
-
-  //     res.status(200).json({
-  //       status: 'success',
-  //       data: {
-  //         address: targetAddress || contractService.getAccountAddress(),
-  //         ...balances,
-  //         recommendations: balances.hasEnoughForGas 
-  //           ? 'Account has sufficient balance for transactions'
-  //           : 'Please add more CELO to your account for gas fees'
-  //       },
-  //     });
-  //   } catch (error) {
-  //     console.error('Error in checkAccountBalances controller:', error);
-  //     next(error);
-  //   }
-  // }
-
-
   static async approveUSDT(req: Request, res: Response, next: NextFunction) {
     try {
       const { amount } = req.body;
 
-      if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-        return next(new CustomError('Valid amount is required', 400, 'fail'));
-      }
+      const amountNum = ContractController.validatePositiveNumber(
+        amount,
+        'amount',
+      );
 
       const hash = await contractService.approveUSDT(
-        contractService.parseUSDT(amount.toString()),
+        contractService.parseUSDT(amountNum.toString()),
       );
       const receipt = await contractService.getTransactionReceipt(hash);
 
@@ -747,12 +898,34 @@ export class ContractController {
         message: 'USDT approval transaction sent',
         data: {
           transactionHash: hash,
-          amount: amount.toString(),
-          receipt: serializeBigInt(receipt)
+          amount: amountNum.toString(),
+          receipt: serializeBigInt(receipt),
         },
       });
     } catch (error) {
       console.error('Error in approveUSDT controller:', error);
+      next(error);
+    }
+  }
+
+  // Utility endpoint to get account info
+  static async getAccountInfo(req: Request, res: Response, next: NextFunction) {
+    try {
+      const accountAddress = contractService.getAccountAddress();
+
+      if (!accountAddress) {
+        return next(new CustomError('No account configured', 400, 'fail'));
+      }
+
+      res.status(200).json({
+        status: 'success',
+        data: {
+          accountAddress,
+          supportedTokens: contractService.getPaymentTokens(),
+        },
+      });
+    } catch (error) {
+      console.error('Error in getAccountInfo controller:', error);
       next(error);
     }
   }
