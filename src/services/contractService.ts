@@ -22,6 +22,16 @@ import { StringDecoder } from 'string_decoder';
 
 dotenv.config();
 
+// Payment token mapping - symbol to contract address
+export const PAYMENT_TOKENS = {
+  USDT: '0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e', // Celo USDT
+  USDC: '0x37f750B7cC259A2f741AF45294f6a16572CF5cAd', // Celo USDC
+  CELO: '0x471EcE3750Da237f93B8E339c536989b8978a438', // Wrapped CELO
+  // Add more tokens as needed
+} as const;
+
+export type PaymentTokenSymbol = keyof typeof PAYMENT_TOKENS;
+
 // Define types to match the contract structure
 export interface Purchase {
   purchaseId: bigint;
@@ -56,8 +66,8 @@ export interface ContractConfig {
   rpcUrl?: string;
 }
 
-// USDT Contract ABI (minimal for approve and allowance)
-const USDT_ABI = [
+// Generic ERC20 Contract ABI (for approve, allowance, balanceOf)
+const ERC20_ABI = [
   {
     inputs: [
       { name: '_spender', type: 'address' },
@@ -85,15 +95,20 @@ const USDT_ABI = [
     stateMutability: 'view',
     type: 'function',
   },
+  {
+    inputs: [],
+    name: 'decimals',
+    outputs: [{ name: '', type: 'uint8' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
 ] as const;
 
 export class DezenMartContractService {
   private publicClient;
   private walletClient;
   private account;
-  // private configure: ContractConfig;
   private contract;
-  private usdtContract;
   private eventUnsubscribers: (() => void)[] = [];
 
   constructor() {
@@ -130,10 +145,13 @@ export class DezenMartContractService {
         wallet: this.walletClient,
       },
     });
+  }
 
-    this.usdtContract = getContract({
-      address: config.USDT_ADDRESS as `0x${string}`,
-      abi: USDT_ABI,
+  // Helper method to get token contract instance
+  private getTokenContract(tokenAddress: Address) {
+    return getContract({
+      address: tokenAddress,
+      abi: ERC20_ABI,
       client: {
         public: this.publicClient,
         wallet: this.walletClient,
@@ -171,27 +189,33 @@ export class DezenMartContractService {
     });
   }
 
-  // Helper to perform USDT reads
-  private async readUSDTContract(
-    functionName: 'allowance' | 'balanceOf',
-    args: readonly [`0x${string}`, `0x${string}`] | readonly [`0x${string}`]
-  ): Promise<bigint> {
+  // Helper to perform token reads
+  private async readTokenContract(
+    tokenAddress: Address,
+    functionName: 'allowance' | 'balanceOf' | 'decimals',
+    args:
+      | readonly [`0x${string}`, `0x${string}`]
+      | readonly [`0x${string}`]
+      | readonly [] = [],
+  ): Promise<bigint | number> {
     return await this.publicClient.readContract({
-      address: config.USDT_ADDRESS as `0x${string}`,
-      abi: USDT_ABI,
+      address: tokenAddress,
+      abi: ERC20_ABI,
       functionName,
       args: args as any,
     });
   }
 
-  // Helper to perform USDT writes
-  private async writeUSDTContract(
+  // Helper to perform token writes
+  private async writeTokenContract(
+    tokenAddress: Address,
     functionName: 'approve',
-    args: [`0x${string}`, bigint]) {
+    args: [`0x${string}`, bigint],
+  ) {
     this.ensureWalletClient();
     return await this.walletClient!.writeContract({
-      address: config.USDT_ADDRESS as `0x${string}`,
-      abi: USDT_ABI,
+      address: tokenAddress,
+      abi: ERC20_ABI,
       functionName,
       args,
     });
@@ -299,38 +323,76 @@ export class DezenMartContractService {
     }));
   }
 
-  // --- USDT Functions ---
+  // --- Token Functions ---
 
-  async getUSDTBalance(address: Address): Promise<bigint> {
-    return (await this.readUSDTContract('balanceOf', [address])) as bigint;
+  async getTokenBalance(
+    tokenAddress: Address,
+    userAddress: Address,
+  ): Promise<bigint> {
+    const balance = await this.readTokenContract(tokenAddress, 'balanceOf', [
+      userAddress,
+    ]);
+    return BigInt(balance);
   }
 
-  async getUSDTAllowance(owner: Address, spender: Address): Promise<bigint> {
-    return (await this.readUSDTContract('allowance', [
+  async getTokenAllowance(
+    tokenAddress: Address,
+    owner: Address,
+    spender: Address,
+  ): Promise<bigint> {
+    const allowance = await this.readTokenContract(tokenAddress, 'allowance', [
       owner,
       spender,
-    ])) as bigint;
+    ]);
+    return BigInt(allowance);
   }
 
-  async approveUSDT(amount: bigint): Promise<Hash> {
-    return await this.writeUSDTContract('approve', [
+  async getTokenDecimals(tokenAddress: Address): Promise<number> {
+    const decimals = await this.readTokenContract(tokenAddress, 'decimals', []);
+    return Number(decimals);
+  }
+
+  async approveToken(tokenAddress: Address, amount: bigint): Promise<Hash> {
+    return await this.writeTokenContract(tokenAddress, 'approve', [
       config.CONTRACT_ADDRESS as `0x${string}`,
       amount,
     ]);
   }
 
+  // --- Legacy USDT Functions (for backward compatibility) ---
+
+  async getUSDTBalance(address: Address): Promise<bigint> {
+    return await this.getTokenBalance(config.USDT_ADDRESS as Address, address);
+  }
+
+  async getUSDTAllowance(owner: Address, spender: Address): Promise<bigint> {
+    return await this.getTokenAllowance(
+      config.USDT_ADDRESS as Address,
+      owner,
+      spender,
+    );
+  }
+
+  async approveUSDT(amount: bigint): Promise<Hash> {
+    return await this.approveToken(config.USDT_ADDRESS as Address, amount);
+  }
+
   // --- Trade Functions ---
 
   async createTrade(
-    productCostInUSDT: string,
+    productCostInToken: string,
     logisticsProviders: Address[],
-    logisticsCostsInUSDT: string[],
+    logisticsCostsInToken: string[],
     totalQuantity: bigint,
+    tokenAddress: Address,
   ): Promise<{ hash: Hash; tradeId: bigint }> {
-    // Convert USDT amounts to Gwei (assuming 6 decimals for USDT)
-    const productCost = parseUnits(productCostInUSDT, 18);
-    const logisticsCosts = logisticsCostsInUSDT.map((cost) =>
-      parseUnits(cost, 18),
+    // Get token decimals for proper conversion
+    const decimals = await this.getTokenDecimals(tokenAddress);
+
+    // Convert token amounts to wei (using token's decimals)
+    const productCost = parseUnits(productCostInToken, decimals);
+    const logisticsCosts = logisticsCostsInToken.map((cost) =>
+      parseUnits(cost, decimals),
     );
 
     const hash = await this.writeContract('createTrade', [
@@ -338,6 +400,7 @@ export class DezenMartContractService {
       logisticsProviders,
       logisticsCosts,
       totalQuantity,
+      tokenAddress, // Pass token address to the contract
     ]);
 
     // Wait for transaction receipt to get the trade ID from events
@@ -376,6 +439,7 @@ export class DezenMartContractService {
     tradeId: number,
     quantity: bigint,
     logisticsProvider: Address,
+    tokenAddress: Address,
   ): Promise<{ hash: Hash; purchaseId: bigint }> {
     this.ensureWalletClient();
 
@@ -395,25 +459,28 @@ export class DezenMartContractService {
     const totalCost = (trade.productCost + logisticsCost) * quantity;
 
     // Check current allowance
-    const currentAllowance = await this.getUSDTAllowance(
+    const currentAllowance = await this.getTokenAllowance(
+      tokenAddress,
       this.account!.address,
       config.CONTRACT_ADDRESS as `0x${string}`,
     );
 
-    // Approve USDT if needed
-    if (currentAllowance < totalCost) {
-      const approvalHash = await this.approveUSDT(totalCost);
+    // Approve token if needed
+    if (BigInt(currentAllowance) < totalCost) {
+      const approvalHash = await this.approveToken(tokenAddress, totalCost);
 
       // Wait for approval transaction to be confirmed
       await new Promise((resolve) => setTimeout(resolve, 3000));
       const approvalReceipt = await this.getTransactionReceipt(approvalHash);
-      if (!approvalReceipt.status) throw new Error('USDT approval transaction failed');
+      if (!approvalReceipt.status)
+        throw new Error('Token approval transaction failed');
     }
 
     const hash = await this.writeContract('buyTrade', [
       tradeId,
       quantity,
       logisticsProvider,
+      tokenAddress, // Pass token address to the contract
     ]);
 
     // Wait for transaction receipt to get the purchase ID from events
@@ -534,11 +601,11 @@ export class DezenMartContractService {
               data: log.data,
               topics: log.topics,
             });
-            if (decoded.eventName === 'TradeCreated') {
+            if (decoded.eventName === 'PurchaseCreated') {
               callback(decoded.args as any);
             }
           } catch (error) {
-            console.error('Error decoding TradeCreated event:', error);
+            console.error('Error decoding PurchaseCreated event:', error);
           }
         });
       },
@@ -563,11 +630,11 @@ export class DezenMartContractService {
               data: log.data,
               topics: log.topics,
             });
-            if (decoded.eventName === 'TradeCreated') {
+            if (decoded.eventName === 'DeliveryConfirmed') {
               callback(decoded.args as any);
             }
           } catch (error) {
-            console.error('Error decoding TradeCreated event:', error);
+            console.error('Error decoding DeliveryConfirmed event:', error);
           }
         });
       },
@@ -592,11 +659,11 @@ export class DezenMartContractService {
               data: log.data,
               topics: log.topics,
             });
-            if (decoded.eventName === 'TradeCreated') {
+            if (decoded.eventName === 'DisputeRaised') {
               callback(decoded.args as any);
             }
           } catch (error) {
-            console.error('Error decoding TradeCreated event:', error);
+            console.error('Error decoding DisputeRaised event:', error);
           }
         });
       },
@@ -621,11 +688,11 @@ export class DezenMartContractService {
               data: log.data,
               topics: log.topics,
             });
-            if (decoded.eventName === 'TradeCreated') {
-              callback(decoded.args as any); // ✅ Works!
+            if (decoded.eventName === 'DisputeResolved') {
+              callback(decoded.args as any);
             }
           } catch (error) {
-            console.error('Error decoding TradeCreated event:', error);
+            console.error('Error decoding DisputeResolved event:', error);
           }
         });
       },
@@ -667,6 +734,15 @@ export class DezenMartContractService {
 
   // --- Utility Functions ---
 
+  formatToken(amount: bigint, decimals: number): string {
+    return formatUnits(amount, decimals);
+  }
+
+  parseToken(amount: string, decimals: number): bigint {
+    return parseUnits(amount, decimals);
+  }
+
+  // Legacy functions for backward compatibility
   formatUSDT(amount: bigint): string {
     return formatUnits(amount, 6);
   }
@@ -689,48 +765,49 @@ export class DezenMartContractService {
   getAccountAddress(): Address | undefined {
     return this.account?.address;
   }
-}
 
-// Factory function for easy initialization
-// export function createDezenMartService(
-//   config: ContractConfig,
-// ): DezenMartContractService {
-//   return new DezenMartContractService(config);
-// }
+  // Get available payment tokens
+  getPaymentTokens(): Record<string, Address> {
+    return PAYMENT_TOKENS;
+  }
+
+  // Get token address by symbol
+  getTokenAddress(symbol: PaymentTokenSymbol): Address {
+    return PAYMENT_TOKENS[symbol];
+  }
+
+  // Validate if token symbol is supported
+  isValidPaymentToken(symbol: string): symbol is PaymentTokenSymbol {
+    return Object.keys(PAYMENT_TOKENS).includes(symbol);
+  }
+}
 
 // Usage example:
 /*
-const contractService = createDezenMartService({
-  contractAddress: '0x...',
-  usdtAddress: '0x...',
-  privateKey: '0x...',
-  isTestnet: true,
-});
+const contractService = new DezenMartContractService();
 
 // Register as seller
 await contractService.registerSeller();
 
-// Create a trade and get both transaction hash and trade ID
+// Create a trade with USDC token
+const usdcAddress = contractService.getTokenAddress('USDC');
 const { hash: tradeHash, tradeId } = await contractService.createTrade(
-  '100', // 100 USDT product cost
+  '100', // 100 USDC product cost
   ['0x...'], // logistics provider addresses
-  ['10'], // 10 USDT logistics cost
-  BigInt(50) // 50 items
+  ['10'], // 10 USDC logistics cost
+  BigInt(50), // 50 items
+  usdcAddress // USDC token address
 );
 
 console.log(`Trade ${tradeId} created with hash: ${tradeHash}`);
 
-// Buy a trade and get both transaction hash and purchase ID
+// Buy a trade with USDC
 const { hash: purchaseHash, purchaseId } = await contractService.buyTrade(
-  tradeId,
+  Number(tradeId),
   BigInt(5), // quantity
-  '0x...' // logistics provider
+  '0x...', // logistics provider
+  usdcAddress // USDC token address
 );
 
 console.log(`Purchase ${purchaseId} created with hash: ${purchaseHash}`);
-
-// Listen for events
-contractService.watchTradeCreated(({ tradeId, seller, productCost, totalQuantity }) => {
-  console.log(`New trade created: ${tradeId} by ${seller}`);
-});
 */
