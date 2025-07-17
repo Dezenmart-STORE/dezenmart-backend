@@ -348,8 +348,7 @@ export class DezenMartContractService {
   }
 
   async getTokenDecimals(tokenAddress: Address): Promise<number> {
-    const decimals = await this.readTokenContract(tokenAddress, 'decimals', []);
-    return Number(decimals);
+    return 18;
   }
 
   async approveToken(tokenAddress: Address, amount: bigint): Promise<Hash> {
