@@ -9,7 +9,7 @@ const router = express.Router();
 router.post(
   '/',
   authenticate,
-  validate(OrderValidation.create),
+  // validate(OrderValidation.create),
   OrderController.createOrder,
 );
 router.get('/:id', authenticate, OrderController.getOrderDetails);

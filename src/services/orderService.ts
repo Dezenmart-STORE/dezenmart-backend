@@ -61,7 +61,7 @@ export class OrderService {
 
   static async getOrderById(id: string) {
     const order = await Order.findById(id)
-      .populate('product', 'name price images tradeId')
+      .populate('product', 'name price images tradeId paymentToken')
       .populate('buyer', 'name profileImage')
       .populate('seller', 'name profileImage rating');
 

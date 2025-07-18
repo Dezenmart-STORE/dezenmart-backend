@@ -4,7 +4,7 @@ export interface IProduct extends Document {
   name: string;
   description: string;
   price: number;
-  type: { [key: string]: string | number }[]
+  type: { [key: string]: string | number }[];
   category: string;
   seller: Schema.Types.ObjectId;
   sellerWalletAddress: string;
@@ -16,6 +16,7 @@ export interface IProduct extends Document {
   isSponsored: boolean;
   rating: number;
   isActive: boolean;
+  paymentToken: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +38,7 @@ const productSchema = new Schema<IProduct>(
     isSponsored: { type: Boolean, default: false },
     rating: { type: Number, min: 1, max: 5 },
     isActive: { type: Boolean, default: true },
+    paymentToken: { type: String, required: true },
   },
   {
     timestamps: true,
