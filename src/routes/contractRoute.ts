@@ -8,14 +8,14 @@ const router = express.Router();
 router.post(
   '/admin/register-logistics',
   authenticate,
-  //   adminMiddleware,
+    // adminMiddleware,
   ContractController.registerLogisticsProvider,
 );
 
 router.post(
   '/admin/resolve-dispute/:purchaseId', // Changed from tradeId to purchaseId
   authenticate,
-  //   adminMiddleware,
+    // adminMiddleware,
   ContractController.resolveDispute,
 );
 
@@ -38,7 +38,7 @@ router.post(
 );
 
 // --- Trade Creation and Management ---
-router.post('/trades', /**authenticate,**/ ContractController.createTrade);
+router.post('/trades', authenticate, ContractController.createTrade);
 
 router.post('/trades/:tradeId/buy', authenticate, ContractController.buyTrade);
 

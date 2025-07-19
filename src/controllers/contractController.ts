@@ -288,13 +288,6 @@ export class ContractController {
         );
       }
 
-      // Validate token address
-      if (!tokenAddress || !ContractController.isValidAddress(tokenAddress)) {
-        return next(
-          new CustomError('Valid token address is required', 400, 'fail'),
-        );
-      }
-
       // Get trade to verify it exists and is active
       const trade = await contractService.getTrade(tradeIdNum);
       if (!trade || !trade.active) {
@@ -332,7 +325,6 @@ export class ContractController {
         data: {
           transactionHash: hash,
           purchaseId: purchaseId.toString(),
-          tokenAddress,
         },
       });
     } catch (error) {
