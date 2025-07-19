@@ -25,7 +25,7 @@ dotenv.config();
 // Payment token mapping - symbol to contract address
 // Define testnet and mainnet token addresses
 const TESTNET_TOKENS = {
-  cUSD: '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1',
+  cUSD: '0x803700bD991d293306D6e7dCcF2B49F9137b437e',
   cEUR: '0x10c892A6EC43a53E45D0B916B4b7D383B1b78C0F',
   cREAL: '0xE4D517785D091D3c54818832dB6094bcc2744545',
   cKES: '0x02De4766C272abc10Bc88c220D214A26960a7e92',
@@ -490,16 +490,18 @@ export class DezenMartContractService {
     const logisticsCost = trade.logisticsCosts[providerIndex];
     const totalCost = (trade.productCost + logisticsCost) * quantity;
 
+    const TOKEN_ADDRESS = tokenAddress as Address;
+
     // Check current allowance
     const currentAllowance = await this.getTokenAllowance(
-      tokenAddress,
+      TOKEN_ADDRESS,
       this.account!.address,
       config.CONTRACT_ADDRESS as `0x${string}`,
     );
 
     // Approve token if needed
     if (BigInt(currentAllowance) < totalCost) {
-      const approvalHash = await this.approveToken(tokenAddress, totalCost);
+      const approvalHash = await this.approveToken(TOKEN_ADDRESS, totalCost);
 
       // Wait for approval transaction to be confirmed
       await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -512,7 +514,6 @@ export class DezenMartContractService {
       tradeId,
       quantity,
       logisticsProvider,
-      tokenAddress, // Pass token address to the contract
     ]);
 
     // Wait for transaction receipt to get the purchase ID from events
