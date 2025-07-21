@@ -412,6 +412,7 @@ export class DezenMartContractService {
   // --- Trade Functions ---
 
   async createTrade(
+    sellerWalletAddress: Address,
     productCostInToken: string,
     logisticsProviders: Address[],
     logisticsCostsInToken: string[],
@@ -428,6 +429,7 @@ export class DezenMartContractService {
     );
 
     const hash = await this.writeContract('createTrade', [
+      sellerWalletAddress, // Pass seller address to the contract
       productCost,
       logisticsProviders,
       logisticsCosts,
@@ -550,8 +552,8 @@ export class DezenMartContractService {
 
   // --- Purchase Management Functions ---
 
-  async confirmDelivery(purchaseId: string): Promise<Hash> {
-    return await this.writeContract('confirmDelivery', [purchaseId]);
+  async confirmDeliveryAndPurchase(purchaseId: string): Promise<Hash> {
+    return await this.writeContract('confirmDeliveryAndPurchase', [purchaseId]);
   }
 
   async confirmPurchase(purchaseId: string): Promise<Hash> {

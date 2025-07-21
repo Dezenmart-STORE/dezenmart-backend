@@ -149,6 +149,7 @@ export class ContractController {
         logisticsCosts,
         totalQuantity,
         tokenAddress,
+        sellerWalletAddress,
       } = req.body;
 
       // Validate product cost
@@ -161,6 +162,16 @@ export class ContractController {
       if (!tokenAddress || !ContractController.isValidAddress(tokenAddress)) {
         return next(
           new CustomError('Valid token address is required', 400, 'fail'),
+        );
+      }
+
+      // Validate seller wallet address
+      if (
+        !sellerWalletAddress ||
+        !ContractController.isValidAddress(sellerWalletAddress)
+      ) {
+        return next(
+          new CustomError('Valid seller wallet address is required', 400, 'fail'),
         );
       }
 
@@ -235,6 +246,7 @@ export class ContractController {
 
       // Create the trade
       const { hash, tradeId } = await contractService.createTrade(
+        sellerWalletAddress as Address, // Pass the seller address from the request context
         productCostNum.toString(),
         logisticsProviders,
         validatedCosts.map((cost) => cost.toString()),
@@ -333,7 +345,7 @@ export class ContractController {
     }
   }
 
-  static async confirmDelivery(
+  static async confirmDeliveryAndPurchase(
     req: Request,
     res: Response,
     next: NextFunction,
@@ -346,7 +358,7 @@ export class ContractController {
         'Purchase ID',
       );
 
-      const hash = await contractService.confirmDelivery(
+      const hash = await contractService.confirmDeliveryAndPurchase(
         purchaseIdNum.toString(),
       );
       const receipt = await contractService.getTransactionReceipt(hash);
