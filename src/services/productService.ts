@@ -1,3 +1,4 @@
+import { Address } from 'viem';
 import { CustomError } from '../middlewares/errorHandler';
 import { Product, IProduct } from '../models/productModel';
 import { contractService } from '../server';
@@ -32,6 +33,7 @@ export class ProductService {
       logisticsCost,
       useUSDT,
       paymentToken,
+      sellerWalletAddress,
     } = productInput;
 
     // Validate essential numeric and boolean fields
@@ -104,6 +106,7 @@ export class ProductService {
     // Get the actual token address from the symbol
     const tokenAddress = contractService.getTokenAddress(paymentToken);
     const tradeReceipt = await contractService.createTrade(
+      sellerWalletAddress as Address,
       productCostStr,
       productInput.logisticsProviders as `0x${string}`[],
       productInput.logisticsCost,

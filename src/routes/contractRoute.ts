@@ -46,7 +46,7 @@ router.post('/trades/:tradeId/buy', authenticate, ContractController.buyTrade);
 router.post(
   '/purchases/:purchaseId/confirm-delivery', // Changed from trade-based to purchase-based
   authenticate,
-  ContractController.confirmDelivery,
+  ContractController.confirmDeliveryAndPurchase,
 );
 
 router.post(
