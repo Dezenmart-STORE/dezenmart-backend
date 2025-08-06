@@ -4,7 +4,10 @@ import { mentoService } from '../services/mentoService';
 // Celo Mainnet & Alfajores Testnet Token Addresses
 const TOKENS = {
   CELO: '0xF194afDf50B03e69Bd7D057c1Aa9e10c9954E4C9', // Alfajores CELO
-  CUSD: '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1', // Alfajores cUSD
+  CUSD: '0x874069fa1eb16d44d622f2e0ca25eea172369bc1', // Alfajores cUSD
+  cREAL: '0xE4D517785D091D3c54818832dB6094bcc2744545',
+  cGBP: '0x47f2Fb88105155a18c390641C8a73f1402B2BB12',
+  cEUR: '0x10c892A6EC43a53E45D0B916B4b7D383B1b78C0F',
   // Add other Mento tokens as needed
 };
 
