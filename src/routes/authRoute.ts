@@ -12,10 +12,13 @@ const router = express.Router();
 
 // Helper function to get allowed domains
 const getAllowedDomains = (): string[] => {
-  return [
+  const domains = [
     process.env.DEZENMART_FRONTEND_URL,
     process.env.DEZENTRA_FRONTEND_URL,
+    'http://localhost:5173',
   ].filter((url): url is string => !!url);
+
+  return domains;
 };
 
 router.get('/google', (req: Request, res: Response, next: NextFunction) => {
