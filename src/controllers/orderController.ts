@@ -13,6 +13,11 @@ export class OrderController {
     res.status(201).json(order);
   };
 
+  static getOrders = async (req: Request, res: Response) => {
+    const orders = await OrderService.getOrders();
+    res.json(orders);
+  };
+
   static getOrderDetails = async (req: Request, res: Response) => {
     const order = await OrderService.getOrderById(req.params.id);
     res.json(order);

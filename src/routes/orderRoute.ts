@@ -12,6 +12,7 @@ router.post(
   // validate(OrderValidation.create),
   OrderController.createOrder,
 );
+router.get('/', OrderController.getOrders);
 router.get('/:id', authenticate, OrderController.getOrderDetails);
 router.put(
   '/:id',
