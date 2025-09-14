@@ -4,6 +4,7 @@ import { Types } from 'mongoose';
 import { NotificationService } from './notificationService';
 import { RewardService } from './rewardService';
 import { Product, IProduct } from '../models/productModel';
+import { generateOrderId } from '../utils/helpers/generate-unique-dummy-orderId';
 
 export class OrderService {
   static async createOrder(orderInput: {
@@ -39,6 +40,7 @@ export class OrderService {
     const amount = updatedProduct.price * orderInput.quantity;
 
     const order = new Order({
+      orderId: generateOrderId(),
       product: updatedProduct._id,
       buyer: orderInput.buyer,
       seller: updatedProduct.seller,
@@ -57,6 +59,14 @@ export class OrderService {
     });
 
     return savedOrder;
+  }
+
+  static async getOrders() {
+    return await Order.find()
+      .populate('buyer', 'name profileImage')
+      .populate('seller', 'name profileImage rating')
+      .populate('product', 'name price images')
+      .sort({ createdAt: -1 });
   }
 
   static async getOrderById(id: string) {
