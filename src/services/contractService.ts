@@ -41,7 +41,7 @@ const TESTNET_TOKENS = {
   cAUD: '0x84CBD49F5aE07632B6B88094E81Cce8236125Fe0',
   cCAD: '0x02EC9E0D2Fd73e89168C1709e542a48f58d7B133',
   cGHS: '0x295B66bE7714458Af45E6A6Ea142A5358A6cA375',
-G$:'0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A',
+  G$: '0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A',
 } as const;
 
 const MAINNET_TOKENS = {
@@ -61,7 +61,7 @@ const MAINNET_TOKENS = {
   cAUD: '0x7175504C455076F15c04A2F90a8e352281F492F9',
   cCAD: '0xff4Ab19391af240c311c54200a492233052B6325',
   cGHS: '0xfAeA5F3404bbA20D3cc2f8C4B0A888F55a3c7313',
-G$:'0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A',
+  G$: '0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A',
 } as const;
 
 export const PAYMENT_TOKENS =
@@ -385,7 +385,22 @@ export class DezenMartContractService {
   }
 
   async getTokenDecimals(tokenAddress: Address): Promise<number> {
-    return 18;
+    try {
+      // First, try to get decimals from the token contract
+      const decimals = await this.readTokenContract(tokenAddress, 'decimals');
+      return Number(decimals);
+    } catch (error) {
+      console.warn(
+        `Could not fetch decimals for token ${tokenAddress}. Error: ${error}`,
+      );
+
+      const usdtAddress = this.getTokenAddress('USDT');
+      if (tokenAddress.toLowerCase() === usdtAddress.toLowerCase()) {
+        return 6;
+      }
+
+      return 18;
+    }
   }
 
   async approveToken(tokenAddress: Address, amount: bigint): Promise<Hash> {
