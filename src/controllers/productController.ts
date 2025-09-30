@@ -115,6 +115,14 @@ export class ProductController {
       );
     }
 
+    if (!req.user || !req.user.id) {
+      throw new CustomError(
+        'User information is missing from request',
+        401,
+        'fail',
+      );
+    }
+
     const productInput = {
       name,
       description,

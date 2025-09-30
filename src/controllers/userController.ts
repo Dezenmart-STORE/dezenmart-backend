@@ -17,11 +17,18 @@ export class UserController {
   };
 
   static getProfile = async (req: Request, res: Response) => {
+    if (!req.user || !req.user.id) {
+      throw new CustomError('User not authenticated', 401, 'fail');
+    }
     const user = await UserService.getUserById(req.user.id);
     res.json(user);
   };
 
   static updateProfile = async (req: Request, res: Response) => {
+    if (!req.user || !req.user.id) {
+      throw new CustomError('User not authenticated', 401, 'fail');
+    }
+
     const userId = req.user.id;
     const updateData = { ...req.body };
     const file = req.file as Express.Multer.File | undefined;
@@ -68,6 +75,11 @@ export class UserController {
           400,
           'fail',
         );
+      }
+
+      // Check if user is authenticated
+      if (!req.user || !req.user.id) {
+        throw new CustomError('User not authenticated', 401, 'fail');
       }
 
       // Check if user is already verified
@@ -121,6 +133,9 @@ export class UserController {
 
   static getSelfVerificationStatus = async (req: Request, res: Response) => {
     try {
+      if (!req.user || !req.user.id) {
+        throw new CustomError('User not authenticated', 401, 'fail');
+      }
       const isVerified = await UserService.isUserSelfVerified(req.user.id);
       const verificationLevel = await UserService.getUserSelfVerificationLevel(
         req.user.id,
@@ -145,6 +160,9 @@ export class UserController {
 
   static revokeSelfVerification = async (req: Request, res: Response) => {
     try {
+      if (!req.user || !req.user.id) {
+        throw new CustomError('User not authenticated', 401, 'fail');
+      }
       const isVerified = await UserService.isUserSelfVerified(req.user.id);
       if (!isVerified) {
         throw new CustomError(
@@ -185,6 +203,9 @@ export class UserController {
   };
 
   static acceptTerms = async (req: Request, res: Response) => {
+    if (!req.user || !req.user.id) {
+      throw new CustomError('User not authenticated', 401, 'fail');
+    }
     const updatedUser = await UserService.acceptTerms(req.user.id);
     res.status(200).json({
       status: 'success',
@@ -199,6 +220,9 @@ export class UserController {
   };
 
   static getTermsStatus = async (req: Request, res: Response) => {
+    if (!req.user || !req.user.id) {
+      throw new CustomError('User not authenticated', 401, 'fail');
+    }
     const status = await UserService.getTermsStatus(req.user.id);
     res.status(200).json({
       status: 'success',
