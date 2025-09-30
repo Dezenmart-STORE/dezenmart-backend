@@ -34,8 +34,21 @@ const OrderSchema = new Schema<IOrder>(
     product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
     buyer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     seller: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    amount: { type: Number, required: true },
-    quantity: { type: Number },
+    amount: {
+      type: Number,
+      required: true,
+      validate: {
+        validator: Number.isInteger,
+        message: 'Amount must be an integer.',
+      },
+    },
+    quantity: {
+      type: Number,
+      validate: {
+        validator: Number.isInteger,
+        message: 'Quantity must be an integer.',
+      },
+    },
     sellerWalletAddress: { type: String },
     logisticsProviderWalletAddress: [{ type: String }],
     purchaseId: { type: String },

@@ -25,7 +25,14 @@ const productSchema = new Schema<IProduct>(
   {
     name: { type: String, required: true },
     description: { type: String, required: true },
-    price: { type: Number, required: true },
+    price: {
+      type: Number,
+      required: true,
+      validate: {
+        validator: Number.isInteger,
+        message: 'Price must be an integer.',
+      },
+    },
     type: { type: [{ type: Schema.Types.Mixed }], required: true },
     category: { type: String, required: true },
     seller: { type: Schema.Types.ObjectId, ref: 'User', required: true },
