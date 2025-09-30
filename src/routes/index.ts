@@ -10,6 +10,8 @@ import watchlistRoute from './watchlistRoute';
 import notificationRoute from './notificationRoute';
 import messageRoute from './messageRoute';
 import contractRoute from './contractRoute';
+import mentoRoute from './mentoRoute';
+import logisticsRoute from './logisticsRoute';
 
 const router = express.Router();
 
@@ -24,5 +26,7 @@ router.use('/watchlist', watchlistRoute);
 router.use('/notifications', notificationRoute);
 router.use('/messages', messageRoute);
 router.use('/contracts', contractRoute);
+router.use('/mento', mentoRoute);
+router.use('/logistics', logisticsRoute);
 
 export default router;

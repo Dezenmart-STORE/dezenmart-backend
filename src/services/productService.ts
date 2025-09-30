@@ -1,6 +1,8 @@
+import { Address } from 'viem';
 import { CustomError } from '../middlewares/errorHandler';
 import { Product, IProduct } from '../models/productModel';
 import { contractService } from '../server';
+import { PaymentTokenSymbol } from './contractService';
 
 interface ICreateProductInput {
   name: string;
@@ -17,14 +19,22 @@ interface ICreateProductInput {
   isActive: boolean;
   logisticsProviders: string[];
   useUSDT: boolean;
+  paymentToken: PaymentTokenSymbol;
 }
 
 export class ProductService {
   static async createProduct(
     productInput: ICreateProductInput,
   ): Promise<IProduct> {
-    const { price, stock, logisticsProviders, logisticsCost, useUSDT } =
-      productInput;
+    const {
+      price,
+      stock,
+      logisticsProviders,
+      logisticsCost,
+      useUSDT,
+      paymentToken,
+      sellerWalletAddress,
+    } = productInput;
 
     // Validate essential numeric and boolean fields
     if (typeof price !== 'number' || price <= 0) {
@@ -82,13 +92,26 @@ export class ProductService {
       );
     }
 
+    // Validate paymentToken against the list of supported tokens in contractService
+    if (!paymentToken || !contractService.isValidPaymentToken(paymentToken)) {
+      throw new CustomError(
+        `Invalid or missing paymentToken. Supported tokens are: ${Object.keys(contractService.getPaymentTokens()).join(', ')}`,
+        400,
+        'fail',
+      );
+    }
+
     const productCostStr = price.toString();
 
+    // Get the actual token address from the symbol
+    const tokenAddress = contractService.getTokenAddress(paymentToken);
     const tradeReceipt = await contractService.createTrade(
+      sellerWalletAddress as Address,
       productCostStr,
       productInput.logisticsProviders as `0x${string}`[],
       productInput.logisticsCost,
       BigInt(stock),
+      tokenAddress,
     );
 
     let tradeId;
@@ -139,6 +162,7 @@ export class ProductService {
     // 2. Create the product in the database with the tradeId
     const productToSave = new Product({
       ...productInput,
+      productToken: productInput.paymentToken,
       tradeId: tradeId,
     });
 

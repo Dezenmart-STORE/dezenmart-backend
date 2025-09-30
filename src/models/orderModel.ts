@@ -1,6 +1,7 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
 interface IOrder extends Document {
+  orderId: string;
   product: Schema.Types.ObjectId;
   buyer: Schema.Types.ObjectId;
   seller: Schema.Types.ObjectId;
@@ -29,11 +30,25 @@ interface IOrder extends Document {
 
 const OrderSchema = new Schema<IOrder>(
   {
+    orderId: { type: String, unique: true, required: true },
     product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
     buyer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     seller: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    amount: { type: Number, required: true },
-    quantity: { type: Number },
+    amount: {
+      type: Number,
+      required: true,
+      validate: {
+        validator: Number.isInteger,
+        message: 'Amount must be an integer.',
+      },
+    },
+    quantity: {
+      type: Number,
+      validate: {
+        validator: Number.isInteger,
+        message: 'Quantity must be an integer.',
+      },
+    },
     sellerWalletAddress: { type: String },
     logisticsProviderWalletAddress: [{ type: String }],
     purchaseId: { type: String },

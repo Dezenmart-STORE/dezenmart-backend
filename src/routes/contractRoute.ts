@@ -36,7 +36,7 @@ router.post(
 );
 
 // --- Trade Creation and Management ---
-router.post('/trades', /**authenticate,**/ ContractController.createTrade);
+router.post('/trades', authenticate, ContractController.createTrade);
 
 router.post('/trades/:tradeId/buy', authenticate, ContractController.buyTrade);
 
@@ -44,7 +44,7 @@ router.post('/trades/:tradeId/buy', authenticate, ContractController.buyTrade);
 router.post(
   '/purchases/:purchaseId/confirm-delivery', // Changed from trade-based to purchase-based
   authenticate,
-  ContractController.confirmDelivery,
+  ContractController.confirmDeliveryAndPurchase,
 );
 
 router.post(
