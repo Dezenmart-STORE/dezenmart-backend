@@ -35,6 +35,7 @@ export class ProductController {
       logisticsCosts,
       useUSDT,
       isSponsored,
+      paymentToken,
     } = req.body;
 
     const parseArrayField = (fieldValue: any): string[] => {
@@ -106,6 +107,14 @@ export class ProductController {
       );
     }
 
+    if (!paymentToken) {
+      throw new CustomError(
+        'A `paymentToken` symbol (e.g., "USDT", "CELO") is required.',
+        400,
+        'fail',
+      );
+    }
+
     const productInput = {
       name,
       description,
@@ -116,10 +125,11 @@ export class ProductController {
       sellerWalletAddress,
       stock: Number(stock),
       images: imageUrls,
-      logisticsCost: logisticsCosts,
+      logisticsCost: finalLogisticsCosts,
       isSponsored: Boolean(isSponsored || false),
       logisticsProviders: finalLogisticsProviders,
       useUSDT: Boolean(useUSDT || false),
+      paymentToken,
     };
     const product = await ProductService.createProduct(productInput as any);
     res.status(201).json({
