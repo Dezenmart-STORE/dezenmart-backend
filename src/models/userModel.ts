@@ -1,5 +1,12 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
+export enum Role {
+  USER = 'user',
+  BUYER = 'buyer',
+  SELLER = 'seller',
+  LOGISTICS_AGENT = 'logistic agent',
+  ADMIN = 'admin',
+}
 export interface IUser extends Document {
   googleId?: string;
   email: string;
@@ -7,6 +14,7 @@ export interface IUser extends Document {
   profileImage?: string;
   dateOfBirth?: Date;
   phoneNumber?: string;
+  roles?: Role[];
   address?: string;
   isMerchant: boolean;
   rating?: number;
@@ -42,6 +50,11 @@ const UserSchema = new Schema<IUser>(
     profileImage: { type: String },
     dateOfBirth: { type: Date },
     phoneNumber: { type: String },
+    roles: {
+      type: [String],
+      enum: Object.values(Role),
+      default: [Role.USER],
+    },
     address: { type: String },
     isMerchant: { type: Boolean, default: false },
     rating: { type: Number, default: 0 },
