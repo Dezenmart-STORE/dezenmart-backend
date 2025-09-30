@@ -23,6 +23,14 @@ export class MessageController {
       fileType = file.mimetype;
     }
 
+    if (!req.user || !req.user.id) {
+      throw new CustomError(
+        'Unauthorized: user not found on request.',
+        401,
+        'fail',
+      );
+    }
+
     const message = await MessageService.sendMessage(
       req.user.id,
       recipient,
@@ -35,6 +43,10 @@ export class MessageController {
   };
 
   static getConversation = async (req: Request, res: Response) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Unauthorized: User not found' });
+    }
+
     const messages = await MessageService.getConversation(
       req.user.id,
       req.params.userId,
@@ -45,6 +57,10 @@ export class MessageController {
   };
 
   static markAsRead = async (req: Request, res: Response) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Unauthorized: User not found' });
+    }
+
     const result = await MessageService.markAsRead(
       req.body.messageIds,
       req.user.id,
@@ -53,6 +69,10 @@ export class MessageController {
   };
 
   static getConversations = async (req: Request, res: Response) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Unauthorized: User not found' });
+    }
+
     const conversations = await MessageService.getUserConversations(
       req.user.id,
     );
