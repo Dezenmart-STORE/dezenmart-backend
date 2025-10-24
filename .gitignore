@@ -4,4 +4,5 @@ node_modules
 package-lock.json
 test-ledger
 /test-ledger
-test-ledger/test-ledger/*.log
+test-ledger/
+test-ledger/*.log
