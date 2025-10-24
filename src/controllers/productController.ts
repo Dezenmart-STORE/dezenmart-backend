@@ -36,6 +36,7 @@ export class ProductController {
       useUSDT,
       isSponsored,
       paymentToken,
+      chain
     } = req.body;
 
     const parseArrayField = (fieldValue: any): string[] => {
@@ -68,7 +69,8 @@ export class ProductController {
 
     const finalLogisticsCosts = parseArrayField(logisticsCosts);
     const finalLogisticsProviders = parseArrayField(logisticsProviders);
-
+console.log(finalLogisticsCosts)
+console.log(finalLogisticsProviders)
     // Validate required fields after parsing
     if (!name) throw new CustomError('Product name is required', 400, 'fail');
     if (price === undefined || price === null || isNaN(Number(price)))
@@ -128,6 +130,7 @@ export class ProductController {
       description,
       price: Number(price),
       type,
+      
       category,
       seller: req.user.id,
       sellerWalletAddress,
@@ -138,6 +141,7 @@ export class ProductController {
       logisticsProviders: finalLogisticsProviders,
       useUSDT: Boolean(useUSDT || false),
       paymentToken,
+      chain
     };
     const product = await ProductService.createProduct(productInput as any);
     res.status(201).json({

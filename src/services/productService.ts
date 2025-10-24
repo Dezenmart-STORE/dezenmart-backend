@@ -2,12 +2,17 @@ import { Address } from 'viem';
 import { CustomError } from '../middlewares/errorHandler';
 import { Product, IProduct } from '../models/productModel';
 import { contractService } from '../server';
-import { PaymentTokenSymbol } from './contractService';
+import { DezenMartContractAPIService } from './contractService';
+import {
+  CHAINENUMS,
+  PaymentTokenSymbol,
+} from './chainsContracts/contractService';
 
 interface ICreateProductInput {
   name: string;
   description: string;
   price: number;
+  chain?: CHAINENUMS;
   type: Record<string, string | number>[];
   category: string;
   seller: string;
@@ -22,6 +27,8 @@ interface ICreateProductInput {
   paymentToken: PaymentTokenSymbol;
 }
 
+// let dezenMartContractAPIService = new DezenMartContractAPIService()
+
 export class ProductService {
   static async createProduct(
     productInput: ICreateProductInput,
@@ -29,6 +36,7 @@ export class ProductService {
     const {
       price,
       stock,
+      chain,
       logisticsProviders,
       logisticsCost,
       useUSDT,
@@ -52,19 +60,19 @@ export class ProductService {
     }
 
     // Validate logisticsProviders
-    if (
-      !logisticsProviders ||
-      !Array.isArray(logisticsProviders) ||
-      !logisticsProviders.every(
-        (lp) => typeof lp === 'string' && lp.startsWith('0x'),
-      )
-    ) {
-      throw new CustomError(
-        'logisticsProviders must be an array of strings, each representing a valid wallet address (starting with "0x").',
-        400,
-        'fail',
-      );
-    }
+    // if (
+    //   !logisticsProviders ||
+    //   !Array.isArray(logisticsProviders) ||
+    //   !logisticsProviders.every(
+    //     (lp) => typeof lp === 'string' && lp.startsWith('0x'),
+    //   )
+    // ) {
+    //   throw new CustomError(
+    //     'logisticsProviders must be an array of strings, each representing a valid wallet address (starting with "0x").',
+    //     400,
+    //     'fail',
+    //   );
+    // }
 
     // Validate logisticsCost
     if (
@@ -93,59 +101,37 @@ export class ProductService {
     }
 
     // Validate paymentToken against the list of supported tokens in contractService
-    if (!paymentToken || !contractService.isValidPaymentToken(paymentToken)) {
-      throw new CustomError(
-        `Invalid or missing paymentToken. Supported tokens are: ${Object.keys(contractService.getPaymentTokens()).join(', ')}`,
-        400,
-        'fail',
-      );
-    }
+    // if (!paymentToken || !contractService.isValidPaymentToken(paymentToken)) {
+    //   throw new CustomError(
+    //     `Invalid or missing paymentToken. Supported tokens are: ${Object.keys(contractService.getPaymentTokens()).join(', ')}`,
+    //     400,
+    //     'fail',
+    //   );
+    // }
 
     const productCostStr = price.toString();
 
     // Get the actual token address from the symbol
-    const tokenAddress = contractService.getTokenAddress(paymentToken);
-    const tradeReceipt = await contractService.createTrade(
-      sellerWalletAddress as Address,
-      productCostStr,
-      productInput.logisticsProviders as `0x${string}`[],
-      productInput.logisticsCost,
-      BigInt(stock),
-      tokenAddress,
-    );
 
-    let tradeId;
-    // if (tradeReceipt && tradeReceipt.events) {
-    //   if (Array.isArray(tradeReceipt.events.LogisticsSelected) &&
-    //       tradeReceipt.events.LogisticsSelected.length > 0) {
-    //     tradeId = tradeReceipt.events.LogisticsSelected[0].returnValues.tradeId.toString();
-    //   }
-    //   else if (tradeReceipt.events.LogisticsSelected &&
-    //       tradeReceipt.events.LogisticsSelected.returnValues &&
-    //       tradeReceipt.events.LogisticsSelected.returnValues.tradeId) {
-    //     tradeId = tradeReceipt.events.LogisticsSelected.returnValues.tradeId.toString();
-    //   }
-    //   else if (tradeReceipt.events.TradeCreated &&
-    //            tradeReceipt.events.TradeCreated.returnValues &&
-    //            tradeReceipt.events.TradeCreated.returnValues.tradeId) {
-    //     tradeId = tradeReceipt.events.TradeCreated.returnValues.tradeId.toString();
-    //   }
-    //   else {
-    //     for (const eventName in tradeReceipt.events) {
-    //       const event = tradeReceipt.events[eventName];
+    // const tradeReceipt = await contractService.createTrade(
+    //   {
+    //   sellerWalletAddress: sellerWalletAddress as Address,
+    //   productCostInToken: productCostStr,
+    //   //  logisticsProviders:   productInput.logisticsProviders as `0x${string}`[],
+    //   logisticsProviders: productInput.logisticsProviders as any[],
+    //   logisticsCostsInToken: productInput.logisticsCost,
+    //   totalQuantity: BigInt(stock),
+    //   tokenAddress:  tokenAddress,
+    //   paymentToken,
+    //   chain: chain as CHAINENUMS,
+    // });
 
-    //       if (Array.isArray(event) && event.length > 0 && event[0].returnValues && event[0].returnValues.tradeId) {
-    //         tradeId = event[0].returnValues.tradeId.toString();
-    //         break;
-    //       }
-    //       else if (typeof event === 'object' && event.returnValues && event.returnValues.tradeId) {
-    //         tradeId = event.returnValues.tradeId.toString();
-    //         break;
-    //       }
-    //     }
-    //   }
-    // }
-    tradeId = tradeReceipt.tradeId.toString();
+    const tradeReceipt = await DezenMartContractAPIService.createTrade(
+    productInput);
+
+    // let tradeId;
+   
+   let  tradeId = tradeReceipt.tradeId.toString();
 
     if (!tradeId) {
       console.error(
@@ -164,6 +150,8 @@ export class ProductService {
       ...productInput,
       productToken: productInput.paymentToken,
       tradeId: tradeId,
+      chain:tradeReceipt?.chain,
+      tokenMint:tradeReceipt?.tokenMint
     });
 
     return await productToSave.save();

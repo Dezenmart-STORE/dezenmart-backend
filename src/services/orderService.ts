@@ -10,6 +10,7 @@ export class OrderService {
   static async createOrder(orderInput: {
     product: string;
     buyer: string;
+    purchaseId: number;
     logisticsProviderWalletAddress: string;
     quantity: number;
   }) {
@@ -19,7 +20,7 @@ export class OrderService {
 
     const updatedProduct = await Product.findOneAndUpdate(
       { _id: orderInput.product, stock: { $gte: orderInput.quantity } },
-      { $inc: { stock: -orderInput.quantity } },
+      { $inc: { stock: -orderInput.quantity },$setonInsert: { purchaseId: orderInput.purchaseId } },
       { new: true },
     );
 
@@ -44,6 +45,7 @@ export class OrderService {
       product: updatedProduct._id,
       buyer: orderInput.buyer,
       seller: updatedProduct.seller,
+       purchaseId: orderInput?.purchaseId ,
       amount,
       quantity: orderInput.quantity,
       sellerWalletAddress: updatedProduct.sellerWalletAddress,
@@ -65,13 +67,13 @@ export class OrderService {
     return await Order.find()
       .populate('buyer', 'name profileImage')
       .populate('seller', 'name profileImage rating')
-      .populate('product', 'name price images')
+      .populate('product', 'name price images tokenMint paymentToken chain')
       .sort({ createdAt: -1 });
   }
 
   static async getOrderById(id: string) {
     const order = await Order.findById(id)
-      .populate('product', 'name price images tradeId paymentToken')
+      .populate('product', 'name price images tradeId paymentToken tokenMint chain')
       .populate('buyer', 'name profileImage')
       .populate('seller', 'name profileImage rating');
 

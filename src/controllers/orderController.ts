@@ -12,6 +12,7 @@ export class OrderController {
     }
     const order = await OrderService.createOrder({
       product: req.body.product,
+      purchaseId: req.body.purchaseId,
       buyer: req.user.id,
       logisticsProviderWalletAddress: req.body.logisticsProviderWalletAddress,
       quantity: req.body.quantity,

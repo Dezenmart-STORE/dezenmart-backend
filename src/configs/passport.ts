@@ -7,8 +7,8 @@ dotenv.config();
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientID: process.env.TEST_GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.TEST_GOOGLE_CLIENT_SECRET!,
       callbackURL: `${process.env.APP_BASE_URL}/api/v1/auth/google/callback`,
       scope: ['profile', 'email'],
     },

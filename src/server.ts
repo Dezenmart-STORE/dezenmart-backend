@@ -5,7 +5,7 @@ import { WebSocketService } from './services/webSocketService';
 import { NotificationService } from './services/notificationService';
 import { OrderService } from './services/orderService';
 import { RewardService } from './services/rewardService';
-import { DezenMartContractService } from './services/contractService';
+import { DezenMartContractService } from './services/chainsContracts/contractService';
 
 const PORT = config.PORT;
 
@@ -24,5 +24,7 @@ export const contractService = new DezenMartContractService();
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`WebSocket server is running on ws://localhost: ${PORT}`);
-  console.log(`Contact Service connected for address: ${config.CONTRACT_ADDRESS}`);
+  console.log(
+    `Contact Service connected for address: ${config.CONTRACT_ADDRESS}`,
+  );
 });

@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { contractService } from '../server';
 import { CustomError } from '../middlewares/errorHandler';
 import { Address } from 'viem';
+import { CHAINENUMS } from '../services/chainsContracts/contractService';
+import { DezenMartContractAPIService } from '../services/contractService';
 
 function serializeBigInt(obj: any): any {
   if (obj === null || obj === undefined) {
@@ -150,6 +152,7 @@ export class ContractController {
         totalQuantity,
         tokenAddress,
         sellerWalletAddress,
+        chain=CHAINENUMS.ethereum
       } = req.body;
 
       // Validate product cost
@@ -159,11 +162,11 @@ export class ContractController {
       );
 
       // Validate token address
-      if (!tokenAddress || !ContractController.isValidAddress(tokenAddress)) {
-        return next(
-          new CustomError('Valid token address is required', 400, 'fail'),
-        );
-      }
+      // if (!tokenAddress || !ContractController.isValidAddress(tokenAddress)) {
+      //   return next(
+      //     new CustomError('Valid token address is required', 400, 'fail'),
+      //   );
+      // }
 
       // Validate seller wallet address
       if (
@@ -245,13 +248,14 @@ export class ContractController {
       );
 
       // Create the trade
-      const { hash, tradeId } = await contractService.createTrade(
-        sellerWalletAddress as Address, // Pass the seller address from the request context
-        productCostNum.toString(),
+      const { hash, tradeId } = await DezenMartContractAPIService.createTrade(
+      { sellerWalletAddress: sellerWalletAddress as Address, // Pass the seller address from the request context
+        productCostInToken:productCostNum.toString(),
         logisticsProviders,
-        validatedCosts.map((cost) => cost.toString()),
-        BigInt(totalQuantityNum),
-        tokenAddress as Address,
+       logisticsCostsInToken: validatedCosts.map((cost) => cost.toString()),
+      totalQuantity:totalQuantityNum as any,
+       tokenAddress: tokenAddress as Address,
+        chain}
       );
 
       res.status(201).json({

@@ -1,4 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
+import { CHAINENUMS } from '../services/chainsContracts/contractService';
 
 export interface IProduct extends Document {
   name: string;
@@ -13,17 +14,21 @@ export interface IProduct extends Document {
   logisticsProviders: string[];
   logisticsCost: string[];
   tradeId: string;
+  purchaseId?: string;
   isSponsored: boolean;
   rating: number;
   isActive: boolean;
   paymentToken: string;
+  tokenMint?: string;
   createdAt: Date;
   updatedAt: Date;
+  chain:string;
 }
 
 const productSchema = new Schema<IProduct>(
   {
     name: { type: String, required: true },
+    chain: { type: String,default:CHAINENUMS.ethereum  },
     description: { type: String, required: true },
     price: {
       type: Number,
@@ -42,10 +47,12 @@ const productSchema = new Schema<IProduct>(
     logisticsProviders: [{ type: String }],
     logisticsCost: [{ type: String }],
     tradeId: { type: String },
+    purchaseId: { type: String },
     isSponsored: { type: Boolean, default: false },
     rating: { type: Number, min: 1, max: 5 },
     isActive: { type: Boolean, default: true },
     paymentToken: { type: String, required: true },
+    tokenMint: { type: String,  },
   },
   {
     timestamps: true,

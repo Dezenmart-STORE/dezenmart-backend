@@ -29,7 +29,7 @@ export class LogisticsController {
     next: NextFunction,
   ) {
     try {
-      const logisticsProviders = await LogisticsService.getAllLogistics();
+      const logisticsProviders = await LogisticsService.getAllLogistics(req.query);
       res.status(200).json({
         status: 'success',
         results: logisticsProviders.length,
