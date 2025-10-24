@@ -1,0 +1,1519 @@
+{
+  "address": "Gbe5vfTQx8y7nREVNCwnEaQFfvxGxsqxqLapsK7rMQKN",
+  "metadata": {
+    "name": "dezenmart_logistics",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
+  "instructions": [
+    {
+      "name": "buy_trade",
+      "discriminator": [
+        164,
+        74,
+        12,
+        32,
+        87,
+        138,
+        136,
+        129
+      ],
+      "accounts": [
+        {
+          "name": "global_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "trade_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  100,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "trade_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "purchase_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  99,
+                  104,
+                  97,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "purchase_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "buyer_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "buyer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "buyer_token_account",
+          "writable": true
+        },
+        {
+          "name": "escrow_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "trade_account.token_mint",
+                "account": "TradeAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "trade_id",
+          "type": "u64"
+        },
+        {
+          "name": "purchase_id",
+          "type": "u64"
+        },
+        {
+          "name": "quantity",
+          "type": "u64"
+        },
+        {
+          "name": "logistics_provider",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "cancel_purchase",
+      "discriminator": [
+        47,
+        200,
+        220,
+        12,
+        114,
+        54,
+        229,
+        198
+      ],
+      "accounts": [
+        {
+          "name": "purchase_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  99,
+                  104,
+                  97,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "purchase_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "trade_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  100,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "purchase_account.trade_id",
+                "account": "PurchaseAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "escrow_token_account",
+          "writable": true
+        },
+        {
+          "name": "buyer_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "purchase_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "confirm_delivery_and_purchase",
+      "discriminator": [
+        156,
+        68,
+        105,
+        53,
+        98,
+        0,
+        155,
+        161
+      ],
+      "accounts": [
+        {
+          "name": "purchase_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  99,
+                  104,
+                  97,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "purchase_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "trade_account",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  100,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "purchase_account.trade_id",
+                "account": "PurchaseAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "escrow_token_account",
+          "writable": true
+        },
+        {
+          "name": "seller_token_account",
+          "writable": true
+        },
+        {
+          "name": "logistics_token_account",
+          "writable": true
+        },
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "purchase_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "create_trade",
+      "discriminator": [
+        183,
+        82,
+        24,
+        245,
+        248,
+        30,
+        204,
+        246
+      ],
+      "accounts": [
+        {
+          "name": "global_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "trade_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  100,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "trade_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "seller"
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "global_state"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "trade_id",
+          "type": "u64"
+        },
+        {
+          "name": "product_cost",
+          "type": "u64"
+        },
+        {
+          "name": "logistics_providers",
+          "type": {
+            "vec": "pubkey"
+          }
+        },
+        {
+          "name": "logistics_costs",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
+          "name": "total_quantity",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "global_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "raise_dispute",
+      "discriminator": [
+        41,
+        243,
+        1,
+        51,
+        150,
+        95,
+        246,
+        73
+      ],
+      "accounts": [
+        {
+          "name": "purchase_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  99,
+                  104,
+                  97,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "purchase_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "register_buyer",
+      "discriminator": [
+        144,
+        92,
+        137,
+        46,
+        209,
+        220,
+        27,
+        164
+      ],
+      "accounts": [
+        {
+          "name": "buyer_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  121,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "buyer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "register_logistics_provider",
+      "discriminator": [
+        5,
+        235,
+        159,
+        156,
+        253,
+        211,
+        183,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "provider_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  103,
+                  105,
+                  115,
+                  116,
+                  105,
+                  99,
+                  115,
+                  95,
+                  112,
+                  114,
+                  111,
+                  118,
+                  105,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "provider"
+              }
+            ]
+          }
+        },
+        {
+          "name": "provider",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "register_seller",
+      "discriminator": [
+        9,
+        50,
+        144,
+        162,
+        206,
+        176,
+        154,
+        111
+      ],
+      "accounts": [
+        {
+          "name": "global_state",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "seller_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  108,
+                  108,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "seller"
+              }
+            ]
+          }
+        },
+        {
+          "name": "seller"
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "global_state"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "resolve_dispute",
+      "discriminator": [
+        231,
+        6,
+        202,
+        6,
+        96,
+        103,
+        12,
+        230
+      ],
+      "accounts": [
+        {
+          "name": "global_state",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "purchase_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  117,
+                  114,
+                  99,
+                  104,
+                  97,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "purchase_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "trade_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  114,
+                  97,
+                  100,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "purchase_account.trade_id",
+                "account": "PurchaseAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "escrow_token_account",
+          "writable": true
+        },
+        {
+          "name": "buyer_token_account",
+          "writable": true
+        },
+        {
+          "name": "seller_token_account",
+          "writable": true
+        },
+        {
+          "name": "logistics_token_account",
+          "writable": true
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "global_state"
+          ]
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "purchase_id",
+          "type": "u64"
+        },
+        {
+          "name": "winner",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "withdraw_escrow_fees",
+      "discriminator": [
+        231,
+        54,
+        231,
+        119,
+        50,
+        41,
+        47,
+        97
+      ],
+      "accounts": [
+        {
+          "name": "global_state",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "escrow_token_account",
+          "writable": true
+        },
+        {
+          "name": "admin_token_account",
+          "writable": true
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "global_state"
+          ]
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "BuyerAccount",
+      "discriminator": [
+        132,
+        99,
+        140,
+        101,
+        194,
+        67,
+        194,
+        66
+      ]
+    },
+    {
+      "name": "GlobalState",
+      "discriminator": [
+        163,
+        46,
+        74,
+        168,
+        216,
+        123,
+        133,
+        98
+      ]
+    },
+    {
+      "name": "LogisticsProviderAccount",
+      "discriminator": [
+        209,
+        168,
+        220,
+        202,
+        140,
+        15,
+        129,
+        42
+      ]
+    },
+    {
+      "name": "PurchaseAccount",
+      "discriminator": [
+        250,
+        162,
+        66,
+        23,
+        30,
+        118,
+        186,
+        140
+      ]
+    },
+    {
+      "name": "SellerAccount",
+      "discriminator": [
+        165,
+        133,
+        123,
+        22,
+        51,
+        242,
+        209,
+        52
+      ]
+    },
+    {
+      "name": "TradeAccount",
+      "discriminator": [
+        46,
+        97,
+        187,
+        111,
+        38,
+        69,
+        11,
+        236
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "DisputeRaised",
+      "discriminator": [
+        246,
+        167,
+        109,
+        37,
+        142,
+        45,
+        38,
+        176
+      ]
+    },
+    {
+      "name": "DisputeResolved",
+      "discriminator": [
+        121,
+        64,
+        249,
+        153,
+        139,
+        128,
+        236,
+        187
+      ]
+    },
+    {
+      "name": "LogisticsProviderRegistered",
+      "discriminator": [
+        120,
+        20,
+        65,
+        42,
+        118,
+        250,
+        120,
+        250
+      ]
+    },
+    {
+      "name": "PaymentHeld",
+      "discriminator": [
+        17,
+        35,
+        31,
+        129,
+        93,
+        27,
+        170,
+        245
+      ]
+    },
+    {
+      "name": "PurchaseCompletedAndConfirmed",
+      "discriminator": [
+        108,
+        153,
+        251,
+        92,
+        32,
+        189,
+        151,
+        187
+      ]
+    },
+    {
+      "name": "PurchaseCreated",
+      "discriminator": [
+        191,
+        130,
+        36,
+        167,
+        72,
+        167,
+        182,
+        97
+      ]
+    },
+    {
+      "name": "TradeCreated",
+      "discriminator": [
+        110,
+        86,
+        122,
+        20,
+        81,
+        78,
+        181,
+        72
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MismatchedArrays",
+      "msg": "Mismatched arrays length"
+    },
+    {
+      "code": 6001,
+      "name": "NoLogisticsProviders",
+      "msg": "No logistics providers provided"
+    },
+    {
+      "code": 6002,
+      "name": "TooManyProviders",
+      "msg": "Too many logistics providers"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidQuantity",
+      "msg": "Invalid quantity"
+    },
+    {
+      "code": 6004,
+      "name": "TradeInactive",
+      "msg": "Trade is inactive"
+    },
+    {
+      "code": 6005,
+      "name": "InsufficientQuantity",
+      "msg": "Insufficient quantity available"
+    },
+    {
+      "code": 6006,
+      "name": "BuyerIsSeller",
+      "msg": "Buyer cannot be the seller"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidLogisticsProvider",
+      "msg": "Invalid logistics provider"
+    },
+    {
+      "code": 6008,
+      "name": "NotAuthorized",
+      "msg": "Not authorized"
+    },
+    {
+      "code": 6009,
+      "name": "AlreadyConfirmed",
+      "msg": "Already confirmed"
+    },
+    {
+      "code": 6010,
+      "name": "Disputed",
+      "msg": "Purchase is disputed"
+    },
+    {
+      "code": 6011,
+      "name": "AlreadySettled",
+      "msg": "Already settled"
+    },
+    {
+      "code": 6012,
+      "name": "AlreadyDisputed",
+      "msg": "Already disputed"
+    },
+    {
+      "code": 6013,
+      "name": "NotDisputed",
+      "msg": "Not disputed"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidWinner",
+      "msg": "Invalid winner"
+    },
+    {
+      "code": 6015,
+      "name": "NoFeesToWithdraw",
+      "msg": "No fees to withdraw"
+    }
+  ],
+  "types": [
+    {
+      "name": "BuyerAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "is_registered",
+            "type": "bool"
+          },
+          {
+            "name": "purchase_ids",
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DisputeRaised",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "purchase_id",
+            "type": "u64"
+          },
+          {
+            "name": "initiator",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DisputeResolved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "purchase_id",
+            "type": "u64"
+          },
+          {
+            "name": "winner",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GlobalState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "trade_counter",
+            "type": "u64"
+          },
+          {
+            "name": "purchase_counter",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LogisticsProviderAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "provider",
+            "type": "pubkey"
+          },
+          {
+            "name": "is_registered",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LogisticsProviderRegistered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "provider",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PaymentHeld",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "purchase_id",
+            "type": "u64"
+          },
+          {
+            "name": "total_amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PurchaseAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "purchase_id",
+            "type": "u64"
+          },
+          {
+            "name": "trade_id",
+            "type": "u64"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "quantity",
+            "type": "u64"
+          },
+          {
+            "name": "total_amount",
+            "type": "u64"
+          },
+          {
+            "name": "delivered_and_confirmed",
+            "type": "bool"
+          },
+          {
+            "name": "disputed",
+            "type": "bool"
+          },
+          {
+            "name": "chosen_logistics_provider",
+            "type": "pubkey"
+          },
+          {
+            "name": "logistics_cost",
+            "type": "u64"
+          },
+          {
+            "name": "settled",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PurchaseCompletedAndConfirmed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "purchase_id",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PurchaseCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "purchase_id",
+            "type": "u64"
+          },
+          {
+            "name": "trade_id",
+            "type": "u64"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "quantity",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SellerAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "is_registered",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TradeAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "trade_id",
+            "type": "u64"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "logistics_providers",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "logistics_costs",
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "product_cost",
+            "type": "u64"
+          },
+          {
+            "name": "escrow_fee",
+            "type": "u64"
+          },
+          {
+            "name": "total_quantity",
+            "type": "u64"
+          },
+          {
+            "name": "remaining_quantity",
+            "type": "u64"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "name": "purchase_ids",
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "token_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TradeCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "trade_id",
+            "type": "u64"
+          },
+          {
+            "name": "seller",
+            "type": "pubkey"
+          },
+          {
+            "name": "product_cost",
+            "type": "u64"
+          },
+          {
+            "name": "total_quantity",
+            "type": "u64"
+          },
+          {
+            "name": "token_address",
+            "type": "pubkey"
+          }
+        ]
+      }
+    }
+  ]
+}

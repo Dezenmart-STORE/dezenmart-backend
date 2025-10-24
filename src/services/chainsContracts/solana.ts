@@ -242,7 +242,8 @@ import {
   getOrCreateAssociatedTokenAccount,
   Account
 } from "@solana/spl-token";
-import idl from "../../../../dezenmart_rust_smart_contract/target/idl/dezenmart_logistics.json"; 
+// import idl from "../../../../dezenmart_rust_smart_contract/target/idl/dezenmart_logistics.json"; 
+import idl from "../../abi/dezenmart_logistics.json" 
 // import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
 import fs from "fs";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
@@ -252,17 +253,17 @@ const PROGRAM_ADDRESS = new anchor.web3.PublicKey(idl.address);
 const SOLANAPROGRAMID = anchor.web3.SystemProgram.programId
 // const TOKENPROGRAM = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXuAYJkmXvzJvmfK57a")
 const TOKENPROGRAM = TOKEN_PROGRAM_ID;
-export const TESTTOKENMINT = new PublicKey("BPbivqM9vJGgJFoV3bAHKpZVq44YmuH2gkUEt8uQX8jy")
-export const TESTTOKENACCOUNT = new PublicKey("6vX1HpDDhYGyzDTpDmWzzXLQKe3CrhrGy7rHh6YbYoDN")
+export const TESTTOKENMINT = new PublicKey("Do1mZe9KZxnn4XdEQm53srKvbpSo8ae7BitH4L9UEXv9")
+export const TESTTOKENACCOUNT = new PublicKey("5EHhG8Pd4HA4myMgQ4wFTqhRvvrMSAsTCqNFJfhh32mk")
 export const TESTACCOUNT = new PublicKey("BTd1DEeDRkfFV6K1BXPTJG6PXxLhS3tMsiSYoJtoidv5")
 console.log(SOLANAPROGRAMID)
-// const keypair = Keypair.fromSecretKey(
-//   Uint8Array.from(JSON.parse(fs.readFileSync("/Users/apple/.config/solana/id.json", "utf-8")))
-// );
-// const connection = new Connection("http://127.0.0.1:8899", "confirmed");
-// const wallet = new anchor.Wallet(keypair);
-export const DefaultProvider = anchor.AnchorProvider.local();
-// new anchor.AnchorProvider(connection, wallet, { commitment: "confirmed" });
+const keypair = Keypair.fromSecretKey(
+  Uint8Array.from(JSON.parse(fs.readFileSync("/Users/apple/.config/solana/id.json", "utf-8")))
+);
+const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+const wallet = new anchor.Wallet(keypair);
+export const DefaultProvider =new anchor.AnchorProvider(connection, wallet, { commitment: "confirmed" });
+// export const DefaultProvider = anchor.AnchorProvider.local();
 const DefaultProgram = new anchor.Program(IDL, DefaultProvider);
 const DefaultWallet = DefaultProvider.wallet
 const defaultTokenDecimals = 9;
@@ -1152,4 +1153,4 @@ let f = async ()=>{
 
 }
 
-// f()
+f()
