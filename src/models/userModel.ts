@@ -15,7 +15,6 @@ export interface IUser extends Document {
   dateOfBirth?: Date;
   phoneNumber?: string;
   roles?: Role[];
-  address?: string;
   isMerchant: boolean;
   rating?: number;
   totalPoints: number;
@@ -38,6 +37,13 @@ export interface IUser extends Document {
     credentialSubject?: any; // Full credential subject from the proof
   };
   hasAcceptedTerms: boolean;
+  address?: {
+    country: string,
+    state: string,
+    city: string,
+    street: string,
+    zipCode: string
+  }
   createdAt: Date;
   updatedAt: Date;
 }
@@ -55,7 +61,6 @@ const UserSchema = new Schema<IUser>(
       enum: Object.values(Role),
       default: [Role.USER],
     },
-    address: { type: String },
     isMerchant: { type: Boolean, default: false },
     rating: { type: Number, default: 0 },
     totalPoints: { type: Number, default: 0 },
@@ -85,6 +90,13 @@ const UserSchema = new Schema<IUser>(
       credentialSubject: { type: Schema.Types.Mixed },
     },
     hasAcceptedTerms: { type: Boolean, default: false },
+    address: {
+      country: { type: String },
+      state: { type: String },
+      city: { type: String },
+      street: { type: String },
+      zipCode: { type: String },
+    },
   },
   { timestamps: true },
 );

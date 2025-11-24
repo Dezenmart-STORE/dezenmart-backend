@@ -46,6 +46,7 @@ export class OrderService {
       seller: updatedProduct.seller,
       amount,
       quantity: orderInput.quantity,
+      stock: updatedProduct.stock,
       sellerWalletAddress: updatedProduct.sellerWalletAddress,
       logisticsProviderWalletAddress: orderInput.logisticsProviderWalletAddress,
     });

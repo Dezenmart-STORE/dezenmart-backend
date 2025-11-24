@@ -7,6 +7,7 @@ interface IOrder extends Document {
   seller: Schema.Types.ObjectId;
   amount: number;
   quantity: number;
+  stock: number;
   sellerWalletAddress: string;
   logisticsProviderWalletAddress: string[];
   purchaseId?: string;
@@ -49,6 +50,7 @@ const OrderSchema = new Schema<IOrder>(
         message: 'Quantity must be an integer.',
       },
     },
+    stock: { type: Number },
     sellerWalletAddress: { type: String },
     logisticsProviderWalletAddress: [{ type: String }],
     purchaseId: { type: String },
