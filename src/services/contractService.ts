@@ -433,8 +433,6 @@ export class DezenMartContractService {
   async createTrade(
     sellerWalletAddress: Address,
     productCostInToken: string,
-    logisticsProviders: Address[],
-    logisticsCostsInToken: string[],
     totalQuantity: bigint,
     tokenAddress: Address,
   ): Promise<{ hash: Hash; tradeId: bigint }> {
@@ -443,15 +441,10 @@ export class DezenMartContractService {
 
     // Convert token amounts to wei (using token's decimals)
     const productCost = parseUnits(productCostInToken, decimals);
-    const logisticsCosts = logisticsCostsInToken.map((cost) =>
-      parseUnits(cost, decimals),
-    );
 
     const hash = await this.writeContract('createTrade', [
       sellerWalletAddress, // Pass seller address to the contract
       productCost,
-      logisticsProviders,
-      logisticsCosts,
       totalQuantity,
       tokenAddress, // Pass token address to the contract
     ]);
