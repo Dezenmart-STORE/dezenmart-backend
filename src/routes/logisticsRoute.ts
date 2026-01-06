@@ -1,5 +1,5 @@
 import express from 'express';
-import { LogisticsController } from '../controllers/logisticsController';
+import { LogisticsController } from '../controllers/logisticsProviderController';
 import { authenticate } from '../middlewares/authMiddleware';
 
 const router = express.Router();
