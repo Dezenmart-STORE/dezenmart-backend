@@ -10,8 +10,6 @@ export interface IProduct extends Document {
   sellerWalletAddress: string;
   stock: number;
   images: string[];
-  logisticsProviders: string[];
-  logisticsCost: string[];
   tradeId: string;
   isSponsored: boolean;
   rating: number;
@@ -39,8 +37,6 @@ const productSchema = new Schema<IProduct>(
     sellerWalletAddress: { type: String, required: true },
     stock: { type: Number, required: true },
     images: [{ type: String, required: true }],
-    logisticsProviders: [{ type: String }],
-    logisticsCost: [{ type: String }],
     tradeId: { type: String },
     isSponsored: { type: Boolean, default: false },
     rating: { type: Number, min: 1, max: 5 },

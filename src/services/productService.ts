@@ -14,10 +14,8 @@ interface ICreateProductInput {
   sellerWalletAddress: string;
   stock: number;
   images: string[];
-  logisticsCost: string[];
   isSponsored: boolean;
   isActive: boolean;
-  logisticsProviders: string[];
   useUSDT: boolean;
   paymentToken: PaymentTokenSymbol;
 }
@@ -29,8 +27,6 @@ export class ProductService {
     const {
       price,
       stock,
-      logisticsProviders,
-      logisticsCost,
       useUSDT,
       paymentToken,
       sellerWalletAddress,
@@ -46,47 +42,6 @@ export class ProductService {
     if (typeof useUSDT === 'undefined') {
       throw new CustomError(
         'The useUSDT field (boolean) is required.',
-        400,
-        'fail',
-      );
-    }
-
-    // Validate logisticsProviders
-    if (
-      !logisticsProviders ||
-      !Array.isArray(logisticsProviders) ||
-      !logisticsProviders.every(
-        (lp) => typeof lp === 'string' && lp.startsWith('0x'),
-      )
-    ) {
-      throw new CustomError(
-        'logisticsProviders must be an array of strings, each representing a valid wallet address (starting with "0x").',
-        400,
-        'fail',
-      );
-    }
-
-    // Validate logisticsCost
-    if (
-      !logisticsCost ||
-      !Array.isArray(logisticsCost) ||
-      !logisticsCost.every(
-        (cost) =>
-          typeof cost === 'string' &&
-          !isNaN(parseFloat(cost)) &&
-          isFinite(Number(cost)),
-      )
-    ) {
-      throw new CustomError(
-        'logisticsCost must be an array of strings, each representing a valid number.',
-        400,
-        'fail',
-      );
-    }
-
-    if (logisticsProviders.length !== logisticsCost.length) {
-      throw new CustomError(
-        'logisticsProviders and logisticsCost arrays must have the same length.',
         400,
         'fail',
       );
@@ -108,8 +63,6 @@ export class ProductService {
     const tradeReceipt = await contractService.createTrade(
       sellerWalletAddress as Address,
       productCostStr,
-      productInput.logisticsProviders as `0x${string}`[],
-      productInput.logisticsCost,
       BigInt(stock),
       tokenAddress,
     );
