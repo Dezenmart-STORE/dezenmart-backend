@@ -25,7 +25,11 @@ export class OrderController {
   };
 
   static getOrderDetails = async (req: Request, res: Response) => {
-    const order = await OrderService.getOrderById(req.params.id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) {
+      return res.status(400).json({ error: 'Order ID is required' });
+    }
+    const order = await OrderService.getOrderById(id);
     res.json(order);
   };
 
@@ -36,8 +40,12 @@ export class OrderController {
         message: 'User not authenticated',
       });
     }
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) {
+      return res.status(400).json({ error: 'Order ID is required' });
+    }
     const order = await OrderService.updateOrder(
-      req.params.id,
+      id,
       req.body,
       req.user.id,
     );
@@ -89,8 +97,12 @@ export class OrderController {
         message: 'User not authenticated',
       });
     }
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) {
+      return res.status(400).json({ error: 'Order ID is required' });
+    }
     const order = await OrderService.raiseDispute(
-      req.params.id,
+      id,
       req.user.id,
       req.body.reason,
     );

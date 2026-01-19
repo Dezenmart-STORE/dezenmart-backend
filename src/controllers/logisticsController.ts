@@ -48,9 +48,15 @@ export class LogisticsController {
     next: NextFunction,
   ) {
     try {
-      const logisticsProvider = await LogisticsService.getLogisticsById(
-        req.params.id,
-      );
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+      if (!id) {
+        return next(
+          new CustomError('No logistics provider ID provided', 400, 'fail'),
+        );
+      }
+
+      const logisticsProvider = await LogisticsService.getLogisticsById(id);
 
       if (!logisticsProvider) {
         return next(
@@ -79,8 +85,15 @@ export class LogisticsController {
     next: NextFunction,
   ) {
     try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+      if (!id) {
+        return next(
+          new CustomError('No logistics provider ID provided', 400, 'fail'),
+        );
+      }
       const logisticsProvider = await LogisticsService.updateLogistics(
-        req.params.id,
+        id,
         req.body,
       );
 
@@ -111,8 +124,16 @@ export class LogisticsController {
     next: NextFunction,
   ) {
     try {
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+      if (!id) {
+        return next(
+          new CustomError('No logistics provider ID provided', 400, 'fail'),
+        );
+      }
+
       const logisticsProvider = await LogisticsService.deleteLogistics(
-        req.params.id,
+        id,
       );
 
       if (!logisticsProvider) {

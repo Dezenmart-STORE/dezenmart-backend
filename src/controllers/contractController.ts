@@ -248,8 +248,6 @@ export class ContractController {
       const { hash, tradeId } = await contractService.createTrade(
         sellerWalletAddress as Address, // Pass the seller address from the request context
         productCostNum.toString(),
-        logisticsProviders,
-        validatedCosts.map((cost) => cost.toString()),
         BigInt(totalQuantityNum),
         tokenAddress as Address,
       );
@@ -752,7 +750,15 @@ export class ContractController {
     next: NextFunction,
   ) {
     try {
-      const { tokenAddress, userAddress } = req.params;
+      const { tokenAddress: tokenAddressParam, userAddress: userAddressParam } =
+        req.params;
+
+      const tokenAddress = Array.isArray(tokenAddressParam)
+        ? tokenAddressParam[0]
+        : tokenAddressParam;
+      const userAddress = Array.isArray(userAddressParam)
+        ? userAddressParam[0]
+        : userAddressParam;
 
       if (!tokenAddress || !ContractController.isValidAddress(tokenAddress)) {
         return next(
@@ -792,8 +798,12 @@ export class ContractController {
 
   static async approveToken(req: Request, res: Response, next: NextFunction) {
     try {
-      const { tokenAddress } = req.params;
+      const { tokenAddress: tokenAddressParam } = req.params;
       const { amount } = req.body;
+
+      const tokenAddress = Array.isArray(tokenAddressParam)
+        ? tokenAddressParam[0]
+        : tokenAddressParam;
 
       if (!tokenAddress || !ContractController.isValidAddress(tokenAddress)) {
         return next(
@@ -861,7 +871,11 @@ export class ContractController {
   // Legacy USDT endpoints (for backward compatibility)
   static async getUSDTBalance(req: Request, res: Response, next: NextFunction) {
     try {
-      const { address } = req.params;
+      const { address: addressParam } = req.params;
+
+      const address = Array.isArray(addressParam)
+        ? addressParam[0]
+        : addressParam;
 
       if (!address || !ContractController.isValidAddress(address)) {
         return next(new CustomError('Valid address is required', 400, 'fail'));

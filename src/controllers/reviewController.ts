@@ -17,13 +17,25 @@ export class ReviewController {
   };
 
   static updateUserRating = async (req: Request, res: Response) => {
-    await ReviewService.updateUserRating(req.params.userId);
+    const userId = Array.isArray(req.params.userId)
+      ? req.params.userId[0]
+      : req.params.userId;
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    await ReviewService.updateUserRating(userId);
     res.json({ success: true });
   };
 
   static getUserReviews = async (req: Request, res: Response) => {
+    const userId = Array.isArray(req.params.userId)
+      ? req.params.userId[0]
+      : req.params.userId;
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
     const reviews = await ReviewService.getReviewsForUser(
-      req.params.userId,
+      userId,
       parseInt(req.query.page as string) || 1,
       parseInt(req.query.limit as string) || 10,
     );
@@ -31,7 +43,13 @@ export class ReviewController {
   };
 
   static getOrderReview = async (req: Request, res: Response) => {
-    const review = await ReviewService.getReviewForOrder(req.params.orderId);
+    const orderId = Array.isArray(req.params.orderId)
+      ? req.params.orderId[0]
+      : req.params.orderId;
+    if (!orderId) {
+      return res.status(400).json({ error: 'Order ID is required' });
+    }
+    const review = await ReviewService.getReviewForOrder(orderId);
     res.json(review);
   };
 }

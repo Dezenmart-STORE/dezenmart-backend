@@ -47,9 +47,17 @@ export class MessageController {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
 
+    const userId = Array.isArray(req.params.userId)
+      ? req.params.userId[0]
+      : req.params.userId;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
     const messages = await MessageService.getConversation(
       req.user.id,
-      req.params.userId,
+      userId,
       parseInt(req.query.page as string) || 1,
       parseInt(req.query.limit as string) || 20,
     );

@@ -4,7 +4,13 @@ import { CustomError } from '../middlewares/errorHandler';
 
 export class UserController {
   static getUserByEmail = async (req: Request, res: Response) => {
-    const user = await UserService.getUserByEmail(req.params.email);
+    const email = Array.isArray(req.params.email)
+      ? req.params.email[0]
+      : req.params.email;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    const user = await UserService.getUserByEmail(email);
     res.json(user);
   };
 
@@ -44,13 +50,21 @@ export class UserController {
   };
 
   static getUserById = async (req: Request, res: Response) => {
-    const user = await UserService.getUserById(req.params.id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) {
+      throw new CustomError('User ID is required', 400, 'fail');
+    }
+    const user = await UserService.getUserById(id);
     if (!user) throw new CustomError('User not found', 404, 'fail');
     res.json(user);
   };
 
   static deleteUser = async (req: Request, res: Response) => {
-    const user = await UserService.deleteUser(req.params.id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) {
+      throw new CustomError('User ID is required', 400, 'fail');
+    }
+    const user = await UserService.deleteUser(id);
     if (!user) throw new CustomError('User not found', 404, 'fail');
     res.json({ success: true });
   };

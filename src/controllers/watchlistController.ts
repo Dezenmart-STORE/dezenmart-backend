@@ -6,10 +6,15 @@ export class WatchlistController {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
-
+    const productId = Array.isArray(req.params.productId)
+      ? req.params.productId[0]
+      : req.params.productId;
+    if (!productId) {
+      return res.status(400).json({ error: 'Product ID is required' });
+    }
     const watchlist = await WatchlistService.addWatchlist(
       req.user.id,
-      req.params.productId,
+      productId,
     );
     res.status(201).json(watchlist);
   };
@@ -18,8 +23,13 @@ export class WatchlistController {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
-
-    await WatchlistService.removeWatchlist(req.user.id, req.params.productId);
+    const productId = Array.isArray(req.params.productId)
+      ? req.params.productId[0]
+      : req.params.productId;
+    if (!productId) {
+      return res.status(400).json({ error: 'Product ID is required' });
+    }
+    await WatchlistService.removeWatchlist(req.user.id, productId);
     res.json({ success: true });
   };
 
@@ -40,10 +50,15 @@ export class WatchlistController {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
-
+    const productId = Array.isArray(req.params.productId)
+      ? req.params.productId[0]
+      : req.params.productId;
+    if (!productId) {
+      return res.status(400).json({ error: 'Product ID is required' });
+    }
     const result = await WatchlistService.checkWatchlist(
       req.user.id,
-      req.params.productId,
+      productId,
     );
     res.json(result);
   };

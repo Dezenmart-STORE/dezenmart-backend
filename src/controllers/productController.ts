@@ -152,13 +152,23 @@ export class ProductController {
   };
 
   static getProductDetails = async (req: Request, res: Response) => {
-    const product = await ProductService.getProductById(req.params.id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) {
+      throw new CustomError('Product ID is required', 400, 'fail');
+    }
+    const product = await ProductService.getProductById(id);
     if (!product) throw new CustomError('Product not found', 404, 'fail');
     res.json(product);
   };
 
   static updateProduct = async (req: Request, res: Response) => {
-    const productId = req.params.id;
+    const productId = Array.isArray(req.params.id)
+      ? req.params.id[0]
+      : req.params.id;
+
+    if (!productId) {
+      throw new CustomError('Product ID is required', 400, 'fail');
+    }
 
     const files = req.files as Express.Multer.File[];
     let imageUrls: string[] = [];
@@ -176,7 +186,11 @@ export class ProductController {
   };
 
   static deleteProduct = async (req: Request, res: Response) => {
-    const product = await ProductService.deleteProduct(req.params.id);
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    if (!id) {
+      throw new CustomError('Product ID is required', 400, 'fail');
+    }
+    const product = await ProductService.deleteProduct(id);
     if (!product) throw new CustomError('Product not found', 404, 'fail');
     res.json({ message: 'Product deleted successfully' });
   };
@@ -204,7 +218,13 @@ export class ProductController {
   };
 
   static getProductsBySeller = async (req: Request, res: Response) => {
-    const sellerId = req.params.sellerId;
+    const sellerId = Array.isArray(req.params.sellerId)
+      ? req.params.sellerId[0]
+      : req.params.sellerId;
+
+    if (!sellerId) {
+      throw new CustomError('Seller ID is required', 400, 'fail');
+    }
     const products = await ProductService.getProductsBySeller(sellerId);
     res.json(products);
   };
