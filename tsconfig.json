@@ -11,7 +11,12 @@
     "strict": false,
     "skipLibCheck": true,
     "noEmitOnError": false,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "ox": ["src/shims.d.ts"],
+      "ox/*": ["src/shims.d.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
