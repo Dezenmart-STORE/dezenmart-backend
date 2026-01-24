@@ -12,7 +12,7 @@
     "skipLibCheck": true,
     "noEmitOnError": false,
     "allowSyntheticDefaultImports": true,
-    "types": ["node"]
+    "types": ["node", "express", "multer"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

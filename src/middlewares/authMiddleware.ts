@@ -15,7 +15,7 @@ export const authenticate = async (
   next: NextFunction,
 ) => {
   try {
-    const authHeader = req.headers.authorization;
+    const authHeader = (req as any).headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new CustomError('Authentication token required', 401, 'fail');
     }
