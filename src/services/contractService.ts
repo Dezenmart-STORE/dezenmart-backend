@@ -177,10 +177,7 @@ export class DezenMartContractService {
     this.contract = getContract({
       address: config.CONTRACT_ADDRESS as `0x${string}`,
       abi: abi.DEZENMART_ABI,
-      client: {
-        public: this.publicClient,
-        wallet: this.walletClient,
-      },
+      client: this.publicClient,
     });
   }
 
@@ -189,10 +186,7 @@ export class DezenMartContractService {
     return getContract({
       address: tokenAddress,
       abi: ERC20_ABI,
-      client: {
-        public: this.publicClient,
-        wallet: this.walletClient,
-      },
+      client: this.publicClient,
     });
   }
 
@@ -458,7 +452,7 @@ export class DezenMartContractService {
         const decoded = decodeEventLog({
           abi: abi.DEZENMART_ABI,
           data: log.data,
-          topics: log.topics,
+          topics: (log as any).topics || [],
         });
         return decoded.eventName === 'TradeCreated';
       } catch {
@@ -473,7 +467,7 @@ export class DezenMartContractService {
     const decoded = decodeEventLog({
       abi: abi.DEZENMART_ABI,
       data: tradeCreatedEvent.data,
-      topics: tradeCreatedEvent.topics,
+      topics: (tradeCreatedEvent as any).topics || [],
     });
 
     const tradeId = (decoded.args as any).tradeId as bigint;
@@ -539,7 +533,7 @@ export class DezenMartContractService {
         const decoded = decodeEventLog({
           abi: abi.DEZENMART_ABI,
           data: log.data,
-          topics: log.topics,
+          topics: (log as any).topics || [],
         });
         return decoded.eventName === 'PurchaseCreated';
       } catch {
@@ -554,7 +548,7 @@ export class DezenMartContractService {
     const decoded = decodeEventLog({
       abi: abi.DEZENMART_ABI,
       data: purchaseCreatedEvent.data,
-      topics: purchaseCreatedEvent.topics,
+      topics: (purchaseCreatedEvent as any).topics || [],
     });
 
     const purchaseId = (decoded.args as any).purchaseId as bigint;
@@ -612,7 +606,7 @@ export class DezenMartContractService {
             const decoded = decodeEventLog({
               abi: abi.DEZENMART_ABI,
               data: log.data,
-              topics: log.topics,
+              topics: (log as any).topics || [],
             });
             if (decoded.eventName === 'TradeCreated') {
               callback(decoded.args as any);
