@@ -31,7 +31,7 @@ const storage = new CloudinaryStorage({
 // File filter function (optional but recommended)
 const fileFilter = (
   req: Request,
-  file: Express.Multer.File,
+  file: any,
   cb: multer.FileFilterCallback,
 ) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp|mp4/;
