@@ -3,7 +3,7 @@ import express from 'express';
 // Middleware to transform form-data fields from strings to their correct types
 const transformProductFormData = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const body = req.body;
-  const files = req.files as Express.Multer.File[] | undefined;
+  const files = req.files as any[] | undefined;
 
   // Convert numeric strings to numbers
   if (body.price) body.price = parseFloat(body.price);

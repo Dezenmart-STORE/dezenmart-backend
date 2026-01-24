@@ -4,12 +4,12 @@ import { ReferralService } from '../services/referralService';
 
 export class ReferralController {
   static applyReferralCode = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
 
     const user = await ReferralService.applyReferralCode(
-      req.user.id,
+      (req.user as any).id,
       req.body.referralCode,
     );
     res.json({
@@ -19,11 +19,11 @@ export class ReferralController {
   };
 
   static getReferralInfo = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
 
-    const user = await User.findById(req.user.id)
+    const user = await User.findById((req.user as any).id)
       .select('referralCode referralCount referredBy')
       .populate('referredBy', 'name email');
 

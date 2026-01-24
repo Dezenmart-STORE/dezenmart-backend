@@ -8,6 +8,7 @@ export enum Role {
   ADMIN = 'admin',
 }
 export interface IUser extends Document {
+  id: string;
   googleId?: string;
   email: string;
   name: string;

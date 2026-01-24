@@ -23,11 +23,11 @@ passport.use(
   ),
 );
 
-passport.serializeUser((user, done) => {
+passport.serializeUser((user: any, done) => {
   done(null, user);
 });
 
-passport.deserializeUser((user: Express.User, done) => {
+passport.deserializeUser((user: any, done) => {
   done(null, user);
 });
 

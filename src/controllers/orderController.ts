@@ -4,7 +4,7 @@ import { CustomError } from '../middlewares/errorHandler';
 
 export class OrderController {
   static createOrder = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       return res.status(401).json({
         status: 'fail',
         message: 'User not authenticated',
@@ -12,7 +12,7 @@ export class OrderController {
     }
     const order = await OrderService.createOrder({
       product: req.body.product,
-      buyer: req.user.id,
+      buyer: (req.user as any).id,
       logisticsProviderWalletAddress: req.body.logisticsProviderWalletAddress,
       quantity: req.body.quantity,
     });
@@ -34,7 +34,7 @@ export class OrderController {
   };
 
   static updateOrder = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       return res.status(401).json({
         status: 'fail',
         message: 'User not authenticated',
@@ -47,7 +47,7 @@ export class OrderController {
     const order = await OrderService.updateOrder(
       id,
       req.body,
-      req.user.id,
+      (req.user as any).id,
     );
     res.json(order);
   };
@@ -91,7 +91,7 @@ export class OrderController {
   }
 
   static raiseDispute = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       return res.status(401).json({
         status: 'fail',
         message: 'User not authenticated',
@@ -103,7 +103,7 @@ export class OrderController {
     }
     const order = await OrderService.raiseDispute(
       id,
-      req.user.id,
+      (req.user as any).id,
       req.body.reason,
     );
     res.json(order);

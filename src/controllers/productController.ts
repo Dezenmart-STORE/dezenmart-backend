@@ -4,7 +4,7 @@ import { CustomError } from '../middlewares/errorHandler';
 
 export class ProductController {
   static createProduct = async (req: Request, res: Response) => {
-    const files = req.files as Express.Multer.File[];
+    const files = req.files as any[];
     let imageUrls: string[] = [];
 
     if (files && files.length > 0) {
@@ -115,7 +115,7 @@ export class ProductController {
       );
     }
 
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       throw new CustomError(
         'User information is missing from request',
         401,
@@ -129,7 +129,7 @@ export class ProductController {
       price: Number(price),
       type,
       category,
-      seller: req.user.id,
+      seller: (req.user as any).id,
       sellerWalletAddress,
       stock: Number(stock),
       images: imageUrls,
@@ -170,7 +170,7 @@ export class ProductController {
       throw new CustomError('Product ID is required', 400, 'fail');
     }
 
-    const files = req.files as Express.Multer.File[];
+    const files = req.files as any[];
     let imageUrls: string[] = [];
 
     const updateData = { ...req.body };

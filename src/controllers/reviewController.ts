@@ -3,11 +3,11 @@ import { ReviewService } from '../services/reviewService';
 
 export class ReviewController {
   static createReview = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
     const review = await ReviewService.createReview({
-      reviewer: req.user.id,
+      reviewer: (req.user as any).id,
       reviewed: req.body.reviewed,
       order: req.body.order,
       rating: req.body.rating,

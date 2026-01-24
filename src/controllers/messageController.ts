@@ -5,7 +5,7 @@ import { CustomError } from '../middlewares/errorHandler';
 export class MessageController {
   static sendMessage = async (req: Request, res: Response) => {
     const { recipient, content, order } = req.body;
-    const file = req.file as Express.Multer.File | undefined;
+    const file = req.file as any;
 
     if (!content && !file) {
       throw new CustomError(
@@ -23,7 +23,7 @@ export class MessageController {
       fileType = file.mimetype;
     }
 
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       throw new CustomError(
         'Unauthorized: user not found on request.',
         401,
@@ -32,7 +32,7 @@ export class MessageController {
     }
 
     const message = await MessageService.sendMessage(
-      req.user.id,
+      (req.user as any).id,
       recipient,
       content,
       order,
@@ -43,7 +43,7 @@ export class MessageController {
   };
 
   static getConversation = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
 
@@ -56,7 +56,7 @@ export class MessageController {
     }
 
     const messages = await MessageService.getConversation(
-      req.user.id,
+      (req.user as any).id,
       userId,
       parseInt(req.query.page as string) || 1,
       parseInt(req.query.limit as string) || 20,
@@ -65,24 +65,24 @@ export class MessageController {
   };
 
   static markAsRead = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
 
     const result = await MessageService.markAsRead(
       req.body.messageIds,
-      req.user.id,
+      (req.user as any).id,
     );
     res.json({ success: true, ...result });
   };
 
   static getConversations = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       return res.status(401).json({ error: 'Unauthorized: User not found' });
     }
 
     const conversations = await MessageService.getUserConversations(
-      req.user.id,
+      (req.user as any).id,
     );
     res.json(conversations);
   };

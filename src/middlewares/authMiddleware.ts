@@ -4,14 +4,13 @@ import { User, Role, IUser } from '../models/userModel';
 import { ErrorResponse, CustomError } from '../middlewares/errorHandler';
 import config from '../configs/config';
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    user?: IUser;
-  }
+// Extend the Request interface inline
+interface AuthRequest extends Request {
+  user?: IUser;
 }
 
 export const authenticate = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) => {
@@ -56,7 +55,7 @@ export const authenticate = async (
 };
 
 export const authorizeRoles = (...roles: Role[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user?.roles) {
       return next(
         new CustomError(

@@ -1,5 +1,6 @@
 import multer from 'multer';
 import path from 'path';
+import { Request } from 'express';
 import { CustomError } from './errorHandler';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import cloudinary from '../configs/storage';
@@ -27,10 +28,9 @@ const storage = new CloudinaryStorage({
   },
 });
 
-
 // File filter function (optional but recommended)
 const fileFilter = (
-  req: Express.Request,
+  req: Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
 ) => {

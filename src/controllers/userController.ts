@@ -23,24 +23,24 @@ export class UserController {
   };
 
   static getProfile = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       throw new CustomError('User not authenticated', 401, 'fail');
     }
-    const user = await UserService.getUserById(req.user.id);
+    const user = await UserService.getUserById((req.user as any).id);
     res.json(user);
   };
 
   static updateProfile = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       throw new CustomError('User not authenticated', 401, 'fail');
     }
 
-    const userId = req.user.id;
+    const userId = (req.user as any).id;
     const updateData = { ...req.body };
-    const file = req.file as Express.Multer.File | undefined;
+    const files = req.files as any[];
 
-    if (file) {
-      const imageFilename = file.path;
+    if (files && files.length > 0) {
+      const imageFilename = files[0].path;
       updateData.profileImage = imageFilename;
     }
 
@@ -92,13 +92,13 @@ export class UserController {
       }
 
       // Check if user is authenticated
-      if (!req.user || !req.user.id) {
+      if (!req.user || !(req.user as any).id) {
         throw new CustomError('User not authenticated', 401, 'fail');
       }
 
       // Check if user is already verified
       const isAlreadyVerified = await UserService.isUserSelfVerified(
-        req.user.id,
+        (req.user as any).id,
       );
       if (isAlreadyVerified) {
         res.status(409).json({
@@ -110,7 +110,7 @@ export class UserController {
 
       // Perform verification
       const updatedUser = await UserService.verifySelfUser(
-        req.user.id,
+        (req.user as any).id,
         proof,
         publicSignals,
       );
@@ -147,12 +147,12 @@ export class UserController {
 
   static getSelfVerificationStatus = async (req: Request, res: Response) => {
     try {
-      if (!req.user || !req.user.id) {
+      if (!req.user || !(req.user as any).id) {
         throw new CustomError('User not authenticated', 401, 'fail');
       }
-      const isVerified = await UserService.isUserSelfVerified(req.user.id);
+      const isVerified = await UserService.isUserSelfVerified((req.user as any).id);
       const verificationLevel = await UserService.getUserSelfVerificationLevel(
-        req.user.id,
+        (req.user as any).id,
       );
 
       res.status(200).json({
@@ -174,10 +174,10 @@ export class UserController {
 
   static revokeSelfVerification = async (req: Request, res: Response) => {
     try {
-      if (!req.user || !req.user.id) {
+      if (!req.user || !(req.user as any).id) {
         throw new CustomError('User not authenticated', 401, 'fail');
       }
-      const isVerified = await UserService.isUserSelfVerified(req.user.id);
+      const isVerified = await UserService.isUserSelfVerified((req.user as any).id);
       if (!isVerified) {
         throw new CustomError(
           'User is not currently verified with Self Protocol.',
@@ -186,7 +186,7 @@ export class UserController {
         );
       }
 
-      const updatedUser = await UserService.revokeSelfVerification(req.user.id);
+      const updatedUser = await UserService.revokeSelfVerification((req.user as any).id);
 
       res.status(200).json({
         status: 'success',
@@ -217,10 +217,10 @@ export class UserController {
   };
 
   static acceptTerms = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       throw new CustomError('User not authenticated', 401, 'fail');
     }
-    const updatedUser = await UserService.acceptTerms(req.user.id);
+    const updatedUser = await UserService.acceptTerms((req.user as any).id);
     res.status(200).json({
       status: 'success',
       message: 'Terms and conditions accepted.',
@@ -234,10 +234,10 @@ export class UserController {
   };
 
   static getTermsStatus = async (req: Request, res: Response) => {
-    if (!req.user || !req.user.id) {
+    if (!req.user || !(req.user as any).id) {
       throw new CustomError('User not authenticated', 401, 'fail');
     }
-    const status = await UserService.getTermsStatus(req.user.id);
+    const status = await UserService.getTermsStatus((req.user as any).id);
     res.status(200).json({
       status: 'success',
       data: {
