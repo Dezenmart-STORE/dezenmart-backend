@@ -5,16 +5,17 @@ import { Reward } from '../models/rewardModel';
 
 interface CustomWebSocket extends WebSocket {
   userId?: string;
+  isAlive?: boolean;
 }
 
 export class WebSocketService {
   private wss: WebSocketServer;
-  private clients: Map<string, CustomWebSocket> = new Map();
+  private clients: Map<string, WebSocket> = new Map();
 
   constructor(server: Server) {
     this.wss = new WebSocketServer({ server });
 
-    this.wss.on('connection', (ws: CustomWebSocket, req) => {
+    this.wss.on('connection', (ws: WebSocket, req: any) => {
       const token = req.url?.split('token=')[1];
 
       if (!token) {
@@ -26,16 +27,17 @@ export class WebSocketService {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
           id: string;
         };
-        ws.userId = decoded.id;
+        (ws as any).userId = decoded.id;
         this.clients.set(decoded.id, ws);
 
         ws.on('close', () => {
-          if (ws.userId) {
-            this.clients.delete(ws.userId);
+          const userId = (ws as any).userId;
+          if (userId) {
+            this.clients.delete(userId);
           }
         });
 
-        ws.on('message', (message) => {
+        ws.on('message', (message: any) => {
           this.handleMessage(ws, message.toString());
         });
       } catch (error) {
@@ -44,7 +46,7 @@ export class WebSocketService {
     });
   }
 
-  private handleMessage(ws: CustomWebSocket, message: string) {
+  private handleMessage(ws: WebSocket, message: string) {
     try {
       const data = JSON.parse(message);
       // Handle different message types
