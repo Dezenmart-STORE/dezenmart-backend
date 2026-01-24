@@ -11,8 +11,7 @@
     "strict": false,
     "skipLibCheck": true,
     "noEmitOnError": false,
-    "allowSyntheticDefaultImports": true,
-    "types": ["node", "express", "multer"]
+    "allowSyntheticDefaultImports": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
