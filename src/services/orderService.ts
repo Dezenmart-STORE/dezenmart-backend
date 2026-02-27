@@ -102,7 +102,6 @@ export class OrderService {
 
     // Verify user has permission to update this order
     if (
-      order.seller.toString() !== userId &&
       order.buyer.toString() !== userId
     ) {
       throw new CustomError('Unauthorized to update this order', 403, 'fail');
