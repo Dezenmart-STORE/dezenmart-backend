@@ -18,7 +18,9 @@ interface IOrder extends Document {
     | 'completed'
     | 'disputed'
     | 'refunded'
-    | 'delivery_confirmed';
+    | 'delivery_confirmed'
+    | 'delivered'
+    | 'shipped';
   dispute?: {
     raisedBy: Types.ObjectId;
     reason: string;

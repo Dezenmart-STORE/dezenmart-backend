@@ -90,7 +90,9 @@ export class OrderService {
         | 'completed'
         | 'disputed'
         | 'refunded'
-        | 'delivery_confirmed';
+        | 'delivery_confirmed'
+        | 'delivered'
+        | 'shipped';
       purchaseId?: string;
     },
     userId: string,
