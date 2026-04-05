@@ -21,6 +21,7 @@ export interface IUser extends Document {
   totalPoints: number;
   orders: Types.ObjectId[];
   availablePoints: number;
+  tokenBalance: number;
   milestones: {
     sales: number;
     purchases: number;
@@ -98,6 +99,7 @@ const UserSchema = new Schema<IUser>(
       street: { type: String },
       zipCode: { type: String },
     },
+    tokenBalance: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

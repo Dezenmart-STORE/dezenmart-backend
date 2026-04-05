@@ -12,6 +12,7 @@ import messageRoute from './messageRoute';
 import contractRoute from './contractRoute';
 import mentoRoute from './mentoRoute';
 import logisticsRoute from './logisticsRoute';
+import exchangeRateRoute from './exchangeRateRoute';
 
 const router = express.Router();
 
@@ -28,5 +29,6 @@ router.use('/messages', messageRoute);
 router.use('/contracts', contractRoute);
 router.use('/mento', mentoRoute);
 router.use('/logistics', logisticsRoute);
+router.use('/exchange-rate', exchangeRateRoute);
 
 export default router;
