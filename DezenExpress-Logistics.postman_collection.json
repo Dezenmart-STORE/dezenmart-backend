@@ -1,0 +1,637 @@
+{
+  "info": {
+    "name": "DezenExpress — Logistics API",
+    "description": "All logistics endpoints for the DezenExpress delivery system built on the Dezenmart backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "description": "JWT — auto-set by the Register or Login requests",
+      "type": "string"
+    },
+    {
+      "key": "providerId",
+      "value": "",
+      "description": "MongoDB ObjectId of a provider — auto-set by Register",
+      "type": "string"
+    },
+    {
+      "key": "ruleId",
+      "value": "",
+      "description": "MongoDB ObjectId of a pricing rule — auto-set by Create Pricing Rule",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Provider",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) pm.collectionVariables.set('token', res.token);",
+                  "if (res.data?.provider?._id) pm.collectionVariables.set('providerId', res.data.provider._id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"GIG Logistics Nigeria\",\n  \"email\": \"gig@example.com\",\n  \"phone\": \"08012345678\",\n  \"password\": \"securepassword123\",\n  \"walletAddress\": \"0xAbCdEf1234567890AbCdEf1234567890AbCdEf12\",\n  \"coverageAreas\": [\n    {\n      \"state\": \"Lagos\",\n      \"lgas\": [\"Ikeja\", \"Eti-Osa\", \"Alimosho\", \"Surulere\"],\n      \"isStatewide\": false\n    },\n    {\n      \"state\": \"Ogun\",\n      \"lgas\": [],\n      \"isStatewide\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/logistics/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "auth", "register"]
+            },
+            "description": "Register a new logistics provider. Creates a User account (role: logistic agent) linked to a LogisticsProvider profile and registers the wallet on-chain. Returns a JWT."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"GIG Logistics Nigeria\",\n  \"email\": \"gig@example.com\",\n  \"phone\": \"08012345678\",\n  \"password\": \"securepassword123\",\n  \"walletAddress\": \"0xAbCdEf1234567890AbCdEf1234567890AbCdEf12\",\n  \"coverageAreas\": [\n    { \"state\": \"Lagos\", \"lgas\": [\"Ikeja\", \"Eti-Osa\"], \"isStatewide\": false }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/logistics/auth/register",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["logistics", "auth", "register"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"data\": {\n    \"provider\": {\n      \"_id\": \"665f1a2b3c4d5e6f7a8b9c0d\",\n      \"userId\": \"665f1a2b3c4d5e6f7a8b9c0e\",\n      \"name\": \"GIG Logistics Nigeria\",\n      \"email\": \"gig@example.com\",\n      \"phone\": \"08012345678\",\n      \"walletAddress\": \"0xAbCdEf1234567890AbCdEf1234567890AbCdEf12\",\n      \"coverageAreas\": [\n        { \"state\": \"Lagos\", \"lgas\": [\"Ikeja\", \"Eti-Osa\"], \"isStatewide\": false }\n      ],\n      \"rating\": 0,\n      \"totalDeliveries\": 0,\n      \"verificationStatus\": \"pending\",\n      \"isActive\": true,\n      \"createdAt\": \"2024-06-04T10:00:00.000Z\",\n      \"updatedAt\": \"2024-06-04T10:00:00.000Z\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login Provider",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) pm.collectionVariables.set('token', res.token);",
+                  "if (res.data?.provider?._id) pm.collectionVariables.set('providerId', res.data.provider._id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"gig@example.com\",\n  \"password\": \"securepassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/logistics/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "auth", "login"]
+            },
+            "description": "Login for logistics providers using email and password. Returns a JWT."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"gig@example.com\",\n  \"password\": \"securepassword123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/logistics/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["logistics", "auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"data\": {\n    \"provider\": {\n      \"_id\": \"665f1a2b3c4d5e6f7a8b9c0d\",\n      \"name\": \"GIG Logistics Nigeria\",\n      \"verificationStatus\": \"pending\"\n    }\n  }\n}"
+            },
+            {
+              "name": "401 Invalid credentials",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"gig@example.com\",\n  \"password\": \"wrongpassword\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/logistics/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["logistics", "auth", "login"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"Invalid email or password.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "My Profile",
+      "description": "Endpoints for the authenticated logistics provider to manage their own profile.",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/logistics/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "me"]
+            },
+            "description": "Returns the authenticated provider's full profile. Requires LOGISTICS_AGENT role."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"data\": {\n    \"provider\": {\n      \"_id\": \"665f1a2b3c4d5e6f7a8b9c0d\",\n      \"userId\": \"665f1a2b3c4d5e6f7a8b9c0e\",\n      \"name\": \"GIG Logistics Nigeria\",\n      \"email\": \"gig@example.com\",\n      \"phone\": \"08012345678\",\n      \"walletAddress\": \"0xAbCdEf1234567890AbCdEf1234567890AbCdEf12\",\n      \"coverageAreas\": [\n        { \"state\": \"Lagos\", \"lgas\": [\"Ikeja\", \"Eti-Osa\"], \"isStatewide\": false }\n      ],\n      \"rating\": 4.5,\n      \"totalDeliveries\": 120,\n      \"verificationStatus\": \"verified\",\n      \"isActive\": true\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"08098765432\",\n  \"coverageAreas\": [\n    {\n      \"state\": \"Lagos\",\n      \"lgas\": [\"Ikeja\", \"Eti-Osa\", \"Alimosho\", \"Surulere\", \"Mushin\"],\n      \"isStatewide\": false\n    },\n    {\n      \"state\": \"Ogun\",\n      \"lgas\": [],\n      \"isStatewide\": true\n    },\n    {\n      \"state\": \"Abuja\",\n      \"lgas\": [\"Municipal Area Council\", \"Gwagwalada\"],\n      \"isStatewide\": false\n    }\n  ],\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/logistics/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "me"]
+            },
+            "description": "Update the authenticated provider's profile. Updatable fields: name, phone, coverageAreas, isActive. Rating and verificationStatus cannot be set by the provider."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pricing Rules",
+      "description": "Endpoints for providers to manage their per-route pricing rules.",
+      "item": [
+        {
+          "name": "Create Pricing Rule",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data?.rule?._id) pm.collectionVariables.set('ruleId', res.data.rule._id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryType\": \"inter_lga_same_state\",\n  \"fromState\": \"Lagos\",\n  \"fromLga\": \"Ikeja\",\n  \"toState\": \"Lagos\",\n  \"toLga\": \"Eti-Osa\",\n  \"weightTiers\": [\n    { \"minWeight\": 0, \"maxWeight\": 2, \"price\": 1500 },\n    { \"minWeight\": 2, \"maxWeight\": 5, \"price\": 3500 },\n    { \"minWeight\": 5, \"maxWeight\": 10, \"price\": 6000 },\n    { \"minWeight\": 10, \"maxWeight\": 20, \"price\": 10000 }\n  ],\n  \"insuranceFee\": 300,\n  \"packagingFee\": 200,\n  \"estimatedDaysMin\": 1,\n  \"estimatedDaysMax\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/logistics/providers/me/pricing-rules",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "providers", "me", "pricing-rules"]
+            },
+            "description": "Create a new pricing rule for a specific route. deliveryType is one of: intra_lga | inter_lga_same_state | inter_state. For inter_state, fromLga and toLga are optional. Weight tiers must not overlap."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"data\": {\n    \"rule\": {\n      \"_id\": \"665f1a2b3c4d5e6f7a8b9c0f\",\n      \"providerId\": \"665f1a2b3c4d5e6f7a8b9c0d\",\n      \"deliveryType\": \"inter_lga_same_state\",\n      \"fromState\": \"Lagos\",\n      \"fromLga\": \"Ikeja\",\n      \"toState\": \"Lagos\",\n      \"toLga\": \"Eti-Osa\",\n      \"weightTiers\": [\n        { \"minWeight\": 0, \"maxWeight\": 2, \"price\": 1500 },\n        { \"minWeight\": 2, \"maxWeight\": 5, \"price\": 3500 },\n        { \"minWeight\": 5, \"maxWeight\": 10, \"price\": 6000 },\n        { \"minWeight\": 10, \"maxWeight\": 20, \"price\": 10000 }\n      ],\n      \"insuranceFee\": 300,\n      \"packagingFee\": 200,\n      \"estimatedDaysMin\": 1,\n      \"estimatedDaysMax\": 3,\n      \"isActive\": true\n    }\n  }\n}"
+            },
+            {
+              "name": "409 Conflict — route already exists",
+              "status": "Conflict",
+              "code": 409,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"A pricing rule for this route already exists. Update the existing one.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Pricing Rule — Intra LGA",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryType\": \"intra_lga\",\n  \"fromState\": \"Lagos\",\n  \"fromLga\": \"Ikeja\",\n  \"toState\": \"Lagos\",\n  \"toLga\": \"Ikeja\",\n  \"weightTiers\": [\n    { \"minWeight\": 0, \"maxWeight\": 5, \"price\": 800 },\n    { \"minWeight\": 5, \"maxWeight\": 10, \"price\": 1500 }\n  ],\n  \"insuranceFee\": 0,\n  \"packagingFee\": 100,\n  \"estimatedDaysMin\": 1,\n  \"estimatedDaysMax\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/logistics/providers/me/pricing-rules",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "providers", "me", "pricing-rules"]
+            },
+            "description": "Example of an intra-LGA rule (same LGA, cheapest tier)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Pricing Rule — Inter State",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryType\": \"inter_state\",\n  \"fromState\": \"Lagos\",\n  \"toState\": \"FCT\",\n  \"weightTiers\": [\n    { \"minWeight\": 0, \"maxWeight\": 2, \"price\": 5000 },\n    { \"minWeight\": 2, \"maxWeight\": 5, \"price\": 9000 },\n    { \"minWeight\": 5, \"maxWeight\": 15, \"price\": 15000 }\n  ],\n  \"insuranceFee\": 500,\n  \"packagingFee\": 300,\n  \"estimatedDaysMin\": 2,\n  \"estimatedDaysMax\": 4\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/logistics/providers/me/pricing-rules",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "providers", "me", "pricing-rules"]
+            },
+            "description": "Inter-state rule — fromLga and toLga are not required."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Pricing Rules",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/logistics/providers/me/pricing-rules?deliveryType=inter_lga_same_state",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "providers", "me", "pricing-rules"],
+              "query": [
+                {
+                  "key": "deliveryType",
+                  "value": "inter_lga_same_state",
+                  "description": "Optional filter. One of: intra_lga | inter_lga_same_state | inter_state",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List all pricing rules for the authenticated provider. Optionally filter by deliveryType."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"results\": 2,\n  \"data\": {\n    \"rules\": [\n      {\n        \"_id\": \"665f1a2b3c4d5e6f7a8b9c0f\",\n        \"deliveryType\": \"inter_lga_same_state\",\n        \"fromState\": \"Lagos\",\n        \"fromLga\": \"Ikeja\",\n        \"toState\": \"Lagos\",\n        \"toLga\": \"Eti-Osa\",\n        \"weightTiers\": [\n          { \"minWeight\": 0, \"maxWeight\": 2, \"price\": 1500 },\n          { \"minWeight\": 2, \"maxWeight\": 5, \"price\": 3500 }\n        ],\n        \"insuranceFee\": 300,\n        \"packagingFee\": 200,\n        \"estimatedDaysMin\": 1,\n        \"estimatedDaysMax\": 3,\n        \"isActive\": true\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Pricing Rule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weightTiers\": [\n    { \"minWeight\": 0, \"maxWeight\": 2, \"price\": 1800 },\n    { \"minWeight\": 2, \"maxWeight\": 5, \"price\": 4000 },\n    { \"minWeight\": 5, \"maxWeight\": 10, \"price\": 7000 }\n  ],\n  \"insuranceFee\": 400,\n  \"estimatedDaysMax\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/logistics/providers/me/pricing-rules/{{ruleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "providers", "me", "pricing-rules", "{{ruleId}}"]
+            },
+            "description": "Update an existing pricing rule. Only the fields you send are changed. The rule must belong to the authenticated provider."
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Pricing Rule Active/Inactive",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/logistics/providers/me/pricing-rules/{{ruleId}}/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "providers", "me", "pricing-rules", "{{ruleId}}", "toggle"]
+            },
+            "description": "Flip the isActive flag on a pricing rule. No request body needed."
+          },
+          "response": [
+            {
+              "name": "200 OK — toggled to inactive",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"data\": {\n    \"rule\": {\n      \"_id\": \"665f1a2b3c4d5e6f7a8b9c0f\",\n      \"isActive\": false\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Pricing Rule",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/logistics/providers/me/pricing-rules/{{ruleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "providers", "me", "pricing-rules", "{{ruleId}}"]
+            },
+            "description": "Permanently delete a pricing rule. The rule must belong to the authenticated provider."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Provider Directory (Public)",
+      "description": "Public endpoints for customers to browse and search logistics providers.",
+      "item": [
+        {
+          "name": "List All Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/logistics/providers?verificationStatus=verified&isActive=true&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "providers"],
+              "query": [
+                {
+                  "key": "verificationStatus",
+                  "value": "verified",
+                  "description": "Filter by status: pending | verified | rejected"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "description": "Filter active providers"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Paginated list of all logistics providers. All query params are optional."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"results\": 2,\n  \"total\": 10,\n  \"data\": {\n    \"providers\": [\n      {\n        \"_id\": \"665f1a2b3c4d5e6f7a8b9c0d\",\n        \"name\": \"GIG Logistics Nigeria\",\n        \"email\": \"gig@example.com\",\n        \"phone\": \"08012345678\",\n        \"rating\": 4.5,\n        \"totalDeliveries\": 120,\n        \"verificationStatus\": \"verified\",\n        \"isActive\": true\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Provider by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/logistics/providers/{{providerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "providers", "{{providerId}}"]
+            },
+            "description": "Get a single provider's full profile by their MongoDB ObjectId."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Available Providers for Route",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/logistics/available?fromState=Lagos&fromLga=Ikeja&toState=Lagos&toLga=Eti-Osa&weight=3.5&sort=price",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "available"],
+              "query": [
+                {
+                  "key": "fromState",
+                  "value": "Lagos",
+                  "description": "Origin state (required)"
+                },
+                {
+                  "key": "fromLga",
+                  "value": "Ikeja",
+                  "description": "Origin LGA (required)"
+                },
+                {
+                  "key": "toState",
+                  "value": "Lagos",
+                  "description": "Destination state (required)"
+                },
+                {
+                  "key": "toLga",
+                  "value": "Eti-Osa",
+                  "description": "Destination LGA (required)"
+                },
+                {
+                  "key": "weight",
+                  "value": "3.5",
+                  "description": "Package weight in kg (required)"
+                },
+                {
+                  "key": "sort",
+                  "value": "price",
+                  "description": "Sort by: price | days | rating (default: price)"
+                }
+              ]
+            },
+            "description": "Core customer-facing endpoint. Given origin, destination, and weight, returns all verified providers that cover the route with a matching pricing rule. The delivery type (intra_lga / inter_lga_same_state / inter_state) is computed automatically. Response includes a price breakdown per provider."
+          },
+          "response": [
+            {
+              "name": "200 OK — providers found",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"results\": 2,\n  \"data\": {\n    \"providers\": [\n      {\n        \"provider\": {\n          \"_id\": \"665f1a2b3c4d5e6f7a8b9c0d\",\n          \"name\": \"GIG Logistics Nigeria\",\n          \"phone\": \"08012345678\",\n          \"rating\": 4.5,\n          \"totalDeliveries\": 120\n        },\n        \"pricingRule\": {\n          \"deliveryType\": \"inter_lga_same_state\",\n          \"fromState\": \"Lagos\",\n          \"fromLga\": \"Ikeja\",\n          \"toState\": \"Lagos\",\n          \"toLga\": \"Eti-Osa\"\n        },\n        \"breakdown\": {\n          \"basePrice\": 3500,\n          \"insuranceFee\": 300,\n          \"packagingFee\": 200,\n          \"totalPrice\": 4000\n        },\n        \"estimatedDaysMin\": 1,\n        \"estimatedDaysMax\": 3\n      }\n    ]\n  }\n}"
+            },
+            {
+              "name": "200 OK — no providers (empty)",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"results\": 0,\n  \"data\": {\n    \"providers\": []\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Admin-only endpoints. Requires a JWT belonging to a user with the admin role.",
+      "item": [
+        {
+          "name": "Verify / Reject Provider",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"verified\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/logistics/providers/{{providerId}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "providers", "{{providerId}}", "verify"]
+            },
+            "description": "Approve or reject a logistics provider. status must be \"verified\" or \"rejected\". Only accessible by users with the admin role."
+          },
+          "response": [
+            {
+              "name": "200 OK — verified",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"data\": {\n    \"provider\": {\n      \"_id\": \"665f1a2b3c4d5e6f7a8b9c0d\",\n      \"name\": \"GIG Logistics Nigeria\",\n      \"verificationStatus\": \"verified\"\n    }\n  }\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"You do not have permission to perform this action\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Location Reference",
+      "description": "Public endpoints for Nigeria states and LGAs — use to populate dropdowns.",
+      "item": [
+        {
+          "name": "Get All States",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/logistics/locations/states",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "locations", "states"]
+            },
+            "description": "Returns all 36 Nigerian states plus FCT Abuja as a flat array of strings."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"results\": 37,\n  \"data\": {\n    \"states\": [\n      \"Abia\", \"Adamawa\", \"Akwa Ibom\", \"Anambra\", \"Bauchi\",\n      \"Bayelsa\", \"Benue\", \"Borno\", \"Cross River\", \"Delta\",\n      \"Ebonyi\", \"Edo\", \"Ekiti\", \"Enugu\", \"FCT\",\n      \"Gombe\", \"Imo\", \"Jigawa\", \"Kaduna\", \"Kano\",\n      \"Katsina\", \"Kebbi\", \"Kogi\", \"Kwara\", \"Lagos\",\n      \"Nasarawa\", \"Niger\", \"Ogun\", \"Ondo\", \"Osun\",\n      \"Oyo\", \"Plateau\", \"Rivers\", \"Sokoto\", \"Taraba\",\n      \"Yobe\", \"Zamfara\"\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get LGAs for State",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/logistics/locations/states/Lagos/lgas",
+              "host": ["{{baseUrl}}"],
+              "path": ["logistics", "locations", "states", "Lagos", "lgas"]
+            },
+            "description": "Returns all LGAs for the given state. Replace 'Lagos' in the URL with any valid state name."
+          },
+          "response": [
+            {
+              "name": "200 OK — Lagos LGAs",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"success\",\n  \"results\": 20,\n  \"data\": {\n    \"lgas\": [\n      \"Agege\", \"Ajeromi-Ifelodun\", \"Alimosho\", \"Amuwo-Odofin\",\n      \"Apapa\", \"Badagry\", \"Epe\", \"Eti-Osa\", \"Ibeju-Lekki\",\n      \"Ifako-Ijaiye\", \"Ikeja\", \"Ikorodu\", \"Kosofe\",\n      \"Lagos Island\", \"Lagos Mainland\", \"Mushin\", \"Ojo\",\n      \"Oshodi-Isolo\", \"Shomolu\", \"Surulere\"\n    ]\n  }\n}"
+            },
+            {
+              "name": "404 State not found",
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"State \\\"Lagoss\\\" not found.\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
