@@ -92,28 +92,19 @@ export class LogisticsController {
     }
   }
 
-  // ── auth ──────────────────────────────────────────────────────────────────
-
-  static async register(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { provider, token } = await LogisticsService.registerProvider(req.body);
-      res.status(201).json({ status: 'success', token, data: { provider } });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  static async login(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { email, password } = req.body;
-      const { provider, token } = await LogisticsService.loginProvider(email, password);
-      res.status(200).json({ status: 'success', token, data: { provider } });
-    } catch (error) {
-      next(error);
-    }
-  }
-
   // ── provider profile ──────────────────────────────────────────────────────
+
+  static async onboardMe(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = getUserId(req, next);
+      if (!userId) return;
+
+      const provider = await LogisticsService.createProviderForUser(userId, req.body);
+      res.status(201).json({ status: 'success', data: { provider } });
+    } catch (error) {
+      next(error);
+    }
+  }
 
   static async getMe(req: AuthRequest, res: Response, next: NextFunction) {
     try {

@@ -1,4 +1,7 @@
 import express from 'express';
+import { NextFunction, Request, Response } from 'express';
+import passport from 'passport';
+import { URLSearchParams } from 'url';
 import { LogisticsController } from '../controllers/logisticsController';
 import { authenticate, authorizeRoles } from '../middlewares/authMiddleware';
 import { Role } from '../models/userModel';
@@ -7,9 +10,101 @@ import { LogisticsValidation } from '../utils/validations/logisticsValidation';
 
 const router = express.Router();
 
+interface LogisticsAuthResult {
+  user: { _id: unknown };
+  provider: { _id: unknown } | null;
+  token: string;
+  needsOnboarding: boolean;
+}
+
+const getAllowedDomains = (): string[] => {
+  return [
+    process.env.LOGISTICS_FRONTEND_URL,
+    process.env.DEZENEXPRESS_FRONTEND_URL,
+    process.env.DEZENMART_FRONTEND_URL,
+    process.env.DEZENTRA_FRONTEND_URL,
+    'http://localhost:5173',
+  ].filter((url): url is string => !!url);
+};
+
+function getRedirectUrl(state: string | undefined): string {
+  const allowedDomains = getAllowedDomains();
+  let redirectUrl = allowedDomains[0] || '/';
+
+  if (!state) return redirectUrl;
+
+  try {
+    const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
+    if (decodedState.origin && allowedDomains.includes(decodedState.origin)) {
+      redirectUrl = decodedState.origin;
+    }
+  } catch (error) {
+    console.error('Invalid state parameter in logistics OAuth callback:', error);
+  }
+
+  return redirectUrl;
+}
+
 // ── auth (public) ─────────────────────────────────────────────────────────────
-router.post('/auth/register', validate(LogisticsValidation.register), LogisticsController.register);
-router.post('/auth/login', validate(LogisticsValidation.login), LogisticsController.login);
+router.get('/auth/google', (req: Request, res: Response, next: NextFunction) => {
+  const { origin } = req.query;
+  const allowedDomains = getAllowedDomains();
+
+  if (typeof origin !== 'string' || !allowedDomains.includes(origin)) {
+    const defaultErrorRedirect = allowedDomains[0] || '/';
+    return res.redirect(`${defaultErrorRedirect}?error=invalid_origin`);
+  }
+
+  const state = Buffer.from(JSON.stringify({ origin })).toString('base64');
+
+  passport.authenticate('google-logistics', {
+    scope: ['profile', 'email'],
+    state,
+  })(req, res, next);
+});
+
+router.get(
+  '/auth/google/callback',
+  (req: Request, res: Response, next: NextFunction) => {
+    const state = req.query.state as string | undefined;
+    const redirectUrl = getRedirectUrl(state);
+
+    passport.authenticate(
+      'google-logistics',
+      { session: false },
+      (err: any, authResult: LogisticsAuthResult | false, info: any) => {
+        if (err || !authResult) {
+          const message = err?.message || info?.message || 'Authentication failed';
+          const errorParams = new URLSearchParams({
+            error: 'auth_failed',
+            message,
+          }).toString();
+          return res.redirect(`${redirectUrl}/auth/logistics/google?${errorParams}`);
+        }
+
+        const queryParams = new URLSearchParams({
+          token: authResult.token,
+          userId: String(authResult.user._id),
+          accountType: 'logistics',
+          needsOnboarding: String(authResult.needsOnboarding),
+        });
+
+        if (authResult.provider) {
+          queryParams.append('providerId', String(authResult.provider._id));
+        }
+
+        return res.redirect(`${redirectUrl}/auth/logistics/google?${queryParams.toString()}`);
+      },
+    )(req, res, next);
+  },
+);
+
+router.post(
+  '/me/onboarding',
+  authenticate,
+  validate(LogisticsValidation.onboardMe),
+  LogisticsController.onboardMe,
+);
 
 // ── location reference (public) ───────────────────────────────────────────────
 router.get('/locations/states', LogisticsController.getStates);

@@ -1,4 +1,3 @@
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Address } from 'viem';
 import config from '../configs/config';
@@ -13,6 +12,10 @@ import { contractService } from '../server';
 
 function signToken(userId: string, email: string): string {
   return jwt.sign({ id: userId, email }, config.JWT_SECRET!, { expiresIn: '7d' });
+}
+
+function isValidWalletAddress(walletAddress: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
 }
 
 function determineDeliveryType(
@@ -42,11 +45,9 @@ function providerCoversLocation(
 
 // ─── interfaces ───────────────────────────────────────────────────────────────
 
-export interface IRegisterProviderInput {
+export interface IGoogleProviderOnboardingInput {
   name: string;
-  email: string;
   phone: string;
-  password: string;
   walletAddress: string;
   coverageAreas?: Array<{ state: string; lgas: string[]; isStatewide: boolean }>;
 }
@@ -137,81 +138,95 @@ export class LogisticsService {
 
   // ── auth ─────────────────────────────────────────────────────────────────
 
-  static async registerProvider(
-    input: IRegisterProviderInput,
-  ): Promise<{ provider: ILogistics; token: string }> {
-    const { name, email, phone, password, walletAddress, coverageAreas = [] } = input;
-
-    if (!walletAddress.startsWith('0x')) {
-      throw new CustomError('A valid wallet address (starting with "0x") is required.', 400, 'fail');
+  static async findOrCreateGoogleProvider(
+    profile: any,
+  ): Promise<{
+    user: any;
+    provider: ILogistics | null;
+    token: string;
+    needsOnboarding: boolean;
+  }> {
+    const email = profile.emails?.[0]?.value;
+    if (!email) {
+      throw new CustomError('Google account email is required.', 400, 'fail');
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      throw new CustomError('An account with this email already exists.', 409, 'fail');
+    let user = await User.findOne({ googleId: profile.id });
+    if (!user) {
+      user = await User.findOne({ email });
+      if (user) {
+        user.googleId = profile.id;
+      } else {
+        user = new User({
+          googleId: profile.id,
+          email,
+          name: profile.displayName,
+          profileImage: profile.photos?.[0]?.value,
+        });
+      }
+    }
+
+    const provider = await Logistics.findOne({ userId: user._id });
+
+    if (provider && !user.roles?.includes(Role.LOGISTICS_AGENT)) {
+      user.roles = [...(user.roles ?? []), Role.LOGISTICS_AGENT];
+    }
+    await user.save();
+
+    const token = signToken(String(user._id), user.email);
+    return { user, provider, token, needsOnboarding: !provider };
+  }
+
+  static async createProviderForUser(
+    userId: string,
+    input: IGoogleProviderOnboardingInput,
+  ): Promise<ILogistics> {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new CustomError('User associated with this token no longer exists.', 401, 'fail');
+    }
+
+    const existingForUser = await Logistics.findOne({ userId: user._id });
+    if (existingForUser) {
+      if (!user.roles?.includes(Role.LOGISTICS_AGENT)) {
+        user.roles = [...(user.roles ?? []), Role.LOGISTICS_AGENT];
+        await user.save();
+      }
+      return existingForUser;
+    }
+
+    const { name, phone, walletAddress, coverageAreas = [] } = input;
+
+    if (!isValidWalletAddress(walletAddress)) {
+      throw new CustomError('walletAddress must be a valid Ethereum address (0x...).', 400, 'fail');
     }
 
     const existingProvider = await Logistics.findOne({
-      $or: [{ name }, { walletAddress }, { email }],
+      $or: [{ name }, { walletAddress }, { email: user.email }],
     });
     if (existingProvider) {
       throw new CustomError('A logistics provider with this name, email or wallet address already exists.', 409, 'fail');
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      roles: [Role.LOGISTICS_AGENT],
-    });
-
     const provider = await Logistics.create({
       userId: user._id,
       name,
-      email,
+      email: user.email,
       phone,
       walletAddress,
       coverageAreas,
     });
 
-    // Fire-and-forget: register wallet on-chain for payment resolution.
-    // DB record is already saved; if the RPC is unavailable the provider
-    // can be re-registered on-chain later without losing their account.
+    if (!user.roles?.includes(Role.LOGISTICS_AGENT)) {
+      user.roles = [...(user.roles ?? []), Role.LOGISTICS_AGENT];
+      await user.save();
+    }
+
     contractService.registerLogisticsProvider(walletAddress as Address).catch((err: unknown) => {
       console.error('[logistics] on-chain registration failed for', walletAddress, err);
     });
 
-    const token = signToken(String(user._id), user.email);
-    return { provider, token };
-  }
-
-  static async loginProvider(
-    email: string,
-    password: string,
-  ): Promise<{ provider: ILogistics; token: string }> {
-    const user = await User.findOne({ email }).select('+password');
-    if (!user || !user.password) {
-      throw new CustomError('Invalid email or password.', 401, 'fail');
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      throw new CustomError('Invalid email or password.', 401, 'fail');
-    }
-
-    if (!user.roles?.includes(Role.LOGISTICS_AGENT)) {
-      throw new CustomError('This account is not a logistics provider.', 403, 'fail');
-    }
-
-    const provider = await Logistics.findOne({ userId: user._id });
-    if (!provider) {
-      throw new CustomError('Logistics provider profile not found.', 404, 'fail');
-    }
-
-    const token = signToken(String(user._id), user.email);
-    return { provider, token };
+    return provider;
   }
 
   // ── provider profile ──────────────────────────────────────────────────────

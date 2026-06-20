@@ -17,24 +17,15 @@ const DELIVERY_TYPES = ['intra_lga', 'inter_lga_same_state', 'inter_state'];
 const SORT_OPTIONS = ['price', 'days', 'rating'];
 
 export const LogisticsValidation = {
-  register: Joi.object({
+  onboardMe: Joi.object({
     body: Joi.object({
       name: Joi.string().min(2).max(100).required(),
-      email: Joi.string().email().required(),
       phone: Joi.string().min(7).max(20).required(),
-      password: Joi.string().min(8).required(),
       walletAddress: Joi.string()
         .pattern(/^0x[a-fA-F0-9]{40}$/)
         .required()
         .messages({ 'string.pattern.base': 'walletAddress must be a valid Ethereum address (0x...)' }),
       coverageAreas: Joi.array().items(coverageAreaSchema).default([]),
-    }),
-  }),
-
-  login: Joi.object({
-    body: Joi.object({
-      email: Joi.string().email().required(),
-      password: Joi.string().required(),
     }),
   }),
 
