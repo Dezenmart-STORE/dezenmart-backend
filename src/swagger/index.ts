@@ -2,6 +2,18 @@ import path from 'path';
 import swaggerJsdoc from 'swagger-jsdoc';
 import config from '../configs/config';
 
+const isProduction = config.nodeEnv === 'production';
+const productionUrl = process.env.API_BASE_URL;
+
+const servers = productionUrl
+  ? [
+      { url: `${productionUrl}/api/v1`, description: 'Production' },
+      { url: `http://localhost:${config.PORT}/api/v1`, description: 'Local development' },
+    ]
+  : [
+      { url: `http://localhost:${config.PORT}/api/v1`, description: 'Local development' },
+    ];
+
 const swaggerDefinition = {
   openapi: '3.0.0',
   info: {
@@ -13,12 +25,7 @@ const swaggerDefinition = {
       name: 'Dezenmart',
     },
   },
-  servers: [
-    {
-      url: `http://localhost:${config.PORT}/api/v1`,
-      description: 'Local development',
-    },
-  ],
+  servers,
   tags: [
     { name: 'Auth', description: 'Google OAuth authentication' },
     { name: 'Users', description: 'User profile and verification' },
