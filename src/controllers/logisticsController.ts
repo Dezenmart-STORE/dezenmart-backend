@@ -274,6 +274,32 @@ export class LogisticsController {
 
   // ── customer-facing ───────────────────────────────────────────────────────
 
+  static async getProvidersByDeliveryAddress(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = getUserId(req, next);
+      if (!userId) return;
+
+      const { deliveryAddressId, fromState, fromLga, weight, sort } = req.query as Record<string, string>;
+
+      const providers = await LogisticsService.getProvidersByDeliveryAddress({
+        buyerId: userId,
+        deliveryAddressId,
+        fromState,
+        fromLga,
+        weight: Number(weight),
+        sort: sort as any,
+      });
+
+      res.status(200).json({
+        status: 'success',
+        results: providers.length,
+        data: { providers },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getAvailableProviders(req: Request, res: Response, next: NextFunction) {
     try {
       const { fromState, fromLga, toState, toLga, weight, sort } = req.query as Record<string, string>;

@@ -24,6 +24,7 @@ const getAllowedDomains = (): string[] => {
     process.env.DEZENMART_FRONTEND_URL,
     process.env.DEZENTRA_FRONTEND_URL,
     'http://localhost:5173',
+    'http://localhost:3000',
   ].filter((url): url is string => !!url);
 };
 
@@ -109,6 +110,14 @@ router.post(
 // ── location reference (public) ───────────────────────────────────────────────
 router.get('/locations/states', LogisticsController.getStates);
 router.get('/locations/states/:state/lgas', LogisticsController.getLgas);
+
+// ── customer-facing provider search (authenticated, by delivery address) ──────
+router.get(
+  '/providers/by-address',
+  authenticate,
+  validate(LogisticsValidation.getProvidersByDeliveryAddress),
+  LogisticsController.getProvidersByDeliveryAddress,
+);
 
 // ── customer-facing provider search (public) ──────────────────────────────────
 router.get(

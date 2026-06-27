@@ -6,6 +6,7 @@ import { CustomError } from '../middlewares/errorHandler';
 import { ILogistics, Logistics } from '../models/logisticsModel';
 import { IPricingRule, PricingRule, DeliveryType } from '../models/pricingRuleModel';
 import { Role, User } from '../models/userModel';
+import { DeliveryAddress } from '../models/deliveryAddressModel';
 import { contractService } from '../server';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -371,6 +372,31 @@ export class LogisticsService {
     }
     rule.isActive = !rule.isActive;
     return await rule.save();
+  }
+
+  static async getProvidersByDeliveryAddress(params: {
+    buyerId: string;
+    deliveryAddressId: string;
+    fromState: string;
+    fromLga: string;
+    weight: number;
+    sort?: 'price' | 'days' | 'rating';
+  }): Promise<IAvailableProvider[]> {
+    const { buyerId, deliveryAddressId, fromState, fromLga, weight, sort = 'price' } = params;
+
+    const address = await DeliveryAddress.findOne({ _id: deliveryAddressId, user: buyerId });
+    if (!address) {
+      throw new CustomError('Delivery address not found', 404, 'fail');
+    }
+
+    return LogisticsService.getAvailableProviders({
+      fromState,
+      fromLga,
+      toState: address.state,
+      toLga: address.lga,
+      weight,
+      sort,
+    });
   }
 
   // ── customer-facing ───────────────────────────────────────────────────────
