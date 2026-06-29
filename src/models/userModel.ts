@@ -47,6 +47,8 @@ export interface IUser extends Document {
     street: string,
     zipCode: string
   }
+  bankName?: string;
+  bankAccount?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -102,6 +104,8 @@ const UserSchema = new Schema<IUser>(
       zipCode: { type: String },
     },
     tokenBalance: { type: Number, default: 0 },
+    bankName: { type: String },
+    bankAccount: { type: String },
   },
   { timestamps: true },
 );
