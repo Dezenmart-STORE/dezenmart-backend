@@ -9,6 +9,8 @@ export const UserValidation = {
       dateOfBirth: Joi.date().optional(),
       phoneNumber: Joi.string().optional(),
       address: Joi.string().optional(),
+      bankName: Joi.string().optional(),
+      bankAccount: Joi.string().optional(),
     }).min(1), // At least one field is required
   }),
 

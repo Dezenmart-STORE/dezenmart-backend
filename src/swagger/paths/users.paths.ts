@@ -39,6 +39,12 @@
  *                 type: string
  *               address:
  *                 type: string
+ *               bankName:
+ *                 type: string
+ *                 description: Bank name for off-ramp NGN disbursement (optional)
+ *               bankAccount:
+ *                 type: string
+ *                 description: Bank account number for off-ramp NGN disbursement (optional)
  *               profileImage:
  *                 type: string
  *                 format: binary

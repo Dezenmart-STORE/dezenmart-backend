@@ -43,6 +43,7 @@ const swaggerDefinition = {
     { name: 'Exchange Rate', description: 'Token exchange rate and purchases' },
     { name: 'Deliveries', description: 'Order delivery tracking and management' },
     { name: 'Delivery Addresses', description: 'User saved delivery addresses' },
+    { name: 'Ramp', description: 'Quidax on-ramp (NGN → crypto) and off-ramp (crypto → NGN) conversion' },
   ],
 };
 

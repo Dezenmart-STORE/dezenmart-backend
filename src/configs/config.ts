@@ -16,6 +16,9 @@ interface Config {
   IS_TESTNET: boolean;
   SELF_APP_SCOPE: string;
   SELF_BACKEND_URL: string;
+  QUIDAX_API_KEY?: string;
+  QUIDAX_BASE_URL: string;
+  QUIDAX_WEBHOOK_SECRET?: string;
 }
 
 const config: Config = {
@@ -34,6 +37,9 @@ const config: Config = {
   IS_TESTNET: process.env.IS_TESTNET === 'true',
   SELF_APP_SCOPE: process.env.SELF_APP_SCOPE || 'dezenmart-app',
   SELF_BACKEND_URL: process.env.SELF_BACKEND_URL || '',
+  QUIDAX_API_KEY: process.env.QUIDAX_API_KEY,
+  QUIDAX_BASE_URL: process.env.QUIDAX_BASE_URL || 'https://ramp-be.quidax.io/api/v1',
+  QUIDAX_WEBHOOK_SECRET: process.env.QUIDAX_WEBHOOK_SECRET,
 };
 
 export default config;
