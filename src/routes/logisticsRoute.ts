@@ -19,11 +19,8 @@ interface LogisticsAuthResult {
 
 const getAllowedDomains = (): string[] => {
   return [
-    process.env.LOGISTICS_FRONTEND_URL,
-    process.env.DEZENEXPRESS_FRONTEND_URL,
-    process.env.DEZENMART_FRONTEND_URL,
-    process.env.DEZENTRA_FRONTEND_URL,
-    'http://localhost:5173',
+    process.env.DEZENMART_DEPLOYED_URL,
+    process.env.DEZENMART_LOGISTICS_FRONTEND_URL,
     'http://localhost:3000',
   ].filter((url): url is string => !!url);
 };

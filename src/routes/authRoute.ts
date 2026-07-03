@@ -15,6 +15,7 @@ const getAllowedDomains = (): string[] => {
   const domains = [
     process.env.DEZENMART_FRONTEND_URL,
     process.env.DEZENTRA_FRONTEND_URL,
+    process.env.DEZENMART_DEPLOYED_URL,
     'http://localhost:5173',
   ].filter((url): url is string => !!url);
 
