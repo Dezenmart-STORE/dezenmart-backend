@@ -9,6 +9,9 @@ export interface IProduct extends Document {
   seller: Schema.Types.ObjectId;
   sellerWalletAddress: string;
   stock: number;
+  weight: number;
+  state: string;
+  lga: string;
   images: string[];
   tradeId: string;
   isSponsored: boolean;
@@ -36,6 +39,9 @@ const productSchema = new Schema<IProduct>(
     seller: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     sellerWalletAddress: { type: String, required: true },
     stock: { type: Number, required: true },
+    weight: { type: Number, required: true, min: 0 },
+    state: { type: String, required: true, trim: true },
+    lga: { type: String, required: true, trim: true },
     images: [{ type: String, required: true }],
     tradeId: { type: String },
     isSponsored: { type: Boolean, default: false },

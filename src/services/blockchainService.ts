@@ -39,7 +39,10 @@ export class DezenMartContractService {
   constructor() {
     // Connect to Celo network (Mainnet or Testnet)
     const nodeUrl =
-      config.CELO_NODE_URL || 'https://alfajores-forno.celo-testnet.org'; // Testnet for now
+      config.CELO_NODE_URL ||
+      (config.IS_TESTNET
+        ? 'https://forno.celo-sepolia.celo-testnet.org'
+        : 'https://forno.celo.org');
 
     this.kit = newKit(nodeUrl);
     this.contractAddress = config.CONTRACT_ADDRESS || '';

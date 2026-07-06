@@ -143,8 +143,6 @@ router.post(
 );
 router.get(
   '/providers/me/pricing-rules',
-  authenticate,
-  authorizeRoles(Role.LOGISTICS_AGENT),
   LogisticsController.getPricingRules,
 );
 router.put(

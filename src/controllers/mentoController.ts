@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 import { mentoService } from '../services/mentoService';
 
-// Celo Mainnet & Alfajores Testnet Token Addresses
+// Celo Mainnet & Celo Sepolia testnet token addresses
 const TOKENS = {
-  CELO: '0xF194afDf50B03e69Bd7D057c1Aa9e10c9954E4C9', // Alfajores CELO
-  CUSD: '0x874069fa1eb16d44d622f2e0ca25eea172369bc1', // Alfajores cUSD
-  cREAL: '0xE4D517785D091D3c54818832dB6094bcc2744545',
-  cGBP: '0x47f2Fb88105155a18c390641C8a73f1402B2BB12',
-  cEUR: '0x10c892A6EC43a53E45D0B916B4b7D383B1b78C0F',
+  CELO: '0x471EcE3750Da237f93B8E339c536989b8978a438', // Celo Sepolia native CELO
+  CUSD: '0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b', // USDm
+  cREAL: '0x2294298942fdc79417DE9E0D740A4957E0e7783a', // BRLm
+  cGBP: '0x85F5181Abdbf0e1814Fc4358582Ae07b8eBA3aF3', // GBPm
+  cEUR: '0xA99dC247d6b7B2E3ab48a1fEE101b83cD6aCd82a', // EURm
   // Add other Mento tokens as needed
 };
 

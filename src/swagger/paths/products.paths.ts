@@ -25,6 +25,9 @@
  *               - category
  *               - sellerWalletAddress
  *               - stock
+ *               - weight
+ *               - state
+ *               - lga
  *               - useUSDT
  *             properties:
  *               name:
@@ -48,6 +51,18 @@
  *               stock:
  *                 type: integer
  *                 minimum: 0
+ *               weight:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Product weight in kg or the unit your logistics logic expects
+ *               state:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 100
+ *               lga:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 100
  *               useUSDT:
  *                 type: boolean
  *               isSponsored:

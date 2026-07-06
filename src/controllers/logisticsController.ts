@@ -207,15 +207,28 @@ export class LogisticsController {
 
   static async getPricingRules(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const userId = getUserId(req, next);
-      if (!userId) return;
+      const { deliveryType, providerId, userId: queryUserId } = req.query as {
+        deliveryType?: string;
+        providerId?: string;
+        userId?: string;
+      };
 
-      const existing = await LogisticsService.getProviderByUserId(userId);
-      if (!existing) return next(new CustomError('Provider profile not found.', 404, 'fail'));
+      let resolvedProviderId = providerId || queryUserId || getUserId(req, next);
+      if (!resolvedProviderId) {
+        return next(new CustomError('Provider identifier is required.', 400, 'fail'));
+      }
 
-      const { deliveryType } = req.query as { deliveryType?: string };
+      const provider = await LogisticsService.getProviderById(resolvedProviderId);
+      if (!provider) {
+        const providerByUserId = await LogisticsService.getProviderByUserId(resolvedProviderId);
+        if (!providerByUserId) {
+          return next(new CustomError('Provider profile not found.', 404, 'fail'));
+        }
+        resolvedProviderId = String(providerByUserId._id);
+      }
+
       const rules = await LogisticsService.getPricingRules(
-        String(existing._id),
+        String(resolvedProviderId),
         deliveryType as any,
       );
       res.status(200).json({ status: 'success', results: rules.length, data: { rules } });

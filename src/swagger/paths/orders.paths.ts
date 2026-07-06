@@ -4,7 +4,7 @@
  *   get:
  *     tags: [Orders]
  *     summary: Get orders
- *     description: Public endpoint to list orders, or authenticated with type filter for user orders.
+ *     description: Public list, or authenticated with type filter for buyer/seller orders.
  *     parameters:
  *       - in: query
  *         name: type
@@ -16,7 +16,7 @@
  *         name: status
  *         schema:
  *           type: string
- *           enum: [pending, accepted, rejected, completed, disputed, refunded]
+ *           enum: [pending, accepted, rejected, completed, disputed, refunded, shipped, delivered, delivery_confirmed]
  *     security:
  *       - bearerAuth: []
  *       - {}
@@ -37,18 +37,117 @@
  *             required:
  *               - product
  *               - quantity
+ *               - logisticsProvider
+ *               - deliveryAddress
  *             properties:
  *               product:
  *                 type: string
  *                 description: Product MongoDB ObjectId
  *               quantity:
  *                 type: number
- *                 minimum: 0
- *               logisticsProviderWalletAddress:
+ *                 minimum: 1
+ *               logisticsProvider:
  *                 type: string
+ *                 description: Selected logistics provider MongoDB ObjectId
+ *               deliveryAddress:
+ *                 type: string
+ *                 description: Buyer's saved delivery address ID
+ *               deliveryFee:
+ *                 type: number
+ *                 description: Quoted delivery fee from provider search
+ *               expectedDeliveryDate:
+ *                 type: string
+ *                 format: date-time
  *     responses:
  *       '201':
- *         description: Order created
+ *         description: Order created with populated logistics provider details
+ *
+ * /orders/logistics/me:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Logistics provider dashboard — list assigned orders
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: logisticsStatus
+ *         schema:
+ *           type: string
+ *           enum: [pending, accepted, rejected, shipped, delivered]
+ *       - $ref: '#/components/parameters/page'
+ *       - $ref: '#/components/parameters/limit'
+ *     responses:
+ *       '200':
+ *         description: Paginated orders assigned to the authenticated logistics provider
+ *
+ * /orders/logistics/me/{orderId}/accept:
+ *   patch:
+ *     tags: [Orders]
+ *     summary: Accept a pending order (logistics provider)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Order accepted
+ *
+ * /orders/logistics/me/{orderId}/reject:
+ *   patch:
+ *     tags: [Orders]
+ *     summary: Decline a pending order (logistics provider)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       '200':
+ *         description: Order declined
+ *
+ * /orders/logistics/me/{orderId}/ship:
+ *   patch:
+ *     tags: [Orders]
+ *     summary: Mark an accepted order as shipped
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               trackingNumber:
+ *                 type: string
+ *               expectedDeliveryDate:
+ *                 type: string
+ *                 format: date-time
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       '200':
+ *         description: Order shipped with shippedAt and expectedDeliveryDate metadata
  *
  * /orders/{id}:
  *   get:
@@ -60,7 +159,7 @@
  *       - $ref: '#/components/parameters/mongoId'
  *     responses:
  *       '200':
- *         description: Order details
+ *         description: Order details including logistics provider profile
  *   put:
  *     tags: [Orders]
  *     summary: Update an order

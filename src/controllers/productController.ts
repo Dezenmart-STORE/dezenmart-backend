@@ -31,6 +31,9 @@ export class ProductController {
       category,
       sellerWalletAddress,
       stock,
+      weight,
+      state,
+      lga,
       logisticsProviders,
       logisticsCosts,
       useUSDT,
@@ -75,6 +78,10 @@ export class ProductController {
       throw new CustomError('Valid product price is required', 400, 'fail');
     if (stock === undefined || stock === null || isNaN(Number(stock)))
       throw new CustomError('Valid product stock is required', 400, 'fail');
+    if (weight === undefined || weight === null || isNaN(Number(weight)))
+      throw new CustomError('Valid product weight is required', 400, 'fail');
+    if (!state) throw new CustomError('Product state is required', 400, 'fail');
+    if (!lga) throw new CustomError('Product LGA is required', 400, 'fail');
     if (!category)
       throw new CustomError('Product category is required', 400, 'fail');
     if (!sellerWalletAddress)
@@ -132,6 +139,9 @@ export class ProductController {
       seller: (req.user as any).id,
       sellerWalletAddress,
       stock: Number(stock),
+      weight: Number(weight),
+      state,
+      lga,
       images: imageUrls,
       logisticsCost: finalLogisticsCosts,
       isSponsored: Boolean(isSponsored || false),

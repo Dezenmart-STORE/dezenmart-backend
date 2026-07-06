@@ -13,7 +13,7 @@ import {
   Transport,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { celo, celoAlfajores } from 'viem/chains';
+import { celo, celoSepolia } from 'viem/chains';
 import config from '../configs/config';
 import { ethers } from 'ethers';
 
@@ -26,11 +26,11 @@ class MentoService {
   private chain: Chain;
 
   constructor() {
-    this.chain = config.IS_TESTNET ? celoAlfajores : celo;
+    this.chain = config.IS_TESTNET ? celoSepolia : celo;
     const rpcUrl =
       config.CELO_NODE_URL ||
       (config.IS_TESTNET
-        ? 'https://alfajores-forno.celo-testnet.org'
+        ? 'https://forno.celo-sepolia.celo-testnet.org'
         : 'https://forno.celo.org');
 
     // Fix 1: Explicitly type the transport

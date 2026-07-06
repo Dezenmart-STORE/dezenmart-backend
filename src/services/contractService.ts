@@ -14,7 +14,7 @@ import {
   GetLogsReturnType,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { celo, celoAlfajores } from 'viem/chains';
+import { celo, celoSepolia } from 'viem/chains';
 import dotenv from 'dotenv';
 import abi from '../abi/dezenmartAbi.json';
 import config from '../configs/config';
@@ -25,22 +25,22 @@ dotenv.config();
 // Payment token mapping - symbol to contract address
 // Define testnet and mainnet token addresses
 const TESTNET_TOKENS = {
-  cUSD: '0x874069fa1eb16d44d622f2e0ca25eea172369bc1',
-  USDT: '0x803700bD991d293306D6e7dCcF2B49F9137b437e',
-  cEUR: '0x10c892A6EC43a53E45D0B916B4b7D383B1b78C0F',
-  cREAL: '0xE4D517785D091D3c54818832dB6094bcc2744545',
-  cKES: '0x1E0433C1769271ECcF4CFF9FDdD515eefE6CdF92',
-  PUSO: '0x5E0E3c9419C42a1B04e2525991FB1A2C467AB8bF',
-  cCOP: '0xe6A57340f0df6E020c1c0a80bC6E13048601f0d4',
-  eXOF: '0xB0FA15e002516d0301884059c0aaC0F0C72b019D',
-  cNGN: '0x4a5b03B8b16122D330306c65e4CA4BC5Dd6511d0',
-  cJPY: '0x2E51F41238cA36a421C9B8b3e189e8Cc7653FE67',
-  cCHF: '0xADC57C2C34aD021Df4421230a6532F4e2E1dCE4F',
-  cZAR: '0x1e5b44015Ff90610b54000DAad31C89b3284df4d',
-  cGBP: '0x47f2Fb88105155a18c390641C8a73f1402B2BB12',
-  cAUD: '0x84CBD49F5aE07632B6B88094E81Cce8236125Fe0',
-  cCAD: '0x02EC9E0D2Fd73e89168C1709e542a48f58d7B133',
-  cGHS: '0x295B66bE7714458Af45E6A6Ea142A5358A6cA375',
+  cUSD: '0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b', // USDm
+  USDT: '0xd077A400968890Eacc75cdc901F0356c943e4fDb',
+  cEUR: '0xA99dC247d6b7B2E3ab48a1fEE101b83cD6aCd82a', // EURm
+  cREAL: '0x2294298942fdc79417DE9E0D740A4957E0e7783a', // BRLm
+  cKES: '0xC7e4635651E3e3Af82b61d3E23c159438daE3BbF', // KESm
+  PUSO: '0x0352976d940a2C3FBa0C3623198947Ee1d17869E', // PHPm
+  cCOP: '0x5F8d55c3627d2dc0a2B4afa798f877242F382F67', // COPm
+  eXOF: '0x5505b70207aE3B826c1A7607F19F3Bf73444A082', // XOFm
+  cNGN: '0x3d5ae86F34E2a82771496D140daFAEf3789dF888', // NGNm
+  cJPY: '0x85Bee67D435A39f7467a8a9DE34a5B73D25Df426', // JPYm
+  cCHF: '0x284E9b7B623eAE866914b7FA0eB720C2Bb3C2980', // CHFm
+  cZAR: '0x10CCfB235b0E1Ed394bACE4560C3ed016697687e', // ZARm
+  cGBP: '0x85F5181Abdbf0e1814Fc4358582Ae07b8eBA3aF3', // GBPm
+  cAUD: '0x5873Faeb42F3563dcD77F0fbbdA818E6d6DA3139', // AUDm
+  cCAD: '0xF151c9a13b78C84f93f50B8b3bC689fedc134F60', // CADm
+  cGHS: '0x5e94B8C872bD47BC4255E60ECBF44D5E66e7401C', // GHSm
   G$: '0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A',
 } as const;
 
@@ -150,11 +150,11 @@ export class DezenMartContractService {
 
   constructor() {
     // Choose the appropriate chain
-    const chain = config.IS_TESTNET ? celoAlfajores : celo;
+    const chain = config.IS_TESTNET ? celoSepolia : celo;
     const rpcUrl =
       config.CELO_NODE_URL ||
       (config.IS_TESTNET
-        ? 'https://alfajores-forno.celo-testnet.org'
+        ? 'https://forno.celo-sepolia.celo-testnet.org'
         : 'https://forno.celo.org');
 
     // Create public client for reading

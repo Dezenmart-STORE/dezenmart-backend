@@ -6,8 +6,9 @@ const transformProductFormData = (req: express.Request, res: express.Response, n
   const files = req.files as any[] | undefined;
 
   // Convert numeric strings to numbers
-  if (body.price) body.price = parseFloat(body.price);
-  if (body.stock) body.stock = parseInt(body.stock, 10);
+  if (body.price !== undefined && body.price !== null && body.price !== '') body.price = parseFloat(body.price);
+  if (body.stock !== undefined && body.stock !== null && body.stock !== '') body.stock = parseInt(body.stock, 10);
+  if (body.weight !== undefined && body.weight !== null && body.weight !== '') body.weight = parseFloat(body.weight);
 
   // Convert boolean strings to booleans
   if (typeof body.useUSDT === 'string') body.useUSDT = body.useUSDT.toLowerCase() === 'true';

@@ -11,6 +11,8 @@ export interface ICoverageArea {
 export interface ILogistics extends Document {
   userId: Types.ObjectId;
   name: string;
+  companyName?: string;
+  location?: string;
   email: string;
   phone: string;
   walletAddress: string;
@@ -34,6 +36,8 @@ const logisticsSchema = new Schema<ILogistics>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     name: { type: String, required: true, unique: true },
+    companyName: { type: String, trim: true },
+    location: { type: String, trim: true },
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     walletAddress: { type: String, required: true, unique: true },

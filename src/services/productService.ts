@@ -13,6 +13,9 @@ interface ICreateProductInput {
   seller: string;
   sellerWalletAddress: string;
   stock: number;
+  weight: number;
+  state: string;
+  lga: string;
   images: string[];
   isSponsored: boolean;
   isActive: boolean;
@@ -27,6 +30,9 @@ export class ProductService {
     const {
       price,
       stock,
+      weight,
+      state,
+      lga,
       useUSDT,
       paymentToken,
       sellerWalletAddress,
@@ -38,6 +44,15 @@ export class ProductService {
     }
     if (typeof stock !== 'number' || stock <= 0) {
       throw new CustomError('Stock must be a positive number.', 400, 'fail');
+    }
+    if (typeof weight !== 'number' || weight <= 0) {
+      throw new CustomError('Weight must be a positive number.', 400, 'fail');
+    }
+    if (!state || typeof state !== 'string' || state.trim() === '') {
+      throw new CustomError('State is required.', 400, 'fail');
+    }
+    if (!lga || typeof lga !== 'string' || lga.trim() === '') {
+      throw new CustomError('LGA is required.', 400, 'fail');
     }
     if (typeof useUSDT === 'undefined') {
       throw new CustomError(

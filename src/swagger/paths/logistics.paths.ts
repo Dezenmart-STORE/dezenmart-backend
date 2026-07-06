@@ -165,12 +165,52 @@
  * /logistics/providers/me/pricing-rules:
  *   get:
  *     tags: [Logistics]
- *     summary: Get pricing rules for current provider
- *     security:
- *       - bearerAuth: []
+ *     summary: Get pricing rules for a provider
+ *     description: Public endpoint. Supply providerId or userId as a query parameter to fetch pricing rules for a specific provider.
+ *     parameters:
+ *       - in: query
+ *         name: providerId
+ *         schema:
+ *           type: string
+ *         description: ID of the logistics provider profile
+ *       - in: query
+ *         name: userId
+ *         schema:
+ *           type: string
+ *         description: User ID associated with the logistics provider profile
+ *       - in: query
+ *         name: deliveryType
+ *         schema:
+ *           type: string
+ *           enum: [intra_lga, inter_lga_same_state, inter_state]
  *     responses:
  *       '200':
  *         description: Pricing rules list
+ *         content:
+ *           application/json:
+ *             example:
+ *               status: success
+ *               results: 1
+ *               data:
+ *                 rules:
+ *                   - _id: 64f1f8c1b9d4a5c6e7f8a9b0
+ *                     providerId: 64f1f8c1b9d4a5c6e7f8a9b1
+ *                     deliveryType: intra_lga
+ *                     fromState: Lagos
+ *                     fromLga: Ikeja
+ *                     toState: Lagos
+ *                     toLga: Lekki
+ *                     weightTiers:
+ *                       - minWeight: 0
+ *                         maxWeight: 5
+ *                         price: 1500
+ *                     insuranceFee: 200
+ *                     packagingFee: 100
+ *                     estimatedDaysMin: 1
+ *                     estimatedDaysMax: 2
+ *                     isActive: true
+ *                     createdAt: '2025-01-01T00:00:00.000Z'
+ *                     updatedAt: '2025-01-01T00:00:00.000Z'
  *   post:
  *     tags: [Logistics]
  *     summary: Create a pricing rule
