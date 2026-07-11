@@ -90,6 +90,15 @@ export interface IAvailableProvider {
 export interface ILogisticsQuotePayload {
   quoteId: string;
   providerId: string;
+  deliveryFee: number;
+  provider: {
+    id: string;
+    name: string;
+    companyName?: string;
+    rating?: number;
+    phone?: string;
+    walletAddress?: string;
+  };
   breakdown: {
     basePrice: number;
     insuranceFee: number;
@@ -486,6 +495,15 @@ export class LogisticsService {
     return {
       quoteId: String(quote._id),
       providerId: String(provider._id),
+      deliveryFee: totalPrice,
+      provider: {
+        id: String(provider._id),
+        name: provider.name,
+        companyName: provider.companyName,
+        rating: provider.rating,
+        phone: provider.phone,
+        walletAddress: provider.walletAddress,
+      },
       breakdown: quote.breakdown,
       estimatedDaysMin: quote.estimatedDaysMin,
       estimatedDaysMax: quote.estimatedDaysMax,

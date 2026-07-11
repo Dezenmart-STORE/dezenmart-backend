@@ -122,7 +122,7 @@
  *                 minimum: 0.1
  *     responses:
  *       '201':
- *         description: Logistics quote created with pricing breakdown and expiry
+ *         description: Logistics quote created with pricing breakdown, delivery fee, provider details, and expiry
  *
  * /logistics/available:
  *   get:
