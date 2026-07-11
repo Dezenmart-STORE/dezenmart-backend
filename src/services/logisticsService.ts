@@ -8,6 +8,7 @@ import { IPricingRule, PricingRule, DeliveryType } from '../models/pricingRuleMo
 import { Role, User } from '../models/userModel';
 import { DeliveryAddress } from '../models/deliveryAddressModel';
 import { contractService } from '../server';
+import { LogisticsQuote } from '../models/logisticsQuoteModel';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -84,6 +85,20 @@ export interface IAvailableProvider {
   };
   estimatedDaysMin: number;
   estimatedDaysMax: number;
+}
+
+export interface ILogisticsQuotePayload {
+  quoteId: string;
+  providerId: string;
+  breakdown: {
+    basePrice: number;
+    insuranceFee: number;
+    packagingFee: number;
+    totalPrice: number;
+  };
+  estimatedDaysMin: number;
+  estimatedDaysMax: number;
+  expiresAt: Date;
 }
 
 // ─── service ──────────────────────────────────────────────────────────────────
@@ -400,6 +415,83 @@ export class LogisticsService {
   }
 
   // ── customer-facing ───────────────────────────────────────────────────────
+
+  static async createQuote(params: {
+    buyerId: string;
+    deliveryAddressId: string;
+    providerId: string;
+    fromState: string;
+    fromLga: string;
+    weight: number;
+  }): Promise<ILogisticsQuotePayload> {
+    const { buyerId, deliveryAddressId, providerId, fromState, fromLga, weight } = params;
+
+    const address = await DeliveryAddress.findOne({ _id: deliveryAddressId, user: buyerId });
+    if (!address) {
+      throw new CustomError('Delivery address not found', 404, 'fail');
+    }
+
+    const provider = await Logistics.findOne({ _id: providerId, verificationStatus: 'verified', isActive: true });
+    if (!provider) {
+      throw new CustomError('Logistics provider not found or inactive', 404, 'fail');
+    }
+
+    const deliveryType = determineDeliveryType(fromState, fromLga, address.state, address.lga);
+    const coversFrom = providerCoversLocation(provider, fromState, fromLga);
+    const coversTo = providerCoversLocation(provider, address.state, address.lga);
+    if (!coversFrom || !coversTo) {
+      throw new CustomError('Provider does not cover this route', 400, 'fail');
+    }
+
+    const rule = await PricingRule.findOne({
+      providerId: provider._id,
+      deliveryType,
+      fromState: new RegExp(`^${fromState}$`, 'i'),
+      toState: new RegExp(`^${address.state}$`, 'i'),
+      ...(deliveryType !== 'inter_state' && {
+        fromLga: new RegExp(`^${fromLga}$`, 'i'),
+        toLga: new RegExp(`^${address.lga}$`, 'i'),
+      }),
+      isActive: true,
+    });
+
+    if (!rule) {
+      throw new CustomError('No pricing rule available for this route', 404, 'fail');
+    }
+
+    const tier = rule.weightTiers.find((t) => weight >= t.minWeight && weight <= t.maxWeight);
+    if (!tier) {
+      throw new CustomError('No pricing tier available for this weight', 400, 'fail');
+    }
+
+    const totalPrice = tier.price + rule.insuranceFee + rule.packagingFee;
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    const quote = await LogisticsQuote.create({
+      buyer: buyerId,
+      deliveryAddress: deliveryAddressId,
+      logisticsProvider: provider._id,
+      breakdown: {
+        basePrice: tier.price,
+        insuranceFee: rule.insuranceFee,
+        packagingFee: rule.packagingFee,
+        totalPrice,
+      },
+      estimatedDaysMin: rule.estimatedDaysMin,
+      estimatedDaysMax: rule.estimatedDaysMax,
+      expiresAt,
+      status: 'pending',
+    });
+
+    return {
+      quoteId: String(quote._id),
+      providerId: String(provider._id),
+      breakdown: quote.breakdown,
+      estimatedDaysMin: quote.estimatedDaysMin,
+      estimatedDaysMax: quote.estimatedDaysMax,
+      expiresAt: quote.expiresAt,
+    };
+  }
 
   static async getAvailableProviders(params: {
     fromState: string;

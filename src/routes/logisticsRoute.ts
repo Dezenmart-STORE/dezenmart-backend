@@ -116,6 +116,13 @@ router.get(
   LogisticsController.getProvidersByDeliveryAddress,
 );
 
+router.post(
+  '/quotes',
+  authenticate,
+  validate(LogisticsValidation.createQuote),
+  LogisticsController.createQuote,
+);
+
 // ── customer-facing provider search (public) ──────────────────────────────────
 router.get(
   '/available',

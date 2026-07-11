@@ -14,7 +14,7 @@ router.post(
   OrderController.createOrder,
 );
 
-router.get('/', OrderController.getOrders);
+router.get('/', authenticate, OrderController.getOrders);
 
 router.get(
   '/logistics/me',
@@ -28,7 +28,7 @@ router.patch(
   '/logistics/me/:orderId/accept',
   authenticate,
   authorizeRoles(Role.LOGISTICS_AGENT),
-  validate(OrderValidation.logisticsOrderAction),
+  validate(OrderValidation.acceptLogisticsOrder),
   OrderController.acceptLogisticsOrder,
 );
 

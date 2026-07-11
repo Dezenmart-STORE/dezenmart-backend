@@ -26,10 +26,24 @@ export const OrderValidation = {
     body: Joi.object({
       product: Schemas.id.required(),
       quantity: Joi.number().positive().precision(2).required(),
-      logisticsProvider: Schemas.id.required(),
-      deliveryAddress: Schemas.id.required(),
-      deliveryFee: Joi.number().min(0).optional(),
-      expectedDeliveryDate: Joi.date().iso().optional(),
+      quoteId: Schemas.id.optional(),
+      logisticsProvider: Schemas.id.optional(),
+      deliveryAddress: Joi.alternatives()
+        .try(
+          Schemas.id.required(),
+          Joi.object({
+            label: Joi.string().trim().required(),
+            fullName: Joi.string().trim().required(),
+            phone: Joi.string().trim().required(),
+            country: Joi.string().trim().optional(),
+            state: Joi.string().trim().required(),
+            lga: Joi.string().trim().required(),
+            street: Joi.string().trim().required(),
+            zipCode: Joi.string().trim().optional(),
+            isDefault: Joi.boolean().optional(),
+          }).required(),
+        )
+        .required(),
     }),
   }),
   dispute: Joi.object({
@@ -69,6 +83,11 @@ export const OrderValidation = {
       trackingNumber: Joi.string().max(100).optional(),
       expectedDeliveryDate: Joi.date().iso().optional(),
       notes: Joi.string().max(500).optional(),
+    }),
+  }),
+  acceptLogisticsOrder: Joi.object({
+    params: Joi.object({
+      orderId: Schemas.id.required(),
     }),
   }),
   logisticsOrderAction: Joi.object({

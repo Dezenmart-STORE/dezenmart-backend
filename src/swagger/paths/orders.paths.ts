@@ -37,7 +37,7 @@
  *             required:
  *               - product
  *               - quantity
- *               - logisticsProvider
+ *               - quoteId
  *               - deliveryAddress
  *             properties:
  *               product:
@@ -46,18 +46,38 @@
  *               quantity:
  *                 type: number
  *                 minimum: 1
- *               logisticsProvider:
+ *               quoteId:
  *                 type: string
- *                 description: Selected logistics provider MongoDB ObjectId
+ *                 description: Logistics quote MongoDB ObjectId returned by the quote endpoint
  *               deliveryAddress:
- *                 type: string
- *                 description: Buyer's saved delivery address ID
- *               deliveryFee:
- *                 type: number
- *                 description: Quoted delivery fee from provider search
- *               expectedDeliveryDate:
- *                 type: string
- *                 format: date-time
+ *                 type: object
+ *                 description: Delivery address details to save for the buyer and use for this order
+ *                 required:
+ *                   - label
+ *                   - fullName
+ *                   - phone
+ *                   - state
+ *                   - lga
+ *                   - street
+ *                 properties:
+ *                   label:
+ *                     type: string
+ *                   fullName:
+ *                     type: string
+ *                   phone:
+ *                     type: string
+ *                   country:
+ *                     type: string
+ *                   state:
+ *                     type: string
+ *                   lga:
+ *                     type: string
+ *                   street:
+ *                     type: string
+ *                   zipCode:
+ *                     type: string
+ *                   isDefault:
+ *                     type: boolean
  *     responses:
  *       '201':
  *         description: Order created with populated logistics provider details

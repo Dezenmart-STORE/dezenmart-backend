@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { OrderService } from '../services/orderService';
 import { CustomError } from '../middlewares/errorHandler';
 import { LogisticsStatus } from '../models/orderModel';
+import { Role } from '../models/userModel';
 
 function getUserId(req: Request): string | null {
   return (req.user as any)?.id ?? (req.user as any)?._id?.toString() ?? null;
@@ -25,11 +26,10 @@ export class OrderController {
     const order = await OrderService.createOrder({
       product: req.body.product,
       buyer: userId,
+      quoteId: req.body.quoteId,
       logisticsProvider: req.body.logisticsProvider,
       deliveryAddress: req.body.deliveryAddress,
       quantity: req.body.quantity,
-      deliveryFee: req.body.deliveryFee,
-      expectedDeliveryDate: req.body.expectedDeliveryDate,
     });
 
     res.status(201).json({
@@ -40,14 +40,23 @@ export class OrderController {
 
   static getOrders = async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const userType = req.query.type as string | undefined;
+    if (!userId) {
+      return res.status(401).json({
+        status: 'fail',
+        message: 'User not authenticated',
+      });
+    }
 
-    if (userId && (userType === 'buyer' || userType === 'seller')) {
-      const orders = await OrderService.getUserOrders(
-        userId,
-        userType,
-        req.query.status as string | undefined,
-      );
+    const userRoles = ((req.user as any)?.roles ?? []) as string[];
+    const isAdmin = userRoles.includes(Role.ADMIN);
+    const userType = req.query.type as 'buyer' | 'seller' | undefined;
+    const status = req.query.status as string | undefined;
+
+    if (isAdmin) {
+      let orders = await OrderService.getOrders();
+      if (status) {
+        orders = orders.filter((order) => order.status === status);
+      }
       return res.status(200).json({
         status: 'success',
         results: orders.length,
@@ -55,8 +64,27 @@ export class OrderController {
       });
     }
 
-    const orders = await OrderService.getOrders();
-    res.json({
+    if (userType === 'buyer' || userType === 'seller') {
+      const orders = await OrderService.getUserOrders(userId, userType, status);
+      return res.status(200).json({
+        status: 'success',
+        results: orders.length,
+        data: { orders },
+      });
+    }
+
+    const [buyerOrders, sellerOrders] = await Promise.all([
+      OrderService.getUserOrders(userId, 'buyer', status),
+      userRoles.includes(Role.SELLER)
+        ? OrderService.getUserOrders(userId, 'seller', status)
+        : Promise.resolve([] as Awaited<ReturnType<typeof OrderService.getUserOrders>>),
+    ]);
+
+    const orders = [...buyerOrders, ...sellerOrders].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    return res.status(200).json({
       status: 'success',
       results: orders.length,
       data: { orders },

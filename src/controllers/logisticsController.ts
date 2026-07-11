@@ -313,6 +313,34 @@ export class LogisticsController {
     }
   }
 
+  static async createQuote(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = getUserId(req, next);
+      if (!userId) return;
+
+      const { deliveryAddressId, providerId, fromState, fromLga, weight } = req.body as {
+        deliveryAddressId: string;
+        providerId: string;
+        fromState: string;
+        fromLga: string;
+        weight: number;
+      };
+
+      const quote = await LogisticsService.createQuote({
+        buyerId: userId,
+        deliveryAddressId,
+        providerId,
+        fromState,
+        fromLga,
+        weight,
+      });
+
+      res.status(201).json({ status: 'success', data: { quote } });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getAvailableProviders(req: Request, res: Response, next: NextFunction) {
     try {
       const { fromState, fromLga, toState, toLga, weight, sort } = req.query as Record<string, string>;

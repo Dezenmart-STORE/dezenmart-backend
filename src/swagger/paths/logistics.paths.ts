@@ -88,6 +88,42 @@
  *       '200':
  *         description: List of LGAs
  *
+ * /logistics/quotes:
+ *   post:
+ *     tags: [Logistics]
+ *     summary: Create a logistics quote for a buyer
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - deliveryAddressId
+ *               - providerId
+ *               - fromState
+ *               - fromLga
+ *               - weight
+ *             properties:
+ *               deliveryAddressId:
+ *                 type: string
+ *                 description: Buyer's saved delivery address MongoDB ObjectId
+ *               providerId:
+ *                 type: string
+ *                 description: Logistics provider MongoDB ObjectId
+ *               fromState:
+ *                 type: string
+ *               fromLga:
+ *                 type: string
+ *               weight:
+ *                 type: number
+ *                 minimum: 0.1
+ *     responses:
+ *       '201':
+ *         description: Logistics quote created with pricing breakdown and expiry
+ *
  * /logistics/available:
  *   get:
  *     tags: [Logistics]

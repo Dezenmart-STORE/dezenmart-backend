@@ -6,7 +6,8 @@ import { NotificationService } from './notificationService';
 import { RewardService } from './rewardService';
 import { Product } from '../models/productModel';
 import { generateOrderId } from '../utils/helpers/generate-unique-dummy-orderId';
-import { DeliveryAddressService } from './deliveryAddressService';
+import { CreateDeliveryAddressInput, DeliveryAddressService } from './deliveryAddressService';
+import { LogisticsQuote } from '../models/logisticsQuoteModel';
 
 const ORDER_POPULATE = [
   { path: 'product', select: 'name price images category' },
@@ -21,10 +22,19 @@ const ORDER_POPULATE = [
 ];
 
 export class OrderService {
+  private static serializeOrder(order: any) {
+    const plainOrder = order.toObject ? order.toObject() : order;
+    return {
+      ...plainOrder,
+      deliveryFee: plainOrder.deliveryFee ?? null,
+      expectedDeliveryDate: plainOrder.expectedDeliveryDate ?? null,
+    };
+  }
+
   private static async findOrderWithDetails(id: string) {
     const order = await Order.findById(id).populate(ORDER_POPULATE);
     if (!order) throw new CustomError('Order not found', 404, 'fail');
-    return order;
+    return this.serializeOrder(order);
   }
 
   private static async getProviderForUser(userId: string) {
@@ -60,17 +70,36 @@ export class OrderService {
   static async createOrder(orderInput: {
     product: string;
     buyer: string;
-    logisticsProvider: string;
-    deliveryAddress: string;
+    quoteId?: string;
+    logisticsProvider?: string;
+    deliveryAddress: string | CreateDeliveryAddressInput;
     quantity: number;
-    deliveryFee?: number;
-    expectedDeliveryDate?: string;
   }) {
     if (orderInput.quantity <= 0) {
       throw new CustomError('Quantity must be greater than zero', 400, 'fail');
     }
 
-    const provider = await Logistics.findById(orderInput.logisticsProvider);
+    let provider: any;
+    let quote: any;
+
+    if (orderInput.quoteId) {
+      quote = await LogisticsQuote.findOne({
+        _id: orderInput.quoteId,
+        buyer: orderInput.buyer,
+        status: 'pending',
+        expiresAt: { $gt: new Date() },
+      });
+
+      if (!quote) {
+        throw new CustomError('Logistics quote not found or expired', 404, 'fail');
+      }
+
+      provider = await Logistics.findById(quote.logisticsProvider);
+    } else if (orderInput.logisticsProvider) {
+      provider = await Logistics.findById(orderInput.logisticsProvider);
+    } else {
+      throw new CustomError('Either quoteId or logisticsProvider is required', 400, 'fail');
+    }
     if (!provider) {
       throw new CustomError('Logistics provider not found', 404, 'fail');
     }
@@ -89,10 +118,21 @@ export class OrderService {
       );
     }
 
-    await DeliveryAddressService.getAddressById(
-      orderInput.buyer,
-      orderInput.deliveryAddress,
-    );
+    let deliveryAddressId: string;
+
+    if (typeof orderInput.deliveryAddress === 'string') {
+      const address = await DeliveryAddressService.getAddressById(
+        orderInput.buyer,
+        orderInput.deliveryAddress,
+      );
+      deliveryAddressId = address._id.toString();
+    } else {
+      const createdAddress = await DeliveryAddressService.createAddress(
+        orderInput.buyer,
+        orderInput.deliveryAddress,
+      );
+      deliveryAddressId = createdAddress._id.toString();
+    }
 
     const updatedProduct = await Product.findOneAndUpdate(
       { _id: orderInput.product, stock: { $gte: orderInput.quantity } },
@@ -127,16 +167,21 @@ export class OrderService {
       sellerWalletAddress: updatedProduct.sellerWalletAddress,
       logisticsProvider: provider._id,
       logisticsProviderWalletAddress: provider.walletAddress,
-      deliveryAddress: orderInput.deliveryAddress,
-      deliveryFee: orderInput.deliveryFee,
-      expectedDeliveryDate: orderInput.expectedDeliveryDate
-        ? new Date(orderInput.expectedDeliveryDate)
-        : undefined,
+      deliveryAddress: deliveryAddressId,
+      deliveryFee: quote?.breakdown?.totalPrice ?? null,
+      expectedDeliveryDate: quote
+        ? new Date(Date.now() + quote.estimatedDaysMax * 24 * 60 * 60 * 1000)
+        : null,
       logisticsStatus: 'pending',
       status: 'pending',
     });
 
     const savedOrder = await order.save();
+
+    if (quote) {
+      quote.status = 'used';
+      await quote.save();
+    }
 
     await NotificationService.createNotification({
       recipient: updatedProduct.seller.toString(),
@@ -156,9 +201,11 @@ export class OrderService {
   }
 
   static async getOrders() {
-    return Order.find()
+    const orders = await Order.find()
       .populate(ORDER_POPULATE)
       .sort({ createdAt: -1 });
+
+    return orders.map((order) => this.serializeOrder(order));
   }
 
   static async getOrderById(id: string) {
@@ -174,9 +221,11 @@ export class OrderService {
       type === 'buyer' ? { buyer: userId } : { seller: userId };
     if (status) query.status = status;
 
-    return Order.find(query)
+    const orders = await Order.find(query)
       .populate(ORDER_POPULATE)
       .sort({ createdAt: -1 });
+
+    return orders.map((order) => this.serializeOrder(order));
   }
 
   static async getLogisticsProviderOrders(
@@ -201,7 +250,12 @@ export class OrderService {
       Order.countDocuments(filter),
     ]);
 
-    return { orders, total, page, limit };
+    return {
+      orders: orders.map((order) => this.serializeOrder(order)),
+      total,
+      page,
+      limit,
+    };
   }
 
   static async acceptLogisticsOrder(orderId: string, userId: string) {
