@@ -33,15 +33,23 @@ function determineDeliveryType(
   return 'inter_state';
 }
 
+function normalizeLocationValue(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 function providerCoversLocation(
   provider: ILogistics,
   state: string,
   lga: string,
 ): boolean {
+  const normalizedState = normalizeLocationValue(state);
+  const normalizedLga = normalizeLocationValue(lga);
+
   return provider.coverageAreas.some(
     (area) =>
-      area.state.toLowerCase() === state.toLowerCase() &&
-      (area.isStatewide || area.lgas.some((l) => l.toLowerCase() === lga.toLowerCase())),
+      normalizeLocationValue(area.state) === normalizedState &&
+      (area.isStatewide ||
+        area.lgas.some((l) => normalizeLocationValue(l) === normalizedLga)),
   );
 }
 
@@ -108,6 +116,10 @@ export interface ILogisticsQuotePayload {
   estimatedDaysMin: number;
   estimatedDaysMax: number;
   expiresAt: Date;
+}
+
+export interface IQuoteComparisonPayload {
+  quotes: ILogisticsQuotePayload[];
 }
 
 // ─── service ──────────────────────────────────────────────────────────────────
@@ -428,87 +440,91 @@ export class LogisticsService {
   static async createQuote(params: {
     buyerId: string;
     deliveryAddressId: string;
-    providerId: string;
     fromState: string;
     fromLga: string;
+    toState: string;
+    toLga: string;
     weight: number;
-  }): Promise<ILogisticsQuotePayload> {
-    const { buyerId, deliveryAddressId, providerId, fromState, fromLga, weight } = params;
+  }): Promise<IQuoteComparisonPayload> {
+    const { buyerId, deliveryAddressId, fromState, fromLga, toState, toLga, weight } = params;
 
     const address = await DeliveryAddress.findOne({ _id: deliveryAddressId, user: buyerId });
     if (!address) {
       throw new CustomError('Delivery address not found', 404, 'fail');
     }
 
-    const provider = await Logistics.findOne({ _id: providerId, verificationStatus: 'verified', isActive: true });
-    if (!provider) {
-      throw new CustomError('Logistics provider not found or inactive', 404, 'fail');
-    }
-
-    const deliveryType = determineDeliveryType(fromState, fromLga, address.state, address.lga);
-    const coversFrom = providerCoversLocation(provider, fromState, fromLga);
-    const coversTo = providerCoversLocation(provider, address.state, address.lga);
-    if (!coversFrom || !coversTo) {
-      throw new CustomError('Provider does not cover this route', 400, 'fail');
-    }
-
-    const rule = await PricingRule.findOne({
-      providerId: provider._id,
-      deliveryType,
-      fromState: new RegExp(`^${fromState}$`, 'i'),
-      toState: new RegExp(`^${address.state}$`, 'i'),
-      ...(deliveryType !== 'inter_state' && {
-        fromLga: new RegExp(`^${fromLga}$`, 'i'),
-        toLga: new RegExp(`^${address.lga}$`, 'i'),
-      }),
+    const providers = await Logistics.find({
       isActive: true,
+      verificationStatus: { $ne: 'rejected' },
     });
+    const quotes: ILogisticsQuotePayload[] = [];
 
-    if (!rule) {
-      throw new CustomError('No pricing rule available for this route', 404, 'fail');
+    for (const provider of providers) {
+      const coversFrom = providerCoversLocation(provider, fromState, fromLga);
+      const coversTo = providerCoversLocation(provider, toState, toLga);
+      if (!coversFrom || !coversTo) continue;
+
+      const deliveryType = determineDeliveryType(fromState, fromLga, toState, toLga);
+      const rule = await PricingRule.findOne({
+        providerId: provider._id,
+        deliveryType,
+        fromState: new RegExp(`^${fromState}$`, 'i'),
+        toState: new RegExp(`^${toState}$`, 'i'),
+        ...(deliveryType !== 'inter_state' && {
+          fromLga: new RegExp(`^${fromLga}$`, 'i'),
+          toLga: new RegExp(`^${toLga}$`, 'i'),
+        }),
+        isActive: true,
+      });
+
+      if (!rule) continue;
+
+      const tier = rule.weightTiers.find((t) => weight >= t.minWeight && weight <= t.maxWeight);
+      if (!tier) continue;
+
+      const totalPrice = tier.price + rule.insuranceFee + rule.packagingFee;
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      const quote = await LogisticsQuote.create({
+        buyer: buyerId,
+        deliveryAddress: deliveryAddressId,
+        logisticsProvider: provider._id,
+        breakdown: {
+          basePrice: tier.price,
+          insuranceFee: rule.insuranceFee,
+          packagingFee: rule.packagingFee,
+          totalPrice,
+        },
+        estimatedDaysMin: rule.estimatedDaysMin,
+        estimatedDaysMax: rule.estimatedDaysMax,
+        expiresAt,
+        status: 'pending',
+      });
+
+      quotes.push({
+        quoteId: String(quote._id),
+        providerId: String(provider._id),
+        deliveryFee: totalPrice,
+        provider: {
+          id: String(provider._id),
+          name: provider.name,
+          companyName: provider.companyName,
+          rating: provider.rating,
+          phone: provider.phone,
+          walletAddress: provider.walletAddress,
+        },
+        breakdown: quote.breakdown,
+        estimatedDaysMin: quote.estimatedDaysMin,
+        estimatedDaysMax: quote.estimatedDaysMax,
+        expiresAt: quote.expiresAt,
+      });
     }
 
-    const tier = rule.weightTiers.find((t) => weight >= t.minWeight && weight <= t.maxWeight);
-    if (!tier) {
-      throw new CustomError('No pricing tier available for this weight', 400, 'fail');
+    if (quotes.length === 0) {
+      throw new CustomError('No logistics providers available for this route', 404, 'fail');
     }
 
-    const totalPrice = tier.price + rule.insuranceFee + rule.packagingFee;
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-    const quote = await LogisticsQuote.create({
-      buyer: buyerId,
-      deliveryAddress: deliveryAddressId,
-      logisticsProvider: provider._id,
-      breakdown: {
-        basePrice: tier.price,
-        insuranceFee: rule.insuranceFee,
-        packagingFee: rule.packagingFee,
-        totalPrice,
-      },
-      estimatedDaysMin: rule.estimatedDaysMin,
-      estimatedDaysMax: rule.estimatedDaysMax,
-      expiresAt,
-      status: 'pending',
-    });
-
-    return {
-      quoteId: String(quote._id),
-      providerId: String(provider._id),
-      deliveryFee: totalPrice,
-      provider: {
-        id: String(provider._id),
-        name: provider.name,
-        companyName: provider.companyName,
-        rating: provider.rating,
-        phone: provider.phone,
-        walletAddress: provider.walletAddress,
-      },
-      breakdown: quote.breakdown,
-      estimatedDaysMin: quote.estimatedDaysMin,
-      estimatedDaysMax: quote.estimatedDaysMax,
-      expiresAt: quote.expiresAt,
-    };
+    return { quotes };
   }
 
   static async getAvailableProviders(params: {
@@ -522,8 +538,11 @@ export class LogisticsService {
     const { fromState, fromLga, toState, toLga, weight, sort = 'price' } = params;
     const deliveryType = determineDeliveryType(fromState, fromLga, toState, toLga);
 
-    // Find verified + active providers
-    const providers = await Logistics.find({ verificationStatus: 'verified', isActive: true });
+    // Find active providers that are not rejected
+    const providers = await Logistics.find({
+      isActive: true,
+      verificationStatus: { $ne: 'rejected' },
+    });
 
     const results: IAvailableProvider[] = [];
 

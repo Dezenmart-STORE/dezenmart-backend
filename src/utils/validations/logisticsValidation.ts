@@ -78,9 +78,10 @@ export const LogisticsValidation = {
   createQuote: Joi.object({
     body: Joi.object({
       deliveryAddressId: Schemas.id.required(),
-      providerId: Schemas.id.required(),
       fromState: Joi.string().required(),
       fromLga: Joi.string().required(),
+      toState: Joi.string().required(),
+      toLga: Joi.string().required(),
       weight: Joi.number().positive().required(),
     }),
   }),

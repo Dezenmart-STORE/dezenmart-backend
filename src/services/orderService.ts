@@ -103,12 +103,8 @@ export class OrderService {
     if (!provider) {
       throw new CustomError('Logistics provider not found', 404, 'fail');
     }
-    if (provider.verificationStatus !== 'verified') {
-      throw new CustomError(
-        'Selected logistics provider is not verified',
-        400,
-        'fail',
-      );
+    if (provider.verificationStatus === 'rejected') {
+      throw new CustomError('Selected logistics provider is not eligible', 400, 'fail');
     }
     if (!provider.isActive) {
       throw new CustomError(

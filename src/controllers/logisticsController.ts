@@ -318,24 +318,26 @@ export class LogisticsController {
       const userId = getUserId(req, next);
       if (!userId) return;
 
-      const { deliveryAddressId, providerId, fromState, fromLga, weight } = req.body as {
+      const { deliveryAddressId, fromState, fromLga, toState, toLga, weight } = req.body as {
         deliveryAddressId: string;
-        providerId: string;
         fromState: string;
         fromLga: string;
+        toState: string;
+        toLga: string;
         weight: number;
       };
 
       const quote = await LogisticsService.createQuote({
         buyerId: userId,
         deliveryAddressId,
-        providerId,
         fromState,
         fromLga,
+        toState,
+        toLga,
         weight,
       });
 
-      res.status(201).json({ status: 'success', data: { quote } });
+      res.status(201).json({ status: 'success', data: quote });
     } catch (error) {
       next(error);
     }

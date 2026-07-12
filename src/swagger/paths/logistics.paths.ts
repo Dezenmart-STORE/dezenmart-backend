@@ -102,20 +102,22 @@
  *             type: object
  *             required:
  *               - deliveryAddressId
- *               - providerId
  *               - fromState
  *               - fromLga
+ *               - toState
+ *               - toLga
  *               - weight
  *             properties:
  *               deliveryAddressId:
  *                 type: string
  *                 description: Buyer's saved delivery address MongoDB ObjectId
- *               providerId:
- *                 type: string
- *                 description: Logistics provider MongoDB ObjectId
  *               fromState:
  *                 type: string
  *               fromLga:
+ *                 type: string
+ *               toState:
+ *                 type: string
+ *               toLga:
  *                 type: string
  *               weight:
  *                 type: number
