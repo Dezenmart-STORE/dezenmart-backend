@@ -7,6 +7,7 @@ import { authenticate, authorizeRoles } from '../middlewares/authMiddleware';
 import { Role } from '../models/userModel';
 import { validate } from '../utils/validation';
 import { LogisticsValidation } from '../utils/validations/logisticsValidation';
+import { getAllowedFrontendOrigins } from '../utils/allowedOrigins';
 
 const router = express.Router();
 
@@ -17,16 +18,8 @@ interface LogisticsAuthResult {
   needsOnboarding: boolean;
 }
 
-const getAllowedDomains = (): string[] => {
-  return [
-    process.env.DEZENMART_DEPLOYED_URL,
-    process.env.DEZENMART_LOGISTICS_FRONTEND_URL,
-    'http://localhost:3000',
-  ].filter((url): url is string => !!url);
-};
-
 function getRedirectUrl(state: string | undefined): string {
-  const allowedDomains = getAllowedDomains();
+  const allowedDomains = getAllowedFrontendOrigins();
   let redirectUrl = allowedDomains[0] || '/';
 
   if (!state) return redirectUrl;
@@ -46,7 +39,7 @@ function getRedirectUrl(state: string | undefined): string {
 // ── auth (public) ─────────────────────────────────────────────────────────────
 router.get('/auth/google', (req: Request, res: Response, next: NextFunction) => {
   const { origin } = req.query;
-  const allowedDomains = getAllowedDomains();
+  const allowedDomains = getAllowedFrontendOrigins();
 
   if (typeof origin !== 'string' || !allowedDomains.includes(origin)) {
     const defaultErrorRedirect = allowedDomains[0] || '/';

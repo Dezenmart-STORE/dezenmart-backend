@@ -1,8 +1,11 @@
 import { User, IUser } from '../models/userModel';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import { SelfBackendVerifier, getUserIdentifier } from '@selfxyz/core';
 import { CustomError } from '../middlewares/errorHandler';
 import config from '../configs/config';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Interface for Self Protocol credential subject
 interface SelfCredentialSubject {
@@ -31,33 +34,107 @@ interface SelfValidationDetails {
 }
 
 export class UserService {
-  static async findOrCreateUser(
-    profile: any,
-  ): Promise<{ user: IUser; token: string }> {
-    let user = await User.findOne({ googleId: profile.id });
+  private static mintSessionToken(user: IUser): string {
+    return jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET!,
+      { expiresIn: '7d' },
+    );
+  }
+
+  private static async upsertGoogleUser(input: {
+    googleId: string;
+    email: string;
+    name: string;
+    profileImage?: string;
+  }): Promise<{ user: IUser; token: string }> {
+    let user = await User.findOne({ googleId: input.googleId });
 
     if (!user) {
-      user = await User.findOne({ email: profile.emails[0].value });
+      user = await User.findOne({ email: input.email });
 
       if (user) {
-        user.googleId = profile.id;
+        user.googleId = input.googleId;
+        if (input.profileImage && !user.profileImage) {
+          user.profileImage = input.profileImage;
+        }
         await user.save();
       } else {
         user = new User({
-          googleId: profile.id,
-          email: profile.emails[0].value,
-          name: profile.displayName,
-          profileImage: profile.photos[0]?.value,
+          googleId: input.googleId,
+          email: input.email,
+          name: input.name,
+          profileImage: input.profileImage,
         });
         await user.save();
       }
     }
 
-    const token = jwt.sign(
-      { id: user._id, email: user.email },
-      process.env.JWT_SECRET!,
-      { expiresIn: '7d' },
-    );
+    return { user, token: this.mintSessionToken(user) };
+  }
+
+  static async findOrCreateUser(
+    profile: any,
+  ): Promise<{ user: IUser; token: string }> {
+    return this.upsertGoogleUser({
+      googleId: profile.id,
+      email: profile.emails[0].value,
+      name: profile.displayName,
+      profileImage: profile.photos?.[0]?.value,
+    });
+  }
+
+  /**
+   * Verifies a Google One Tap / GIS ID token and returns an app session.
+   */
+  static async authenticateWithGoogleOneTap(
+    credential: string,
+  ): Promise<{ user: IUser; token: string }> {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      throw new CustomError('Google OAuth is not configured', 500, 'error');
+    }
+
+    let ticket;
+    try {
+      ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: clientId,
+      });
+    } catch {
+      throw new CustomError('Invalid Google credential', 401, 'fail');
+    }
+
+    const payload = ticket.getPayload();
+    if (!payload?.sub || !payload.email) {
+      throw new CustomError('Google credential missing required claims', 401, 'fail');
+    }
+
+    const issuer = payload.iss;
+    if (
+      issuer !== 'accounts.google.com' &&
+      issuer !== 'https://accounts.google.com'
+    ) {
+      throw new CustomError('Invalid Google credential issuer', 401, 'fail');
+    }
+
+    if (payload.email_verified === false) {
+      throw new CustomError('Google email is not verified', 401, 'fail');
+    }
+
+    const { user: sessionUser, token } = await this.upsertGoogleUser({
+      googleId: payload.sub,
+      email: payload.email,
+      name: payload.name || payload.email.split('@')[0],
+      profileImage: payload.picture,
+    });
+
+    // Same profile shape as GET /users/profile
+    const user = await this.getUserById(sessionUser._id.toString());
+    if (!user) {
+      throw new CustomError('Failed to load user after Google sign-in', 500, 'error');
+    }
+
     return { user, token };
   }
 

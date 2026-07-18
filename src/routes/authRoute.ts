@@ -2,6 +2,10 @@ import express, { Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 import { IUser } from '../models/userModel';
 import { URLSearchParams } from 'url';
+import { AuthController } from '../controllers/authController';
+import { validate } from '../utils/validation';
+import { AuthValidation } from '../utils/validations/authValidation';
+import { getAllowedFrontendOrigins } from '../utils/allowedOrigins';
 
 interface AuthResult {
   user: IUser;
@@ -10,21 +14,15 @@ interface AuthResult {
 
 const router = express.Router();
 
-// Helper function to get allowed domains
-const getAllowedDomains = (): string[] => {
-  const domains = [
-    process.env.DEZENMART_FRONTEND_URL,
-    process.env.DEZENTRA_FRONTEND_URL,
-    process.env.DEZENMART_DEPLOYED_URL,
-    'http://localhost:5173',
-  ].filter((url): url is string => !!url);
-
-  return domains;
-};
+router.post(
+  '/google/one-tap',
+  validate(AuthValidation.googleOneTap),
+  AuthController.googleOneTap,
+);
 
 router.get('/google', (req: Request, res: Response, next: NextFunction) => {
   const { origin } = req.query;
-  const allowedDomains = getAllowedDomains();
+  const allowedDomains = getAllowedFrontendOrigins();
 
   // Validate the origin to prevent open redirect vulnerabilities.
   if (typeof origin !== 'string' || !allowedDomains.includes(origin)) {
@@ -46,7 +44,7 @@ router.get(
   '/google/callback',
   (req: Request, res: Response, next: NextFunction) => {
     const state = req.query.state as string;
-    const allowedDomains = getAllowedDomains();
+    const allowedDomains = getAllowedFrontendOrigins();
     let redirectUrl = allowedDomains[0] || '/'; // Default redirect URL
 
     passport.authenticate(
@@ -94,7 +92,7 @@ router.get(
 
 router.get('/logout', (req: Request, res: Response, next: NextFunction) => {
   const origin = req.query.origin as string;
-  const allowedDomains = getAllowedDomains();
+  const allowedDomains = getAllowedFrontendOrigins();
 
   // Default to the first configured domain or a root path.
   let redirectUrl = allowedDomains[0] || '/';

@@ -17,6 +17,48 @@
  *       '302':
  *         description: Redirect to Google OAuth
  *
+ * /auth/google/one-tap:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Sign in with Google One Tap / GIS ID token
+ *     description: >
+ *       Verifies the Google ID token (`credential`) from Google Identity Services
+ *       One Tap, upserts the user, and returns an app JWT plus full user profile.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - credential
+ *             properties:
+ *               credential:
+ *                 type: string
+ *                 description: Google ID token JWT from One Tap
+ *     responses:
+ *       '200':
+ *         description: Authenticated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                     user:
+ *                       type: object
+ *       '401':
+ *         description: Invalid or unverified Google credential
+ *       '422':
+ *         description: Validation error
+ *
  * /auth/google/callback:
  *   get:
  *     tags: [Auth]

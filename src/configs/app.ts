@@ -9,6 +9,7 @@ import passport from './passport';
 import { errorHandler } from '../middlewares/errorHandler';
 import routes from '../routes/index';
 import { swaggerSpec } from '../swagger/index';
+import { getAllowedFrontendOrigins } from '../utils/allowedOrigins';
 
 const app = express();
 connectDB();
@@ -24,7 +25,18 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(cors());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow non-browser clients (no Origin header) and allowlisted frontends
+      if (!origin || getAllowedFrontendOrigins().includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
+    credentials: true,
+  }),
+);
 app.use(
   helmet({
     contentSecurityPolicy: {
