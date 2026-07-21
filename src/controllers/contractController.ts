@@ -270,7 +270,7 @@ export class ContractController {
   static async buyTrade(req: Request, res: Response, next: NextFunction) {
     try {
       const { tradeId } = req.params;
-      const { quantity, logisticsProvider, tokenAddress } = req.body;
+      const { quantity, logisticsProvider, tokenAddress, logisticsCost } = req.body;
 
       // Validate tradeId
       const tradeIdNum = ContractController.validatePositiveInteger(
@@ -298,6 +298,22 @@ export class ContractController {
         );
       }
 
+      // Validate logisticsCost — must be a positive numeric USDT amount (e.g. "5.50")
+      if (
+        logisticsCost === undefined ||
+        logisticsCost === null ||
+        isNaN(Number(logisticsCost)) ||
+        Number(logisticsCost) < 0
+      ) {
+        return next(
+          new CustomError(
+            'logisticsCost is required and must be a non-negative number (USDT amount)',
+            400,
+            'fail',
+          ),
+        );
+      }
+
       // Get trade to verify it exists and is active
       const trade = await contractService.getTrade(tradeIdNum);
       if (!trade || !trade.active) {
@@ -306,27 +322,15 @@ export class ContractController {
         );
       }
 
-      // Verify the logistics provider is valid for this trade
-      const providerExists = trade.logisticsProviders.some(
-        (provider) =>
-          provider.toLowerCase() === logisticsProvider.toLowerCase(),
-      );
-      if (!providerExists) {
-        return next(
-          new CustomError(
-            'Invalid logistics provider for this trade',
-            400,
-            'fail',
-          ),
-        );
-      }
-
-      // Buy the trade
+      // Buy the trade — logisticsCost is a human-readable USDT amount and will be
+      // encoded via parseUnits inside contractService.buyTrade, consistent with
+      // how product price is encoded in createTrade.
       const { hash, purchaseId } = await contractService.buyTrade(
         tradeIdNum,
         BigInt(quantityNum),
         logisticsProvider,
         tokenAddress as Address,
+        String(logisticsCost),
       );
 
       res.status(200).json({

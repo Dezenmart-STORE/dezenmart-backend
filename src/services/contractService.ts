@@ -480,22 +480,20 @@ export class DezenMartContractService {
     quantity: bigint,
     logisticsProvider: Address,
     tokenAddress: Address,
+    /** Delivery fee as a human-readable USDT amount (e.g. "5.50"). Must be in the same
+     *  token denomination as the product price so the contract can sum them correctly. */
+    logisticsCostInToken: string,
   ): Promise<{ hash: Hash; purchaseId: bigint }> {
     this.ensureWalletClient();
 
-    // Get trade details to calculate required approval
+    // Get token decimals so we encode both product and logistics costs consistently
+    const decimals = await this.getTokenDecimals(tokenAddress);
+
+    // Encode logistics cost to token wei units — mirrors how product price is encoded in createTrade
+    const logisticsCost = parseUnits(logisticsCostInToken, decimals);
+
+    // Get trade details to calculate the total approval amount needed
     const trade = await this.getTrade(tradeId);
-
-    // Find the logistics cost for the chosen provider
-    const providerIndex = trade.logisticsProviders.findIndex(
-      (provider) => provider.toLowerCase() === logisticsProvider.toLowerCase(),
-    );
-
-    if (providerIndex === -1) {
-      throw new Error('Invalid logistics provider');
-    }
-
-    const logisticsCost = trade.logisticsCosts[providerIndex];
     const totalCost = (trade.productCost + logisticsCost) * quantity;
 
     const TOKEN_ADDRESS = tokenAddress as Address;
@@ -522,6 +520,7 @@ export class DezenMartContractService {
       tradeId,
       quantity,
       logisticsProvider,
+      logisticsCost, // encoded in token wei, same unit as productCost on-chain
     ]);
 
     // Wait for transaction receipt to get the purchase ID from events
