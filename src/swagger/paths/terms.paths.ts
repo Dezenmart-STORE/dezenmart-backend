@@ -3,10 +3,19 @@
  * /terms/current:
  *   get:
  *     tags: [Terms]
- *     summary: Get the active terms and conditions
+ *     summary: Get the active legal document for a content type
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         required: true
+ *         description: Legal document type to retrieve
+ *         schema:
+ *           type: string
+ *           enum: [terms_of_use, privacy_policy, cookie_policy]
+ *         example: privacy_policy
  *     responses:
  *       '200':
- *         description: Active terms and conditions
+ *         description: Active legal document for the requested type
  *       '404':
  *         description: No active terms found
  *
@@ -22,6 +31,12 @@
  *         schema:
  *           type: boolean
  *         description: Filter by active status
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [terms_of_use, privacy_policy, cookie_policy]
+ *         description: Filter legal documents by content type
  *     responses:
  *       '200':
  *         description: Paginated list of terms and conditions
@@ -37,9 +52,14 @@
  *           schema:
  *             type: object
  *             required:
+ *               - type
  *               - title
  *               - content
  *             properties:
+ *               type:
+ *                 type: string
+ *                 enum: [terms_of_use, privacy_policy, cookie_policy]
+ *                 example: terms_of_use
  *               title:
  *                 type: string
  *                 example: Terms and Conditions
@@ -51,7 +71,7 @@
  *                 example: '1.0.0'
  *               isActive:
  *                 type: boolean
- *                 description: Set as the active terms (deactivates others)
+ *                 description: Set as active; deactivates only previous active versions of the same type
  *     responses:
  *       '201':
  *         description: Terms created
@@ -80,6 +100,9 @@
  *           schema:
  *             type: object
  *             properties:
+ *               type:
+ *                 type: string
+ *                 enum: [terms_of_use, privacy_policy, cookie_policy]
  *               title:
  *                 type: string
  *               content:

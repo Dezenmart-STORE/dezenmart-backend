@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { TermsService } from '../services/termsService';
+import { TermsType } from '../models/termsModel';
 
 function extractId(req: Request, param = 'id'): string {
   const value = req.params[param];
@@ -24,8 +25,9 @@ export class TermsController {
         req.query.isActive === undefined
           ? undefined
           : req.query.isActive === 'true';
+      const type = req.query.type as TermsType | undefined;
 
-      const result = await TermsService.getTermsList(page, limit, isActive);
+      const result = await TermsService.getTermsList(page, limit, isActive, type);
       res.status(200).json({
         status: 'success',
         results: result.terms.length,
@@ -37,9 +39,9 @@ export class TermsController {
     }
   };
 
-  static getCurrent = async (_req: Request, res: Response, next: NextFunction) => {
+  static getCurrent = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const terms = await TermsService.getActiveTerms();
+      const terms = await TermsService.getActiveTerms(req.query.type as TermsType);
       res.status(200).json({ status: 'success', data: { terms } });
     } catch (error) {
       next(error);

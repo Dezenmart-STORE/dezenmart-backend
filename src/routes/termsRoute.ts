@@ -7,7 +7,7 @@ import { TermsValidation } from '../utils/validations/termsValidation';
 
 const router = express.Router();
 
-router.get('/current', TermsController.getCurrent);
+router.get('/current', validate(TermsValidation.current), TermsController.getCurrent);
 router.get('/', validate(TermsValidation.list), TermsController.list);
 router.get('/:id', validate(TermsValidation.getById), TermsController.getById);
 
