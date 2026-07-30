@@ -200,8 +200,23 @@ export class ProductController {
     if (!id) {
       throw new CustomError('Product ID is required', 400, 'fail');
     }
-    const product = await ProductService.deleteProduct(id);
+
+    const user = req.user as any;
+    if (!user || !user.id) {
+      throw new CustomError('User information is missing from request', 401, 'fail');
+    }
+
+    const product = await ProductService.getProductById(id);
     if (!product) throw new CustomError('Product not found', 404, 'fail');
+
+    const isSeller = product.seller ? (product.seller as any)._id.toString() === user.id.toString() : false;
+    const isAdmin = user.roles && user.roles.includes('admin');
+
+    if (!isSeller && !isAdmin) {
+      throw new CustomError('You do not have permission to delete this product', 403, 'fail');
+    }
+
+    await ProductService.deleteProduct(id);
     res.json({ message: 'Product deleted successfully' });
   };
 
