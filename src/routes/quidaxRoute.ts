@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.post(
   '/on-ramp/initiate',
-  authenticate,
+  // authenticate,
   validate(QuidaxValidation.initiateOnRamp),
   QuidaxController.initiateOnRamp,
 );

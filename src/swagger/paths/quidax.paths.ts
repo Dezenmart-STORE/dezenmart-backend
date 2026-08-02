@@ -28,17 +28,25 @@
  *                 example: "5000"
  *               customer:
  *                 type: object
- *                 required: [email, name]
+ *                 required: [email, first_name, last_name]
  *                 properties:
  *                   email:
  *                     type: string
  *                     format: email
- *                   name:
+ *                   first_name:
+ *                     type: string
+ *                   last_name:
  *                     type: string
  *               wallet_address:
  *                 type: object
- *                 description: Target wallet address(es) keyed by network
- *                 example: { "usdt": "0xabc..." }
+ *                 required: [address, network]
+ *                 properties:
+ *                   address:
+ *                     type: string
+ *                     example: "0x680cFFe00A5b0bdbF507F510C162a2bbdc7655eD"
+ *                   network:
+ *                     type: string
+ *                     example: "celo"
  *     responses:
  *       '201':
  *         description: On-ramp transaction initiated
@@ -181,12 +189,14 @@
  *                 example: BEP20
  *               customer:
  *                 type: object
- *                 required: [email, name]
+ *                 required: [email, first_name, last_name]
  *                 properties:
  *                   email:
  *                     type: string
  *                     format: email
- *                   name:
+ *                   first_name:
+ *                     type: string
+ *                   last_name:
  *                     type: string
  *     responses:
  *       '201':

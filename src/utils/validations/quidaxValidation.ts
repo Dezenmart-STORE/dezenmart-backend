@@ -2,10 +2,14 @@ import Joi from 'joi';
 
 const customerSchema = Joi.object({
   email: Joi.string().email().required(),
-  name: Joi.string().required(),
+  first_name: Joi.string().required(),
+  last_name: Joi.string().required(),
 }).unknown(true);
 
-const walletAddressSchema = Joi.object().unknown(true).required();
+const walletAddressSchema = Joi.object({
+  address: Joi.string().required(),
+  network: Joi.string().required(),
+}).required();
 
 export const QuidaxValidation = {
   initiateOnRamp: Joi.object({

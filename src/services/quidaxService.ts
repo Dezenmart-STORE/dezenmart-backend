@@ -25,8 +25,9 @@ interface RefreshOnRampBody {
   from_amount: string;
 }
 
-function generateMerchantReference(userId: string): string {
-  return `dezenmrt-${userId.slice(-6)}-${Date.now()}`;
+function generateMerchantReference(userId?: string): string {
+  const suffix = userId ? userId.slice(-6) : Math.random().toString(36).slice(-6).toUpperCase();
+  return `dezenmrt-${suffix}-${Date.now()}`;
 }
 
 async function quidaxRequest<T>(
@@ -144,7 +145,7 @@ export class QuidaxService {
       from_currency: body.from_currency ?? 'usdt',
       to_currency: body.to_currency ?? 'ngn',
       from_amount: body.from_amount,
-      network: body.network,
+      network: body.network ?? 'celo',
       merchant_reference: merchantReference,
       customer: body.customer,
     };
