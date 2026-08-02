@@ -83,6 +83,22 @@
  *           type: number
  *           minimum: 0
  *
+ *     WalletStatus:
+ *       type: object
+ *       properties:
+ *         hasWallet:
+ *           type: boolean
+ *         walletAddress:
+ *           type: string
+ *           nullable: true
+ *           example: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b'
+ *         chainId:
+ *           type: integer
+ *           example: 42220
+ *         provider:
+ *           type: string
+ *           example: dynamic
+ *
  *     TransactionResponse:
  *       type: object
  *       properties:

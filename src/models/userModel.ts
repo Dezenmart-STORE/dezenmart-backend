@@ -49,6 +49,10 @@ export interface IUser extends Document {
   }
   bankName?: string;
   bankAccount?: string;
+  walletAddress?: string;
+  chainId?: number;
+  walletProvider?: string;
+  dynamicUserId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -106,6 +110,10 @@ const UserSchema = new Schema<IUser>(
     tokenBalance: { type: Number, default: 0 },
     bankName: { type: String },
     bankAccount: { type: String },
+    walletAddress: { type: String, lowercase: true },
+    chainId: { type: Number },
+    walletProvider: { type: String },
+    dynamicUserId: { type: String },
   },
   { timestamps: true },
 );

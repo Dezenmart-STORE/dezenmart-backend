@@ -17,6 +17,7 @@ import deliveryRoute from './deliveryRoute';
 import deliveryAddressRoute from './deliveryAddressRoute';
 import quidaxRoute from './quidaxRoute';
 import termsRoute from './termsRoute';
+import walletRoute from './walletRoute';
 
 const router = express.Router();
 
@@ -38,5 +39,6 @@ router.use('/deliveries', deliveryRoute);
 router.use('/delivery-addresses', deliveryAddressRoute);
 router.use('/ramp', quidaxRoute);
 router.use('/terms', termsRoute);
+router.use('/wallet', walletRoute);
 
 export default router;
