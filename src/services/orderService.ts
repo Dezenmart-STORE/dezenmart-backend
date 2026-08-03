@@ -387,7 +387,17 @@ export class OrderService {
     const order = await Order.findById(id);
     if (!order) throw new CustomError('Order not found', 404, 'fail');
 
-    if (order.buyer.toString() !== userId) {
+    const isBuyer = order.buyer.toString() === userId;
+    let isAssignedLogisticsProvider = false;
+
+    if (!isBuyer && order.logisticsProvider) {
+      const provider = await Logistics.findOne({ userId });
+      isAssignedLogisticsProvider =
+        !!provider &&
+        order.logisticsProvider.toString() === provider._id.toString();
+    }
+
+    if (!isBuyer && !isAssignedLogisticsProvider) {
       throw new CustomError('Unauthorized to update this order', 403, 'fail');
     }
 
@@ -409,8 +419,7 @@ export class OrderService {
     }
 
     if (statusChanged) {
-      const recipient =
-        order.seller.toString() === userId ? order.buyer : order.seller;
+      const recipient = isBuyer ? order.seller : order.buyer;
 
       await NotificationService.createNotification({
         recipient: recipient.toString(),
