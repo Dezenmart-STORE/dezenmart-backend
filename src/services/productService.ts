@@ -3,6 +3,7 @@ import { CustomError } from '../middlewares/errorHandler';
 import { Product, IProduct } from '../models/productModel';
 import { contractService } from '../server';
 import { PaymentTokenSymbol } from './contractService';
+import { getPaymentGateway, PaymentProvider } from './paymentGateways/paymentGatewayService';
 
 interface ICreateProductInput {
   name: string;
@@ -21,6 +22,25 @@ interface ICreateProductInput {
   isActive: boolean;
   useUSDT: boolean;
   paymentToken: PaymentTokenSymbol;
+}
+
+interface ICreateFiatProductInput {
+  name: string;
+  description: string;
+  price: number;
+  type: Record<string, string | number>[];
+  category: string;
+  seller: string;
+  stock: number;
+  weight: number;
+  state: string;
+  lga: string;
+  images: string[];
+  isSponsored: boolean;
+  bankName: string;
+  bankCode: string;
+  accountNumber: string;
+  provider: PaymentProvider;
 }
 
 export class ProductService {
@@ -132,6 +152,55 @@ export class ProductService {
       ...productInput,
       productToken: productInput.paymentToken,
       tradeId: tradeId,
+    });
+
+    return await productToSave.save();
+  }
+
+  static async createFiatProduct(productInput: ICreateFiatProductInput): Promise<IProduct> {
+    const { price, stock, weight, state, lga, bankName, bankCode, accountNumber, provider } =
+      productInput;
+
+    if (typeof price !== 'number' || price <= 0) {
+      throw new CustomError('Price must be a positive number.', 400, 'fail');
+    }
+    if (typeof stock !== 'number' || stock <= 0) {
+      throw new CustomError('Stock must be a positive number.', 400, 'fail');
+    }
+    if (typeof weight !== 'number' || weight <= 0) {
+      throw new CustomError('Weight must be a positive number.', 400, 'fail');
+    }
+    if (!state || typeof state !== 'string' || state.trim() === '') {
+      throw new CustomError('State is required.', 400, 'fail');
+    }
+    if (!lga || typeof lga !== 'string' || lga.trim() === '') {
+      throw new CustomError('LGA is required.', 400, 'fail');
+    }
+    if (!bankName || !bankCode || !accountNumber) {
+      throw new CustomError(
+        'bankName, bankCode and accountNumber are required for a fiat product.',
+        400,
+        'fail',
+      );
+    }
+
+    const gateway = getPaymentGateway(provider);
+    const resolved = await gateway.resolveAccountNumber(accountNumber, bankCode);
+
+    const { bankName: _bn, bankCode: _bc, accountNumber: _an, provider: _p, ...rest } =
+      productInput;
+
+    const productToSave = new Product({
+      ...rest,
+      paymentType: 'fiat',
+      sellerBankAccount: {
+        bankName,
+        bankCode,
+        accountNumber,
+        accountName: resolved.accountName,
+        provider,
+        verified: true,
+      },
     });
 
     return await productToSave.save();

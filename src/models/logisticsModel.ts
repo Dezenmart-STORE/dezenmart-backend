@@ -1,4 +1,5 @@
 import { Document, Schema, Types, model } from 'mongoose';
+import { fiatAccountSchema, IFiatAccount } from './schemas/fiatAccountSchema';
 
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
@@ -16,6 +17,7 @@ export interface ILogistics extends Document {
   email: string;
   phone: string;
   walletAddress: string;
+  fiatAccount?: IFiatAccount;
   coverageAreas: ICoverageArea[];
   rating: number;
   totalDeliveries: number;
@@ -41,6 +43,7 @@ const logisticsSchema = new Schema<ILogistics>(
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     walletAddress: { type: String, required: true, unique: true },
+    fiatAccount: { type: fiatAccountSchema },
     coverageAreas: { type: [coverageAreaSchema], default: [] },
     rating: { type: Number, default: 0, min: 0, max: 5 },
     totalDeliveries: { type: Number, default: 0 },

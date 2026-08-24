@@ -81,6 +81,82 @@
  *       '201':
  *         description: Product created
  *
+ * /products/fiat:
+ *   post:
+ *     tags: [Products]
+ *     summary: Create a new product with fiat (bank transfer) payout instead of a wallet
+ *     description: Resolves the given bank account against the provider and stores it as the product's payout destination; sets paymentType to "fiat".
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - price
+ *               - category
+ *               - stock
+ *               - weight
+ *               - state
+ *               - lga
+ *               - bankName
+ *               - bankCode
+ *               - accountNumber
+ *               - provider
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *                 format: float
+ *               type:
+ *                 type: string
+ *                 description: JSON string of product type attributes
+ *               category:
+ *                 type: string
+ *               stock:
+ *                 type: integer
+ *                 minimum: 0
+ *               weight:
+ *                 type: number
+ *                 minimum: 0
+ *               state:
+ *                 type: string
+ *               lga:
+ *                 type: string
+ *               isSponsored:
+ *                 type: boolean
+ *                 default: false
+ *               bankName:
+ *                 type: string
+ *                 example: Guaranty Trust Bank
+ *               bankCode:
+ *                 type: string
+ *                 example: '058'
+ *               accountNumber:
+ *                 type: string
+ *                 example: '0123456789'
+ *               provider:
+ *                 type: string
+ *                 enum: [paystack, flutterwave]
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 maxItems: 5
+ *     responses:
+ *       '201':
+ *         description: Fiat product created
+ *       '400':
+ *         description: Missing or invalid fields, or no images provided
+ *       '401':
+ *         description: Authentication token required
+ *
  * /products/search:
  *   get:
  *     tags: [Products]

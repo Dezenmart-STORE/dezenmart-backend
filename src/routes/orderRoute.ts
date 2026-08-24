@@ -1,6 +1,7 @@
 import express from 'express';
 import { OrderController } from '../controllers/orderController';
 import { OrderValidation } from '../utils/validations/orderValidation';
+import { PaymentValidation } from '../utils/validations/paymentValidation';
 import { validate } from '../utils/validation';
 import { authenticate, authorizeRoles } from '../middlewares/authMiddleware';
 import { Role } from '../models/userModel';
@@ -57,6 +58,22 @@ router.post(
   authenticate,
   validate(OrderValidation.dispute),
   OrderController.raiseDispute,
+);
+
+router.post(
+  '/:id/pay',
+  authenticate,
+  validate(PaymentValidation.initializePayment),
+  OrderController.initializePayment,
+);
+
+router.get('/:id/payout', authenticate, OrderController.getPayoutStatus);
+
+router.post(
+  '/:id/payout/retry',
+  authenticate,
+  authorizeRoles(Role.ADMIN),
+  OrderController.retryPayout,
 );
 
 export default router;

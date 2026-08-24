@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { OrderService } from '../services/orderService';
+import { PaymentService } from '../services/paymentService';
+import { PayoutService } from '../services/payoutService';
 import { CustomError } from '../middlewares/errorHandler';
 import { LogisticsStatus } from '../models/orderModel';
 import { Role } from '../models/userModel';
@@ -262,6 +264,66 @@ export class OrderController {
         message: 'Order marked as shipped',
         data: { order },
       });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static initializePayment = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return next(new CustomError('User not authenticated', 401, 'fail'));
+      }
+
+      const id = extractParam(req, 'id');
+      if (!id) {
+        return next(new CustomError('Order ID is required', 400, 'fail'));
+      }
+
+      const result = await PaymentService.initializeOrderPayment(id, userId, req.body.provider);
+      res.status(200).json({ status: 'success', data: result });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static retryPayout = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const id = extractParam(req, 'id');
+      if (!id) {
+        return next(new CustomError('Order ID is required', 400, 'fail'));
+      }
+
+      await PayoutService.triggerOrderPayout(id, { force: true });
+      const payoutStatus = await PayoutService.getPayoutStatus(id);
+      res.status(200).json({ status: 'success', data: payoutStatus });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  static getPayoutStatus = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const id = extractParam(req, 'id');
+      if (!id) {
+        return next(new CustomError('Order ID is required', 400, 'fail'));
+      }
+
+      const payoutStatus = await PayoutService.getPayoutStatus(id);
+      res.status(200).json({ status: 'success', data: payoutStatus });
     } catch (error) {
       next(error);
     }

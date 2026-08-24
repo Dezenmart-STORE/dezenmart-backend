@@ -9,6 +9,7 @@ import { Role, User } from '../models/userModel';
 import { DeliveryAddress } from '../models/deliveryAddressModel';
 import { contractService } from '../server';
 import { LogisticsQuote } from '../models/logisticsQuoteModel';
+import { getPaymentGateway, PaymentProvider } from './paymentGateways/paymentGatewayService';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -317,6 +318,41 @@ export class LogisticsService {
       { verificationStatus: status },
       { new: true },
     );
+  }
+
+  // ── fiat payout account ────────────────────────────────────────────────────
+
+  static async getFiatAccount(userId: string) {
+    const provider = await Logistics.findOne({ userId }).select('fiatAccount');
+    if (!provider) {
+      throw new CustomError('Logistics provider profile not found', 404, 'fail');
+    }
+    return provider.fiatAccount ?? null;
+  }
+
+  static async setFiatAccount(
+    userId: string,
+    input: { bankName: string; bankCode: string; accountNumber: string; provider: PaymentProvider },
+  ) {
+    const providerRecord = await Logistics.findOne({ userId });
+    if (!providerRecord) {
+      throw new CustomError('Logistics provider profile not found', 404, 'fail');
+    }
+
+    const gateway = getPaymentGateway(input.provider);
+    const resolved = await gateway.resolveAccountNumber(input.accountNumber, input.bankCode);
+
+    providerRecord.fiatAccount = {
+      bankName: input.bankName,
+      bankCode: input.bankCode,
+      accountNumber: input.accountNumber,
+      accountName: resolved.accountName,
+      provider: input.provider,
+      verified: true,
+    };
+    await providerRecord.save();
+
+    return providerRecord.fiatAccount;
   }
 
   // ── pricing rules ─────────────────────────────────────────────────────────

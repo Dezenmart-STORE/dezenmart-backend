@@ -220,6 +220,137 @@
  *     responses:
  *       '200':
  *         description: Dispute raised
+ *
+ * /orders/{id}/pay:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Initialize fiat payment for an order
+ *     description: Only valid for orders with paymentMethod "fiat" that are still "pending". Fails if a payment is already in progress for the order.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/mongoId'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - provider
+ *             properties:
+ *               provider:
+ *                 type: string
+ *                 enum: [paystack, flutterwave]
+ *     responses:
+ *       '200':
+ *         description: Payment initialized — redirect the buyer to authorizationUrl to complete payment
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     authorizationUrl:
+ *                       type: string
+ *                     reference:
+ *                       type: string
+ *       '400':
+ *         description: Order is not a fiat-payment order, or not in a payable status
+ *       '401':
+ *         description: Authentication token required
+ *       '403':
+ *         description: Not the order's buyer
+ *       '404':
+ *         description: Order not found
+ *       '409':
+ *         description: A payment is already in progress for this order
+ *
+ * /orders/{id}/payout:
+ *   get:
+ *     tags: [Orders]
+ *     summary: Get the fiat payout status for an order
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/mongoId'
+ *     responses:
+ *       '200':
+ *         description: Payout status and individual payout legs (seller / logistics)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     payoutStatus:
+ *                       type: string
+ *                       enum: [none, processing, completed, partially_completed, failed]
+ *                     payoutCompletedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
+ *                     legs:
+ *                       type: array
+ *                       description: One entry per payout leg (seller, logistics)
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           legType:
+ *                             type: string
+ *                             enum: [seller, logistics]
+ *                           recipientType:
+ *                             type: string
+ *                             enum: [user, logistics]
+ *                           provider:
+ *                             type: string
+ *                             enum: [paystack, flutterwave]
+ *                           grossAmount:
+ *                             type: number
+ *                           feeAmount:
+ *                             type: number
+ *                           netAmount:
+ *                             type: number
+ *                           status:
+ *                             type: string
+ *                             enum: [pending, processing, success, failed, blocked]
+ *                           failureReason:
+ *                             type: string
+ *                           completedAt:
+ *                             type: string
+ *                             format: date-time
+ *       '401':
+ *         description: Authentication token required
+ *       '404':
+ *         description: Order not found
+ *
+ * /orders/{id}/payout/retry:
+ *   post:
+ *     tags: [Orders]
+ *     summary: Retry a failed or stuck fiat payout for an order (admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/mongoId'
+ *     responses:
+ *       '200':
+ *         description: Payout retried; current payout status is returned (same shape as GET /orders/{id}/payout)
+ *       '401':
+ *         description: Authentication token required
+ *       '403':
+ *         description: Requires the admin role
+ *       '404':
+ *         description: Order not found
  */
 
 export {};

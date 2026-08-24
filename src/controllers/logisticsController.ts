@@ -188,6 +188,32 @@ export class LogisticsController {
     }
   }
 
+  // ── fiat payout account ────────────────────────────────────────────────────
+
+  static async getFiatAccount(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = getUserId(req, next);
+      if (!userId) return;
+
+      const fiatAccount = await LogisticsService.getFiatAccount(userId);
+      res.status(200).json({ status: 'success', data: { fiatAccount } });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async setFiatAccount(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = getUserId(req, next);
+      if (!userId) return;
+
+      const fiatAccount = await LogisticsService.setFiatAccount(userId, req.body);
+      res.status(200).json({ status: 'success', data: { fiatAccount } });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // ── pricing rules ─────────────────────────────────────────────────────────
 
   static async createPricingRule(req: AuthRequest, res: Response, next: NextFunction) {

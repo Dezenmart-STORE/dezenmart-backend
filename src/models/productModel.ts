@@ -1,4 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
+import { fiatAccountSchema, IFiatAccount } from './schemas/fiatAccountSchema';
+
+export type PaymentType = 'crypto' | 'fiat';
 
 export interface IProduct extends Document {
   name: string;
@@ -7,7 +10,9 @@ export interface IProduct extends Document {
   type: { [key: string]: string | number }[];
   category: string;
   seller: Schema.Types.ObjectId;
-  sellerWalletAddress: string;
+  paymentType: PaymentType;
+  sellerWalletAddress?: string;
+  sellerBankAccount?: IFiatAccount;
   stock: number;
   weight: number;
   state: string;
@@ -17,7 +22,7 @@ export interface IProduct extends Document {
   isSponsored: boolean;
   rating: number;
   isActive: boolean;
-  paymentToken: string;
+  paymentToken?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,7 +42,24 @@ const productSchema = new Schema<IProduct>(
     type: { type: [{ type: Schema.Types.Mixed }], required: true },
     category: { type: String, required: true },
     seller: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    sellerWalletAddress: { type: String, required: true },
+    paymentType: {
+      type: String,
+      enum: ['crypto', 'fiat'],
+      required: true,
+      default: 'crypto',
+    },
+    sellerWalletAddress: {
+      type: String,
+      required: function (this: IProduct) {
+        return this.paymentType !== 'fiat';
+      },
+    },
+    sellerBankAccount: {
+      type: fiatAccountSchema,
+      required: function (this: IProduct) {
+        return this.paymentType === 'fiat';
+      },
+    },
     stock: { type: Number, required: true },
     weight: { type: Number, required: true, min: 0 },
     state: { type: String, required: true, trim: true },
@@ -47,7 +69,12 @@ const productSchema = new Schema<IProduct>(
     isSponsored: { type: Boolean, default: false },
     rating: { type: Number, min: 1, max: 5 },
     isActive: { type: Boolean, default: true },
-    paymentToken: { type: String, required: true },
+    paymentToken: {
+      type: String,
+      required: function (this: IProduct) {
+        return this.paymentType !== 'fiat';
+      },
+    },
   },
   {
     timestamps: true,

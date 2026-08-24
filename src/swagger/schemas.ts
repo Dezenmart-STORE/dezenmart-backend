@@ -99,6 +99,29 @@
  *           type: string
  *           example: dynamic
  *
+ *     FiatAccount:
+ *       type: object
+ *       properties:
+ *         bankName:
+ *           type: string
+ *           example: Guaranty Trust Bank
+ *         bankCode:
+ *           type: string
+ *           example: '058'
+ *         accountNumber:
+ *           type: string
+ *           example: '0123456789'
+ *         accountName:
+ *           type: string
+ *           description: Name returned by the payment provider when the account number was resolved
+ *           example: John Doe
+ *         provider:
+ *           type: string
+ *           enum: [paystack, flutterwave]
+ *         verified:
+ *           type: boolean
+ *           default: false
+ *
  *     TransactionResponse:
  *       type: object
  *       properties:

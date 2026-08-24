@@ -1,4 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import { fiatAccountSchema, IFiatAccount } from './schemas/fiatAccountSchema';
 
 export enum Role {
   USER = 'user',
@@ -47,8 +48,11 @@ export interface IUser extends Document {
     street: string,
     zipCode: string
   }
+  /** @deprecated use fiatAccount instead */
   bankName?: string;
+  /** @deprecated use fiatAccount instead */
   bankAccount?: string;
+  fiatAccount?: IFiatAccount;
   walletAddress?: string;
   chainId?: number;
   walletProvider?: string;
@@ -110,6 +114,7 @@ const UserSchema = new Schema<IUser>(
     tokenBalance: { type: Number, default: 0 },
     bankName: { type: String },
     bankAccount: { type: String },
+    fiatAccount: { type: fiatAccountSchema },
     walletAddress: { type: String, lowercase: true },
     chainId: { type: Number },
     walletProvider: { type: String },

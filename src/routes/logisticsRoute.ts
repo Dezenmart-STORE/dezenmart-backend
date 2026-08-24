@@ -133,6 +133,21 @@ router.put(
   LogisticsController.updateMe,
 );
 
+// ── fiat payout account (logistics agent) ─────────────────────────────────────
+router.get(
+  '/me/fiat-account',
+  authenticate,
+  authorizeRoles(Role.LOGISTICS_AGENT),
+  LogisticsController.getFiatAccount,
+);
+router.post(
+  '/me/fiat-account',
+  authenticate,
+  authorizeRoles(Role.LOGISTICS_AGENT),
+  validate(LogisticsValidation.setFiatAccount),
+  LogisticsController.setFiatAccount,
+);
+
 // ── pricing rules (logistics agent) ──────────────────────────────────────────
 router.post(
   '/providers/me/pricing-rules',

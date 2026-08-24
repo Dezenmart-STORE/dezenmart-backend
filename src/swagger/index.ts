@@ -46,6 +46,7 @@ const swaggerDefinition = {
     { name: 'Ramp', description: 'Quidax on-ramp (NGN → crypto) and off-ramp (crypto → NGN) conversion' },
     { name: 'Terms', description: 'Terms and conditions content management' },
     { name: 'Wallet', description: 'User wallet status and setup' },
+    { name: 'Payments', description: 'Fiat payments, payouts, and bank account management (Paystack / Flutterwave)' },
   ],
 };
 

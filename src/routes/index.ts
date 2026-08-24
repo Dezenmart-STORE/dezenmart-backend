@@ -18,6 +18,7 @@ import deliveryAddressRoute from './deliveryAddressRoute';
 import quidaxRoute from './quidaxRoute';
 import termsRoute from './termsRoute';
 import walletRoute from './walletRoute';
+import paymentRoute from './paymentRoute';
 
 const router = express.Router();
 
@@ -40,5 +41,6 @@ router.use('/delivery-addresses', deliveryAddressRoute);
 router.use('/ramp', quidaxRoute);
 router.use('/terms', termsRoute);
 router.use('/wallet', walletRoute);
+router.use('/payments', paymentRoute);
 
 export default router;

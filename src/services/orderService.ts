@@ -8,6 +8,7 @@ import { Product } from '../models/productModel';
 import { generateOrderId } from '../utils/helpers/generate-unique-dummy-orderId';
 import { CreateDeliveryAddressInput, DeliveryAddressService } from './deliveryAddressService';
 import { LogisticsQuote } from '../models/logisticsQuoteModel';
+import { PayoutService } from './payoutService';
 
 const ORDER_POPULATE = [
   { path: 'product', select: 'name price images category' },
@@ -160,6 +161,7 @@ export class OrderService {
       amount,
       quantity: orderInput.quantity,
       stock: updatedProduct.stock,
+      paymentMethod: updatedProduct.paymentType === 'fiat' ? 'fiat' : 'crypto',
       sellerWalletAddress: updatedProduct.sellerWalletAddress,
       logisticsProvider: provider._id,
       logisticsProviderWalletAddress: provider.walletAddress,
@@ -260,6 +262,14 @@ export class OrderService {
     if (order.logisticsStatus !== 'pending') {
       throw new CustomError(
         `Cannot accept order with logistics status "${order.logisticsStatus}"`,
+        400,
+        'fail',
+      );
+    }
+
+    if (order.paymentMethod === 'fiat' && order.status !== 'accepted') {
+      throw new CustomError(
+        'Cannot accept a fiat order that has not been paid for yet',
         400,
         'fail',
       );
@@ -416,6 +426,13 @@ export class OrderService {
     if (updates.status === 'completed') {
       await RewardService.processOrderRewards(id);
       await RewardService.processDeliveryConfirmation(id);
+    }
+
+    if (statusChanged && updates.status === 'delivered' && order.paymentMethod === 'fiat') {
+      // Gateway failures here must never block the delivery-confirmation write itself.
+      PayoutService.triggerOrderPayout(id).catch((err: unknown) => {
+        console.error(`[orderService] fiat payout trigger failed for order ${id}`, err);
+      });
     }
 
     if (statusChanged) {

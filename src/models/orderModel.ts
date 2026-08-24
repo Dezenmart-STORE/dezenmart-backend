@@ -18,6 +18,14 @@ export type OrderStatus =
   | 'delivered'
   | 'shipped';
 
+export type PaymentMethod = 'crypto' | 'fiat';
+export type PayoutStatus =
+  | 'none'
+  | 'processing'
+  | 'completed'
+  | 'partially_completed'
+  | 'failed';
+
 interface IOrder extends Document {
   orderId: string;
   product: Schema.Types.ObjectId;
@@ -34,6 +42,13 @@ interface IOrder extends Document {
   logisticsStatus: LogisticsStatus;
   purchaseId?: string;
   status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  paidAt?: Date;
+  fiatPaymentProvider?: 'paystack' | 'flutterwave';
+  fiatPaymentReference?: string;
+  platformFeeAmount?: number;
+  payoutStatus: PayoutStatus;
+  payoutCompletedAt?: Date;
   shippedAt?: Date;
   expectedDeliveryDate?: Date;
   logisticsAcceptedAt?: Date;
@@ -106,6 +121,21 @@ const OrderSchema = new Schema<IOrder>(
       ],
       default: 'pending',
     },
+    paymentMethod: {
+      type: String,
+      enum: ['crypto', 'fiat'],
+      default: 'crypto',
+    },
+    paidAt: { type: Date },
+    fiatPaymentProvider: { type: String, enum: ['paystack', 'flutterwave'] },
+    fiatPaymentReference: { type: String },
+    platformFeeAmount: { type: Number, min: 0 },
+    payoutStatus: {
+      type: String,
+      enum: ['none', 'processing', 'completed', 'partially_completed', 'failed'],
+      default: 'none',
+    },
+    payoutCompletedAt: { type: Date },
     shippedAt: { type: Date },
     expectedDeliveryDate: { type: Date },
     logisticsAcceptedAt: { type: Date },

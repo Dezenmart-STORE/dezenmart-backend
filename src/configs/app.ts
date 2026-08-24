@@ -50,7 +50,13 @@ app.use(
   }),
 );
 app.use(morgan('dev')); // logging middleware
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as any).rawBody = buf;
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public')); // serve static files from public directory
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

@@ -156,6 +156,100 @@ export class ProductController {
     });
   };
 
+  static createFiatProduct = async (req: Request, res: Response) => {
+    const files = req.files as any[];
+    let imageUrls: string[] = [];
+
+    if (files && files.length > 0) {
+      imageUrls = files.map((file) => file.path);
+    }
+
+    if (imageUrls.length === 0) {
+      throw new CustomError('No images provided', 400, 'fail');
+    }
+
+    if (imageUrls.length > 5) {
+      throw new CustomError(
+        'You can only upload a maximum of 5 images',
+        400,
+        'fail',
+      );
+    }
+
+    const {
+      name,
+      description,
+      price,
+      type,
+      category,
+      stock,
+      weight,
+      state,
+      lga,
+      isSponsored,
+      bankName,
+      bankCode,
+      accountNumber,
+      provider,
+    } = req.body;
+
+    if (!name) throw new CustomError('Product name is required', 400, 'fail');
+    if (price === undefined || price === null || isNaN(Number(price)))
+      throw new CustomError('Valid product price is required', 400, 'fail');
+    if (stock === undefined || stock === null || isNaN(Number(stock)))
+      throw new CustomError('Valid product stock is required', 400, 'fail');
+    if (weight === undefined || weight === null || isNaN(Number(weight)))
+      throw new CustomError('Valid product weight is required', 400, 'fail');
+    if (!state) throw new CustomError('Product state is required', 400, 'fail');
+    if (!lga) throw new CustomError('Product LGA is required', 400, 'fail');
+    if (!category)
+      throw new CustomError('Product category is required', 400, 'fail');
+    if (!bankName)
+      throw new CustomError('bankName is required', 400, 'fail');
+    if (!bankCode)
+      throw new CustomError('bankCode is required', 400, 'fail');
+    if (!accountNumber)
+      throw new CustomError('accountNumber is required', 400, 'fail');
+    if (!provider || !['paystack', 'flutterwave'].includes(provider))
+      throw new CustomError(
+        'provider must be one of "paystack" or "flutterwave"',
+        400,
+        'fail',
+      );
+
+    if (!req.user || !(req.user as any).id) {
+      throw new CustomError(
+        'User information is missing from request',
+        401,
+        'fail',
+      );
+    }
+
+    const productInput = {
+      name,
+      description,
+      price: Number(price),
+      type,
+      category,
+      seller: (req.user as any).id,
+      stock: Number(stock),
+      weight: Number(weight),
+      state,
+      lga,
+      images: imageUrls,
+      isSponsored: Boolean(isSponsored || false),
+      bankName,
+      bankCode,
+      accountNumber,
+      provider,
+    };
+    const product = await ProductService.createFiatProduct(productInput as any);
+    res.status(201).json({
+      message: 'Fiat product created successfully',
+      data: product,
+    });
+  };
+
   static getProducts = async (req: Request, res: Response) => {
     const products = await ProductService.getProducts();
     res.json(products);

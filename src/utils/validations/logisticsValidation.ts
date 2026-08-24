@@ -38,6 +38,15 @@ export const LogisticsValidation = {
     }).min(1),
   }),
 
+  setFiatAccount: Joi.object({
+    body: Joi.object({
+      bankName: Joi.string().trim().required(),
+      bankCode: Joi.string().trim().required(),
+      accountNumber: Joi.string().trim().required(),
+      provider: Joi.string().valid('paystack', 'flutterwave').required(),
+    }),
+  }),
+
   createPricingRule: Joi.object({
     body: Joi.object({
       deliveryType: Joi.string().valid(...DELIVERY_TYPES).required(),

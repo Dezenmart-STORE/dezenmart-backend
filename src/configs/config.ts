@@ -19,6 +19,16 @@ interface Config {
   QUIDAX_API_KEY?: string;
   QUIDAX_BASE_URL: string;
   QUIDAX_WEBHOOK_SECRET?: string;
+  PAYSTACK_SECRET_KEY?: string;
+  PAYSTACK_PUBLIC_KEY?: string;
+  PAYSTACK_BASE_URL: string;
+  FLUTTERWAVE_SECRET_KEY?: string;
+  FLUTTERWAVE_PUBLIC_KEY?: string;
+  FLUTTERWAVE_BASE_URL: string;
+  FLUTTERWAVE_WEBHOOK_SECRET_HASH?: string;
+  FIAT_PLATFORM_FEE_PERCENT: number;
+  FIAT_CURRENCY: string;
+  FIAT_PAYMENT_CALLBACK_URL?: string;
 }
 
 const config: Config = {
@@ -40,6 +50,16 @@ const config: Config = {
   QUIDAX_API_KEY: process.env.QUIDAX_API_KEY,
   QUIDAX_BASE_URL: process.env.QUIDAX_BASE_URL || 'https://ramp-be.quidax.io/api/v1',
   QUIDAX_WEBHOOK_SECRET: process.env.QUIDAX_WEBHOOK_SECRET,
+  PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY,
+  PAYSTACK_PUBLIC_KEY: process.env.PAYSTACK_PUBLIC_KEY,
+  PAYSTACK_BASE_URL: process.env.PAYSTACK_BASE_URL || 'https://api.paystack.co',
+  FLUTTERWAVE_SECRET_KEY: process.env.FLUTTERWAVE_SECRET_KEY,
+  FLUTTERWAVE_PUBLIC_KEY: process.env.FLUTTERWAVE_PUBLIC_KEY,
+  FLUTTERWAVE_BASE_URL: process.env.FLUTTERWAVE_BASE_URL || 'https://api.flutterwave.com/v3',
+  FLUTTERWAVE_WEBHOOK_SECRET_HASH: process.env.FLUTTERWAVE_WEBHOOK_SECRET_HASH,
+  FIAT_PLATFORM_FEE_PERCENT: Number(process.env.FIAT_PLATFORM_FEE_PERCENT) || 2.5,
+  FIAT_CURRENCY: process.env.FIAT_CURRENCY || 'NGN',
+  FIAT_PAYMENT_CALLBACK_URL: process.env.FIAT_PAYMENT_CALLBACK_URL,
 };
 
 export default config;

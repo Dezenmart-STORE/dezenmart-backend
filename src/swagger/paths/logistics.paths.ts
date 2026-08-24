@@ -200,6 +200,86 @@
  *       '200':
  *         description: Profile updated
  *
+ * /logistics/me/fiat-account:
+ *   get:
+ *     tags: [Logistics]
+ *     summary: Get the authenticated logistics agent's fiat payout account
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: The provider's fiat account, or null if none is set up
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     fiatAccount:
+ *                       nullable: true
+ *                       $ref: '#/components/schemas/FiatAccount'
+ *       '401':
+ *         description: Authentication token required
+ *       '403':
+ *         description: Requires the logistics_agent role
+ *   post:
+ *     tags: [Logistics]
+ *     summary: Set or update the authenticated logistics agent's fiat payout account
+ *     description: Resolves the account number against the provider before saving; the account is marked verified on success.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - bankName
+ *               - bankCode
+ *               - accountNumber
+ *               - provider
+ *             properties:
+ *               bankName:
+ *                 type: string
+ *                 example: Guaranty Trust Bank
+ *               bankCode:
+ *                 type: string
+ *                 example: '058'
+ *               accountNumber:
+ *                 type: string
+ *                 example: '0123456789'
+ *               provider:
+ *                 type: string
+ *                 enum: [paystack, flutterwave]
+ *     responses:
+ *       '200':
+ *         description: Fiat account saved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     fiatAccount:
+ *                       $ref: '#/components/schemas/FiatAccount'
+ *       '401':
+ *         description: Authentication token required
+ *       '403':
+ *         description: Requires the logistics_agent role
+ *       '422':
+ *         description: Validation error
+ *
  * /logistics/providers/me/pricing-rules:
  *   get:
  *     tags: [Logistics]

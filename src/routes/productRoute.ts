@@ -16,6 +16,13 @@ router.post(
   // validate(ProductValidation.create),
   ProductController.createProduct,
 );
+router.post(
+  '/fiat',
+  authenticate,
+  uploadMultipleImages('images', 5),
+  transformProductFormData,
+  ProductController.createFiatProduct,
+);
 router.get('/', ProductController.getProducts);
 // router.get(
 //   '/category/:category',
