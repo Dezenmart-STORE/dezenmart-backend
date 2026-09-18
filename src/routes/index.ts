@@ -18,6 +18,10 @@ import deliveryAddressRoute from './deliveryAddressRoute';
 import quidaxRoute from './quidaxRoute';
 import termsRoute from './termsRoute';
 import walletRoute from './walletRoute';
+import riderRoute from './riderRoute';
+import expressBookingRoute from './expressBookingRoute';
+import expressRidersRoute from './expressRidersRoute';
+import korapayExpressRoute from './korapayExpressRoute';
 
 const router = express.Router();
 
@@ -40,5 +44,9 @@ router.use('/delivery-addresses', deliveryAddressRoute);
 router.use('/ramp', quidaxRoute);
 router.use('/terms', termsRoute);
 router.use('/wallet', walletRoute);
+router.use('/express/rider', riderRoute);
+router.use('/express/riders', expressRidersRoute);
+router.use('/express/payments', korapayExpressRoute);
+router.use('/express', expressBookingRoute);
 
 export default router;

@@ -19,6 +19,21 @@ interface Config {
   QUIDAX_API_KEY?: string;
   QUIDAX_BASE_URL: string;
   QUIDAX_WEBHOOK_SECRET?: string;
+  KORAPAY_SECRET_KEY?: string;
+  KORAPAY_PUBLIC_KEY?: string;
+  KORAPAY_WEBHOOK_SECRET?: string;
+  KORAPAY_BASE_URL: string;
+  SMTP_HOST?: string;
+  SMTP_PORT?: number;
+  SMTP_USER?: string;
+  SMTP_PASSWORD?: string;
+  SMTP_FROM_EMAIL?: string;
+  SMTP_FROM_NAME?: string;
+  OTP_HASH_SECRET?: string;
+  OTP_EXPIRY_MINUTES: number;
+  RIDER_JWT_SECRET?: string;
+  RIDER_JWT_EXPIRES_IN?: string;
+  EXPRESS_PLATFORM_FEE_PERCENT: number;
 }
 
 const config: Config = {
@@ -40,6 +55,21 @@ const config: Config = {
   QUIDAX_API_KEY: process.env.QUIDAX_API_KEY,
   QUIDAX_BASE_URL: process.env.QUIDAX_BASE_URL || 'https://ramp-be.quidax.io/api/v1',
   QUIDAX_WEBHOOK_SECRET: process.env.QUIDAX_WEBHOOK_SECRET,
+  KORAPAY_SECRET_KEY: process.env.KORAPAY_SECRET_KEY,
+  KORAPAY_PUBLIC_KEY: process.env.KORAPAY_PUBLIC_KEY,
+  KORAPAY_WEBHOOK_SECRET: process.env.KORAPAY_WEBHOOK_SECRET,
+  KORAPAY_BASE_URL: process.env.KORAPAY_BASE_URL || 'https://api.korapay.com/merchant/api/v1',
+  SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined,
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+  SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL,
+  SMTP_FROM_NAME: process.env.SMTP_FROM_NAME || 'Dezenmart Express',
+  OTP_HASH_SECRET: process.env.OTP_HASH_SECRET,
+  OTP_EXPIRY_MINUTES: Number(process.env.OTP_EXPIRY_MINUTES) || 5,
+  RIDER_JWT_SECRET: process.env.RIDER_JWT_SECRET,
+  RIDER_JWT_EXPIRES_IN: process.env.RIDER_JWT_EXPIRES_IN || '30d',
+  EXPRESS_PLATFORM_FEE_PERCENT: Number(process.env.EXPRESS_PLATFORM_FEE_PERCENT) || 20,
 };
 
 export default config;

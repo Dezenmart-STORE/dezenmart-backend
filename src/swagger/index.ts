@@ -46,6 +46,9 @@ const swaggerDefinition = {
     { name: 'Ramp', description: 'Quidax on-ramp (NGN → crypto) and off-ramp (crypto → NGN) conversion' },
     { name: 'Terms', description: 'Terms and conditions content management' },
     { name: 'Wallet', description: 'User wallet status and setup' },
+    { name: 'Express Booking', description: 'On-demand ride and delivery booking, lookup, and tracking' },
+    { name: 'Express Riders', description: 'Rider registration, auth, rider-facing booking actions, and wallet' },
+    { name: 'Express Payments', description: 'Korapay payment initiation, verification, and webhook for Express bookings' },
   ],
 };
 
