@@ -17,7 +17,12 @@ export const validate = (schema: Joi.ObjectSchema) => {
     });
 
     if (error) {
-      next(new CustomError('Validation Error', 422, 'fail'));
+      const details = error.details.map(({ path, message }) => ({
+        field: path.join('.'),
+        message,
+      }));
+
+      next(new CustomError('Validation failed', 422, 'fail', details));
       return;
     }
 

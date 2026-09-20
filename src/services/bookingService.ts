@@ -8,8 +8,18 @@ interface BaseBookingInput {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  pickupAddress: { label?: string; address: string; lat?: number; lng?: number };
-  dropoffAddress: { label?: string; address: string; lat?: number; lng?: number };
+  pickupAddress: {
+    label?: string;
+    address: string;
+    lat?: number;
+    lng?: number;
+  };
+  dropoffAddress: {
+    label?: string;
+    address: string;
+    lat?: number;
+    lng?: number;
+  };
   distanceKm?: number;
   fareAmount: number;
   currency?: string;
@@ -22,7 +32,12 @@ interface BookRideInput extends BaseBookingInput {
 }
 
 interface BookDeliveryInput extends BaseBookingInput {
-  package: { description: string; sizeCategory?: 'small' | 'medium' | 'large'; weightKg?: number; value?: number };
+  package: {
+    description: string;
+    sizeCategory?: 'small' | 'medium' | 'large';
+    weightKg?: number;
+    value?: number;
+  };
   recipientName: string;
   recipientPhone: string;
 }
@@ -33,12 +48,18 @@ async function generateUniqueBookingRef(type: BookingType) {
     const exists = await Booking.exists({ bookingRef });
     if (!exists) return bookingRef;
   }
-  throw new CustomError('Could not generate a unique booking reference, please retry', 500, 'error');
+  throw new CustomError(
+    'Could not generate a unique booking reference, please retry',
+    500,
+    'error',
+  );
 }
 
 export function serializePublicBooking(booking: IBooking) {
   const assignedRider =
-    booking.assignedRider && typeof booking.assignedRider === 'object' && 'name' in booking.assignedRider
+    booking.assignedRider &&
+    typeof booking.assignedRider === 'object' &&
+    'name' in booking.assignedRider
       ? {
           id: (booking.assignedRider as any)._id,
           name: (booking.assignedRider as any).name,
@@ -47,9 +68,10 @@ export function serializePublicBooking(booking: IBooking) {
           vehiclePlateNumber: (booking.assignedRider as any).vehiclePlateNumber,
           rating: (booking.assignedRider as any).rating,
         }
-      : booking.assignedRider ?? undefined;
+      : (booking.assignedRider ?? undefined);
 
   return {
+    id: booking._id.toString(),
     bookingRef: booking.bookingRef,
     type: booking.type,
     status: booking.status,
@@ -120,19 +142,30 @@ export class BookingService {
     return serializePublicBooking(booking);
   }
 
-  static async findOrders(query: { email?: string; phone?: string }, page = 1, limit = 10) {
+  static async findOrders(
+    query: { email?: string; phone?: string },
+    page = 1,
+    limit = 10,
+  ) {
     const filter: Record<string, unknown> = {};
     if (query.email) filter.customerEmail = query.email.toLowerCase();
     if (query.phone) filter.customerPhone = query.phone;
 
     if (!filter.customerEmail && !filter.customerPhone) {
-      throw new CustomError('email or phone query parameter is required', 422, 'fail');
+      throw new CustomError(
+        'email or phone query parameter is required',
+        422,
+        'fail',
+      );
     }
 
     const skip = (page - 1) * limit;
     const [bookings, total] = await Promise.all([
       Booking.find(filter)
-        .populate('assignedRider', 'name phone vehicleType vehiclePlateNumber rating')
+        .populate(
+          'assignedRider',
+          'name phone vehicleType vehiclePlateNumber rating',
+        )
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -174,7 +207,8 @@ export class BookingService {
             name: (booking.assignedRider as any).name,
             phone: (booking.assignedRider as any).phone,
             vehicleType: (booking.assignedRider as any).vehicleType,
-            vehiclePlateNumber: (booking.assignedRider as any).vehiclePlateNumber,
+            vehiclePlateNumber: (booking.assignedRider as any)
+              .vehiclePlateNumber,
             rating: (booking.assignedRider as any).rating,
           }
         : undefined;
