@@ -4,9 +4,7 @@ import { CustomError } from './errorHandler';
 import { IRider, Rider } from '../models/riderModel';
 import config from '../configs/config';
 
-interface RiderAuthRequest extends Request {
-  rider?: IRider;
-}
+type RiderAuthRequest = Request & { rider?: IRider };
 
 export const authenticateRider = async (
   req: RiderAuthRequest,
@@ -28,7 +26,10 @@ export const authenticateRider = async (
 
     let decoded: { id: string };
     try {
-      const payload = jwt.verify(token, config.RIDER_JWT_SECRET) as jwt.JwtPayload;
+      const payload = jwt.verify(
+        token,
+        config.RIDER_JWT_SECRET,
+      ) as jwt.JwtPayload;
       if (!payload || typeof payload.id !== 'string') {
         throw new CustomError('Invalid token payload', 401, 'fail');
       }
@@ -39,11 +40,19 @@ export const authenticateRider = async (
 
     const rider = await Rider.findById(decoded.id);
     if (!rider) {
-      throw new CustomError('Rider associated with this token no longer exists', 401, 'fail');
+      throw new CustomError(
+        'Rider associated with this token no longer exists',
+        401,
+        'fail',
+      );
     }
 
     if (!rider.isActive) {
-      throw new CustomError('This rider account has been deactivated', 403, 'fail');
+      throw new CustomError(
+        'This rider account has been deactivated',
+        403,
+        'fail',
+      );
     }
 
     req.rider = rider;
@@ -59,7 +68,9 @@ export const requireVerifiedRider = (
   next: NextFunction,
 ) => {
   if (req.rider?.verificationStatus !== 'verified') {
-    return next(new CustomError('Your rider account is not yet verified', 403, 'fail'));
+    return next(
+      new CustomError('Your rider account is not yet verified', 403, 'fail'),
+    );
   }
   next();
 };
