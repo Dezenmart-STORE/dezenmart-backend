@@ -50,7 +50,7 @@ class MentoService {
         transport,
       }) as WalletClient;
 
-      const ethersProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
+      const ethersProvider = new ethers.JsonRpcProvider(rpcUrl);
       this.ethersSigner = new ethers.Wallet(
         config.PRIVATE_KEY as `0x${string}`,
         ethersProvider,

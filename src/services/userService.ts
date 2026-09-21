@@ -1,7 +1,7 @@
 import { User, IUser } from '../models/userModel';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
-import { SelfBackendVerifier, getUserIdentifier } from '@selfxyz/core';
+import { DefaultConfigStore, SelfBackendVerifier } from '@selfxyz/core';
 import { CustomError } from '../middlewares/errorHandler';
 import config from '../configs/config';
 
@@ -107,7 +107,11 @@ export class UserService {
 
     const payload = ticket.getPayload();
     if (!payload?.sub || !payload.email) {
-      throw new CustomError('Google credential missing required claims', 401, 'fail');
+      throw new CustomError(
+        'Google credential missing required claims',
+        401,
+        'fail',
+      );
     }
 
     const issuer = payload.iss;
@@ -132,7 +136,11 @@ export class UserService {
     // Same profile shape as GET /users/profile
     const user = await this.getUserById(sessionUser._id.toString());
     if (!user) {
-      throw new CustomError('Failed to load user after Google sign-in', 500, 'error');
+      throw new CustomError(
+        'Failed to load user after Google sign-in',
+        500,
+        'error',
+      );
     }
 
     return { user, token };
@@ -177,8 +185,10 @@ export class UserService {
 
   static async verifySelfUser(
     userId: string,
+    attestationId: number,
     proof: any,
     publicSignals: any,
+    userContextData: string,
   ): Promise<IUser> {
     // Validate configuration
     if (
@@ -198,14 +208,26 @@ export class UserService {
       const selfBackendVerifier = new SelfBackendVerifier(
         config.SELF_APP_SCOPE,
         config.SELF_BACKEND_URL,
+        config.IS_TESTNET,
+        new Map([[1, true]]),
+        new DefaultConfigStore({
+          minimumAge: 18,
+          excludedCountries: [],
+          ofac: true,
+        }),
+        'hex',
       );
 
       // Verify the proof
-      const result = await selfBackendVerifier.verify(proof, publicSignals);
+      const result = await selfBackendVerifier.verify(
+        attestationId as any,
+        proof,
+        publicSignals,
+        userContextData,
+      );
 
-      if (result.isValid) {
-        // Extract user identifier from public signals
-        const selfId = await getUserIdentifier(publicSignals);
+      if (result.isValidDetails.isValid) {
+        const selfId = result.userData.userIdentifier;
 
         // Check if this selfId is already used by another user
         const existingUserWithSelfId = await User.findOne({
@@ -223,7 +245,7 @@ export class UserService {
 
         // Extract nullifier (adjust index based on your proof structure)
         // The nullifier index may vary based on your specific proof implementation
-        const nullifier = publicSignals[1] || publicSignals[0]; // Fallback to first element if second doesn't exist
+        const nullifier = result.discloseOutput.nullifier;
 
         // Check if this nullifier is already used
         const existingUserWithNullifier = await User.findOne({
@@ -241,7 +263,7 @@ export class UserService {
 
         // Determine verification level based on credential subject data
         const verificationLevel = UserService.determineVerificationLevel(
-          result.credentialSubject,
+          result.discloseOutput,
         );
 
         // Update user with Self Protocol verification data
@@ -254,7 +276,7 @@ export class UserService {
                 nullifier: nullifier,
                 verificationLevel: verificationLevel,
                 isVerified: true,
-                credentialSubject: result.credentialSubject,
+                credentialSubject: result.discloseOutput,
               },
             },
           },
@@ -276,14 +298,10 @@ export class UserService {
 
         // Create a descriptive error message based on validation details
         const failureReasons = [];
-        if (result.isValidDetails?.isValidScope === false)
-          failureReasons.push('invalid scope');
-        if (result.isValidDetails?.isValidAttestationId === false)
-          failureReasons.push('invalid attestation ID');
-        if (result.isValidDetails?.isValidProof === false)
-          failureReasons.push('invalid proof');
-        if (result.isValidDetails?.isValidNationality === false)
-          failureReasons.push('invalid nationality');
+        if (result.isValidDetails?.isMinimumAgeValid === false)
+          failureReasons.push('minimum age requirement not met');
+        if (result.isValidDetails?.isOfacValid === false)
+          failureReasons.push('OFAC validation failed');
 
         const errorMessage =
           failureReasons.length > 0

@@ -71,12 +71,12 @@ export class UserController {
 
   static verifySelf = async (req: Request, res: Response) => {
     try {
-      const { proof, publicSignals } = req.body;
+      const { attestationId, proof, publicSignals, userContextData } = req.body;
 
       // Validate required fields
-      if (!proof || !publicSignals) {
+      if (!attestationId || !proof || !publicSignals || !userContextData) {
         throw new CustomError(
-          'Missing required fields: proof and publicSignals are required in the request body.',
+          'Missing required fields: attestationId, proof, publicSignals, and userContextData are required in the request body.',
           400,
           'fail',
         );
@@ -111,8 +111,10 @@ export class UserController {
       // Perform verification
       const updatedUser = await UserService.verifySelfUser(
         (req.user as any).id,
+        attestationId,
         proof,
         publicSignals,
+        userContextData,
       );
 
       res.status(200).json({
@@ -150,7 +152,9 @@ export class UserController {
       if (!req.user || !(req.user as any).id) {
         throw new CustomError('User not authenticated', 401, 'fail');
       }
-      const isVerified = await UserService.isUserSelfVerified((req.user as any).id);
+      const isVerified = await UserService.isUserSelfVerified(
+        (req.user as any).id,
+      );
       const verificationLevel = await UserService.getUserSelfVerificationLevel(
         (req.user as any).id,
       );
@@ -177,7 +181,9 @@ export class UserController {
       if (!req.user || !(req.user as any).id) {
         throw new CustomError('User not authenticated', 401, 'fail');
       }
-      const isVerified = await UserService.isUserSelfVerified((req.user as any).id);
+      const isVerified = await UserService.isUserSelfVerified(
+        (req.user as any).id,
+      );
       if (!isVerified) {
         throw new CustomError(
           'User is not currently verified with Self Protocol.',
@@ -186,7 +192,9 @@ export class UserController {
         );
       }
 
-      const updatedUser = await UserService.revokeSelfVerification((req.user as any).id);
+      const updatedUser = await UserService.revokeSelfVerification(
+        (req.user as any).id,
+      );
 
       res.status(200).json({
         status: 'success',

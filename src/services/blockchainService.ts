@@ -1,11 +1,12 @@
 import { ContractKit, newKit } from '@celo/contractkit';
-import { AbiItem } from 'web3-utils';
-import { BlockNumber } from 'web3-core';
+import Web3 from 'web3';
 import dotenv from 'dotenv';
 import config from '../configs/config';
 import abi from '../abi/dezenmartAbi.json';
 
 dotenv.config();
+
+type BlockNumber = number | 'latest';
 
 // Define types for our trade structure to match the contract
 export interface Trade {
@@ -30,6 +31,7 @@ export interface Trade {
 
 export class DezenMartContractService {
   private kit: ContractKit;
+  private web3: Web3;
   private contractAddress: string;
   private usdtAddress: string;
 
@@ -45,12 +47,13 @@ export class DezenMartContractService {
         : 'https://forno.celo.org');
 
     this.kit = newKit(nodeUrl);
+    this.web3 = new Web3(this.kit.connection.currentProvider as any);
     this.contractAddress = config.CONTRACT_ADDRESS || '';
     this.usdtAddress = config.USDT_ADDRESS || '';
 
     // Set default account if provided
     if (config.PRIVATE_KEY) {
-      const account = this.kit.web3.eth.accounts.privateKeyToAccount(
+      const account = this.web3.eth.accounts.privateKeyToAccount(
         config.PRIVATE_KEY,
       );
       this.kit.addAccount(account.privateKey);
@@ -59,9 +62,9 @@ export class DezenMartContractService {
   }
 
   // Get contract instance
-  private async getContract() {
-    return new this.kit.web3.eth.Contract(
-      abi.DEZENMART_ABI as AbiItem[],
+  private async getContract(): Promise<any> {
+    return new this.web3.eth.Contract(
+      abi.DEZENMART_ABI as any,
       this.contractAddress,
     );
   }
@@ -78,7 +81,9 @@ export class DezenMartContractService {
 
   async getLogisticsProviders(): Promise<string[]> {
     const contract = await this.getContract();
-    const providers: string[] = await contract.methods.getLogisticsProviders().call();
+    const providers: string[] = await contract.methods
+      .getLogisticsProviders()
+      .call();
     return providers;
   }
 
@@ -140,11 +145,7 @@ export class DezenMartContractService {
   }
 
   // Buy trade (buyer)
-  async buyTrade(
-    tradeId: string,
-    quantity: string,
-    logisticsProvider: string,
-  ) {
+  async buyTrade(tradeId: string, quantity: string, logisticsProvider: string) {
     const contract = await this.getContract();
 
     // Get the trade details to calculate the required payment
@@ -157,7 +158,7 @@ export class DezenMartContractService {
     if (!trade.logisticsProviders || !Array.isArray(trade.logisticsProviders)) {
       throw new Error('Logistics providers data is invalid or missing');
     }
-    
+
     if (!trade.logisticsCosts || !Array.isArray(trade.logisticsCosts)) {
       throw new Error('Logistics costs data is invalid or missing');
     }
@@ -218,17 +219,16 @@ export class DezenMartContractService {
     //   // .add(this.kit.web3.utils.toBN(logisticsEscrowFee))
     //   .toString();
 
+    await this.approveUSDT('10000000000000000000');
 
-      await this.approveUSDT('10000000000000000000');
-
-      const tx = await contract.methods.buyTrade(
-        tradeId,
-        quantity,
-        logisticsProvider,
-      );
-      const buyTradeReceipt = await this.sendTransaction(tx)
-      return buyTradeReceipt;
-      // return await this.sendTransaction(tx);
+    const tx = await contract.methods.buyTrade(
+      tradeId,
+      quantity,
+      logisticsProvider,
+    );
+    const buyTradeReceipt = await this.sendTransaction(tx);
+    return buyTradeReceipt;
+    // return await this.sendTransaction(tx);
     // }
   }
 
@@ -250,8 +250,8 @@ export class DezenMartContractService {
       },
     ];
 
-    const usdtContract = new this.kit.web3.eth.Contract(
-      usdtAbi as AbiItem[],
+    const usdtContract = new this.web3.eth.Contract(
+      usdtAbi as any,
       config.USDT_ADDRESS,
     );
 
@@ -307,7 +307,7 @@ export class DezenMartContractService {
   async getTrade(tradeId: string): Promise<Trade> {
     const contract = await this.getContract();
     try {
-      const trade = await contract.methods.trades(tradeId).call();
+      const trade: any = await contract.methods.trades(tradeId).call();
 
       // Format the response to match our Trade interface
       return {
@@ -343,7 +343,7 @@ export class DezenMartContractService {
   async getTradesByBuyer(): Promise<Trade[]> {
     const contract = await this.getContract();
     try {
-      const trades = await contract.methods.getTradesByBuyer().call({
+      const trades: Trade[] = await contract.methods.getTradesByBuyer().call({
         from: this.kit.defaultAccount,
       });
       return trades;
@@ -357,7 +357,7 @@ export class DezenMartContractService {
   async getTradesBySeller(): Promise<Trade[]> {
     const contract = await this.getContract();
     try {
-      const trades = await contract.methods.getTradesBySeller().call({
+      const trades: Trade[] = await contract.methods.getTradesBySeller().call({
         from: this.kit.defaultAccount,
       });
       return trades;
@@ -388,7 +388,7 @@ export class DezenMartContractService {
   // Helper function to send transactions
   private async sendTransaction(tx: any, value = '0') {
     try {
-      const accounts = await this.kit.web3.eth.getAccounts();
+      const accounts = await this.web3.eth.getAccounts();
       const from = this.kit.defaultAccount || accounts[0];
       if (!from) {
         throw new Error(
@@ -455,7 +455,7 @@ export class DezenMartContractService {
           typeof this.lastCheckedBlock === 'number'
             ? this.lastCheckedBlock + 1
             : 'latest';
-        const currentBlock = await this.kit.web3.eth.getBlockNumber();
+        const currentBlock = Number(await this.web3.eth.getBlockNumber());
 
         // Avoid querying if fromBlock would be greater than currentBlock
         if (typeof fromBlock === 'number' && fromBlock > currentBlock) {
