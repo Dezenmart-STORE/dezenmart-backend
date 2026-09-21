@@ -8,10 +8,16 @@ const productionUrl = process.env.API_BASE_URL;
 const servers = productionUrl
   ? [
       { url: `${productionUrl}/api/v1`, description: 'Production' },
-      { url: `http://localhost:${config.PORT}/api/v1`, description: 'Local development' },
+      {
+        url: `http://localhost:${config.PORT}/api/v1`,
+        description: 'Local development',
+      },
     ]
   : [
-      { url: `http://localhost:${config.PORT}/api/v1`, description: 'Local development' },
+      {
+        url: `http://localhost:${config.PORT}/api/v1`,
+        description: 'Local development',
+      },
     ];
 
 const swaggerDefinition = {
@@ -37,23 +43,50 @@ const swaggerDefinition = {
     { name: 'Watchlist', description: 'Product watchlist' },
     { name: 'Notifications', description: 'User notifications' },
     { name: 'Messages', description: 'Direct messaging' },
-    { name: 'Contracts', description: 'On-chain trade and purchase management' },
+    {
+      name: 'Contracts',
+      description: 'On-chain trade and purchase management',
+    },
     { name: 'Mento', description: 'Token swap via Mento protocol' },
     { name: 'Logistics', description: 'Logistics provider management' },
     { name: 'Exchange Rate', description: 'Token exchange rate and purchases' },
-    { name: 'Deliveries', description: 'Order delivery tracking and management' },
-    { name: 'Delivery Addresses', description: 'User saved delivery addresses' },
-    { name: 'Ramp', description: 'Quidax on-ramp (NGN → crypto) and off-ramp (crypto → NGN) conversion' },
+    {
+      name: 'Deliveries',
+      description: 'Order delivery tracking and management',
+    },
+    {
+      name: 'Delivery Addresses',
+      description: 'User saved delivery addresses',
+    },
+    {
+      name: 'Ramp',
+      description:
+        'Quidax on-ramp (NGN → crypto) and off-ramp (crypto → NGN) conversion',
+    },
     { name: 'Terms', description: 'Terms and conditions content management' },
     { name: 'Wallet', description: 'User wallet status and setup' },
+    {
+      name: 'Express Booking',
+      description: 'On-demand ride and delivery booking, lookup, and tracking',
+    },
+    {
+      name: 'Express Riders',
+      description:
+        'Rider registration, auth, rider-facing booking actions, and wallet',
+    },
+    {
+      name: 'Express Payments',
+      description:
+        'Korapay payment initiation, verification, and webhook for Express bookings',
+    },
   ],
 };
 
 const options: swaggerJsdoc.Options = {
   definition: swaggerDefinition,
   apis: [
-    path.join(process.cwd(), 'src/swagger/schemas.ts'),
-    path.join(process.cwd(), 'src/swagger/paths/*.ts'),
+    path.resolve(process.cwd(), 'src/swagger/schemas.ts').replace(/\\/g, '/'),
+    path.resolve(process.cwd(), 'src/swagger/paths/*.ts').replace(/\\/g, '/'),
   ],
 };
 
