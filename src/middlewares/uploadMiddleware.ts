@@ -2,10 +2,10 @@ import multer from 'multer';
 import path from 'path';
 import { Request } from 'express';
 import { CustomError } from './errorHandler';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import cloudinaryStorage from 'multer-storage-cloudinary';
 import cloudinary from '../configs/storage';
 
-const storage = new CloudinaryStorage({
+const storage = cloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
     let folderName = 'general';
@@ -29,11 +29,7 @@ const storage = new CloudinaryStorage({
 });
 
 // File filter function (optional but recommended)
-const fileFilter = (
-  req: Request,
-  file: any,
-  cb: multer.FileFilterCallback,
-) => {
+const fileFilter = (req: Request, file: any, cb: multer.FileFilterCallback) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp|mp4/;
   const mimetype = allowedTypes.test(file.mimetype);
   const extname = allowedTypes.test(
